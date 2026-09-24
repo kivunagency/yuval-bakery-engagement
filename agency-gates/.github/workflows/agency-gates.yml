@@ -1,0 +1,185 @@
+name: agency-gates
+
+# The agency engineering plan, phase 4: a project is BORN with its gates.
+#
+# Phases 2 and 3 installed this by hand on two existing systems, and both had to ratchet
+# against a committed baseline, because you cannot refuse a rule that a codebase already
+# breaks eighty-five times. This file is the same machinery pointed at a project that has
+# broken nothing yet, so the baselines in qa/ are EMPTY and every violation is refused
+# outright. That is the whole reason to do it at birth: the retrofit is a negotiation,
+# the birth is a rule.
+#
+# The measured cost of the alternative, all from real projects:
+#
+#   egoz-maniv    115 routes,  85 querying the database straight from the route,
+#                 337 inline queries, 104 catch blocks that swallow. Not fixable by
+#                 decree; it took a ratchet and it will take months.
+#   KivunOS       our own system. 33 routes, 26 querying directly, and NO CI AT ALL
+#                 until 2026-09-16. Every gate we built for clients ran on their code
+#                 and never on ours.
+#   mishkei-lev   39 routes, ZERO querying directly, because the rule existed while it
+#                 was being written.
+#
+# Only the third one was cheap, and the only difference was WHEN.
+#
+# Baselines live in qa/. Lowering one is a deliberate, reviewable act:
+#   node scripts/<check>.mjs --write-baseline qa/<name>.baseline.json
+#
+# Source of truth for every script: ~/.claude/shared/scripts/
+# Re-copied into a project by: shared/scripts/bootstrap-client.py
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+jobs:
+  boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Rule 2, a route does not query the database
+        run: node scripts/check-route-boundaries.mjs --ratchet --baseline qa/route-boundaries.baseline.json
+
+      # A BASELINE MUST BE REPRODUCIBLE FROM THE TREE.
+      #
+      # boaz's idea, and the reason it is here rather than in a settings change: the
+      # obvious way to make a ratchet go green is to regenerate the baseline, and with no
+      # CODEOWNERS and zero required reviewers, a PR that adds a violation and regenerates
+      # the baseline in the same commit passes with nobody looking. Requiring the
+      # committed file to be byte-identical to a fresh scan does not stop a regeneration;
+      # it stops a HAND EDIT. The moment somebody adjusts a number to clear a red check,
+      # the file stops matching what the tool derives, and this step says so.
+      #
+      # Cheaper than branch protection, and it needs no repository permissions.
+      - name: and the committed baseline is reproducible from the tree
+        run: |
+          for g in route-boundaries swallowed-catch server-waterfall project-shape hardcoded-hebrew; do
+            f="qa/$g.baseline.json"
+            [ -f "$f" ] || continue
+            case "$g" in
+              route-boundaries)  s=check-route-boundaries ;;
+              swallowed-catch)   s=check-swallowed-catch ;;
+              server-waterfall)  s=check-server-waterfall ;;
+              project-shape)     s=check-project-shape ;;
+              hardcoded-hebrew)  s=check-hardcoded-hebrew ;;
+            esac
+            node "scripts/$s.mjs" --write-baseline /tmp/fresh.json > /dev/null
+            if ! diff -q "$f" /tmp/fresh.json > /dev/null; then
+              echo "::error::$f is not what $s.mjs derives from this tree."
+              echo "A baseline is a recording, not a dial. If the counts genuinely moved,"
+              echo "regenerate it in a commit that says why. If you edited it by hand to"
+              echo "clear a red check, that is the thing this step exists to catch."
+              diff "$f" /tmp/fresh.json | head -40
+              exit 1
+            fi
+          done
+          echo "every committed baseline matches a fresh scan"
+
+  shape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: The house shape, see shared/PROJECT-SKELETON.md
+        run: node scripts/check-project-shape.mjs --ratchet --baseline qa/project-shape.baseline.json
+
+  hebrew:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Rule 1, Hebrew reaches the screen through he.json, never a literal in code
+        run: node scripts/check-hardcoded-hebrew.mjs --ratchet --baseline qa/hardcoded-hebrew.baseline.json
+
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Rule 18, the system carries a contract
+        run: node scripts/check-system-contract.mjs --exist
+      - name: Rule 18, and it is updated in the same change as the behaviour
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE"
+          node scripts/check-system-contract.mjs --fresh --base "origin/$BASE"
+
+  swallowed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Rule 20, a catch block does not swallow
+        run: node scripts/check-swallowed-catch.mjs --ratchet --baseline qa/swallowed-catch.baseline.json
+
+  waterfall:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Rule 31, the server does not wait on itself
+        run: node scripts/check-server-waterfall.mjs --ratchet --baseline qa/server-waterfall.baseline.json
+
+  callers:
+    runs-on: ubuntu-latest
+    # contents: read only. The earlier `pull-requests: write` was dead: the script imports
+    # child_process, fs and path, calls no API and is handed no token. boaz F6.
+    permissions: { contents: read }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # the caller count needs a merge base, which a shallow clone does not have
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Rule 19, count the callers of every function this PR changed
+        # Through the environment, not interpolated into the shell. base_ref is far less
+        # dangerous than a PR body, but amit refused mishkei-lev #160 for exactly this
+        # inconsistency: the job one step below routes the identical value through `env:`
+        # while this one interpolated it. One anti-pattern, applied unevenly, is how the
+        # habit erodes.
+        env:
+          BASE: ${{ github.base_ref }}
+        run: node scripts/check-caller-count.mjs --base "origin/$BASE"
+
+  claims:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Rule 17 and Rule 26, what the PR body has to say
+        env:
+          # through the environment and then a FILE, never interpolated into the shell:
+          # a PR body is attacker-controlled text
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE: ${{ github.base_ref }}
+        run: printf '%s' "$PR_BODY" > /tmp/pr-body.txt
+
+      # SEPARATE STEPS, and this is not cosmetic. Both used to sit in one `run: |` block,
+      # which runs under `bash -e`, so a Rule 17 failure exited the block and Rule 26 NEVER
+      # RAN, silently, reported as one red check. A gate that disables another gate when it
+      # fires is the exact defect Rule 20 exists for, inside the job that enforces it.
+      # boaz F4.
+      - name: Rule 17, the PR names the artefact its change produced
+        env:
+          BASE: ${{ github.base_ref }}
+        run: node scripts/check-proof-of-execution.mjs --base "origin/$BASE" --body-file /tmp/pr-body.txt
+
+      - name: Rule 26, Hebrew is verified rendered
+        if: always()
+        env:
+          BASE: ${{ github.base_ref }}
+        run: node scripts/check-rtl-screenshot.mjs --base "origin/$BASE" --body-file /tmp/pr-body.txt

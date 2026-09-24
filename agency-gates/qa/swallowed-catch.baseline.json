@@ -1,0 +1,6 @@
+{
+  "_comment": "Rule 20 ratchet, at BIRTH. items is deliberately EMPTY: this project has never violated the rule, so every violation is a NEW one and is refused. This is not a placeholder to be filled in later. If a file ever appears here, someone lowered the bar on a project that was born clean, and the commit that did it should say why.",
+  "rule": "Rule 20",
+  "summary": {"filesWithSwallowedCatch": 0, "swallowedCatches": 0},
+  "items": {}
+}

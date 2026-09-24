@@ -1,0 +1,6 @@
+{
+  "_comment": "House shape ratchet, at BIRTH. items is deliberately EMPTY. See shared/PROJECT-SKELETON.md: a server module with no server-only, a client layer importing the server layer, an unnamed bounded context, or a loose script at the repo root are all refused on sight in a project that has never had one.",
+  "rule": "House shape (Rule 2, Rule 24)",
+  "summary": {"serverModules": 0, "missingServerOnly": 0, "clientImportsServer": 0, "unnamedContext": 0, "strayRootScripts": 0},
+  "items": {}
+}

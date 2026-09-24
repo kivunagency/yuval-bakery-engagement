@@ -1,0 +1,6 @@
+{
+  "_comment": "Rule 1 ratchet, at BIRTH. items is deliberately EMPTY: English-first means no Hebrew literal in code, ever, and a project born today owes nothing to anyone else's history. egoz-maniv carries 191 such files and is grandfathered by the rule's own text; mishkei-lev carries ZERO, because the rule existed while it was being written.",
+  "rule": "Rule 1, English-first i18n",
+  "summary": {"files": 0, "filesWithHebrew": 0, "hebrewLines": 0, "filesWithHebrewOnlyInComments": 0},
+  "items": {}
+}

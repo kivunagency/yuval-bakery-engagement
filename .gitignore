@@ -1,0 +1,66 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Environment variables (secrets — NEVER commit)
+# CAUTION (Egoz-Maniv 2026-07-03): the Vercel CLI (`vercel env pull`) writes env files WITHOUT a
+# leading dot — env.local, env.prod-local, env.vercel-local — which ".env*" does NOT match. That
+# leaked a live Supabase service_role key into git. Match BOTH dotted and dot-less forms:
+.env
+.env*
+.env.local
+.env.*.local
+env
+env.local
+env.prod-local
+env.vercel-local
+env*.local
+env.*-local
+# keep template files tracked:
+!.env.example
+!.env.local.example
+!env.local.example
+
+# Vercel
+.vercel
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temp / cache
+*.tmp
+.cache/
+
+# Cursor / Codex
+.cursor/
+.codex/
+
+# Anthropic / Claude session artifacts
+.claude/
