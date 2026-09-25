@@ -12,3 +12,8 @@ export const TEXT_VERSIONS = {
   cancellation: 'cancellation-2026-10-v1',
 } as const;
 export type TextVersionKey = keyof typeof TEXT_VERSIONS;
+
+// Date the accessibility statement was last reviewed (Rule 33 item 9: the
+// statement carries its update date). Change it whenever the text or the
+// site's accessibility status changes.
+export const ACCESSIBILITY_STATEMENT_UPDATED = '2026-09-25';

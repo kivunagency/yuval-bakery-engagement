@@ -16,6 +16,7 @@ test.describe.configure({ mode: 'serial' });
 const COMPLIANCE_ROUTES = [
   { route: '/business', shot: 'business' },
   { route: '/privacy', shot: 'privacy' },
+  { route: '/accessibility', shot: 'accessibility' },
 ];
 
 const BUSINESS_KEYS = ['business_name', 'business_owner_name', 'business_registration_number', 'business_address', 'business_phone', 'business_whatsapp', 'business_email'];
@@ -191,5 +192,27 @@ test.describe('privacy notice (compliance-001, s.11)', () => {
     } finally {
       await withDb((db) => db.query("UPDATE app_settings SET value = '24'::jsonb WHERE key = 'guest_pii_months'"));
     }
+  });
+});
+
+test.describe('accessibility statement (compliance-003)', () => {
+  test('footer links to it; it has a date, no conformance claim, an unverified exemption, owner contact', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('site-footer').getByRole('link', { name: 'הצהרת נגישות' })).toHaveAttribute('href', '/accessibility');
+    await page.goto('/accessibility');
+    await expect(page.getByTestId('accessibility-updated')).toContainText('2026');
+    await expect(page.locator('#status')).toContainText('לא מצהירים על עמידה מלאה');
+    await expect(page.getByTestId('accessibility-exemption')).toContainText('לא אומתו');
+    await expect(page.locator('main')).not.toContainText('רכז נגישות');
+    await expect(page.locator('#accessibility-contact').getByTestId('contact-block')).toBeVisible();
+  });
+
+  test('keyboard: tabbing reaches the footer links with a visible focus ring', async ({ page }) => {
+    await page.goto('/accessibility');
+    const link = page.getByTestId('site-footer').getByRole('link', { name: 'הצהרת נגישות' });
+    for (let i = 0; i < 40 && !(await link.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press('Tab');
+    await expect(link).toBeFocused();
+    const outline = await link.evaluate((el) => getComputedStyle(el).outlineStyle);
+    expect(outline).toBe('solid');
   });
 });

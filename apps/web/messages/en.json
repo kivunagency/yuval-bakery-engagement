@@ -61,7 +61,8 @@
     "nav_label": "Site information",
     "links": {
       "business": "Business details",
-      "privacy": "Privacy"
+      "privacy": "Privacy",
+      "accessibility": "Accessibility statement"
     }
   },
   "returns_policy": {
@@ -164,6 +165,45 @@
         "title": "Cookies",
         "body": "The site uses only essential cookies (keeping you signed in). No analytics, advertising or third-party cookies, so there is no cookie banner."
       }
+    }
+  },
+  "accessibility": {
+    "statement": {
+      "title": "Accessibility statement",
+      "updated": "Last updated: {date}",
+      "commitment": {
+        "title": "Our commitment",
+        "body": "We want everyone, including people with disabilities, to be able to browse and order on this site. The site is built to Israeli Standard 5568 (based on WCAG 2.0), level AA."
+      },
+      "status": {
+        "title": "Accessibility status",
+        "body": "The site was built with accessibility in mind from the first screen. A full audit of the site against the standard has not been completed yet, so we do not claim full conformance."
+      },
+      "done": {
+        "title": "What has been done",
+        "language": "The site is in Hebrew, laid out right to left, and declares its language to assistive technology.",
+        "contrast": "Text and background colours meet the AA contrast ratio.",
+        "keyboard": "The site is built so every action can be done with the keyboard, with a visible focus ring and a \"skip to main content\" link.",
+        "targets": "Buttons and links are at least 44 by 44 pixels.",
+        "motion": "Motion is limited to short button transitions, and turns off entirely with the \"reduce motion\" setting.",
+        "alt": "Every product photo has a text description, and a product cannot be published without one.",
+        "allergens": "Allergens are written as text on every product, not only as an icon or in a tooltip.",
+        "state": "Status (for example a full day) is never shown by colour alone."
+      },
+      "limits": {
+        "title": "Known limitations",
+        "not_audited": "Screen reader use and <ltr>200%</ltr> zoom have not been fully tested yet.",
+        "external": "Payment happens in Bit or PayBox and contact in WhatsApp: those apps are not under our control.",
+        "content": "Product photos and descriptions are added by the business; if one is missing a description, please tell us."
+      },
+      "exemption": {
+        "title": "Exemption",
+        "body": "[Pending check: a small business may be exempt from the accessibility regulations depending on its annual turnover. The exemption amount and whether it applies to this business have not been verified.] Either way, we build the site to the standard."
+      },
+      "contact_title": "Accessibility contact",
+      "contact": "Found something hard to use? Contact the business owner directly. Tell us which page, what the problem was and how to reach you, and we will get back to you.",
+      "email_label": "Email:",
+      "email_placeholder": "[Business email]"
     }
   }
 }

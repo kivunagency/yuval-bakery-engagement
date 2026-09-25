@@ -11,6 +11,7 @@ import styles from './SiteFooter.module.css';
 export const FOOTER_LINKS = [
   { href: '/business', key: 'business' },
   { href: '/privacy', key: 'privacy' },
+  { href: '/accessibility', key: 'accessibility' },
 ] as const;
 
 export function SiteFooter({ settings }: { settings: PublicSiteSettings }) {
