@@ -21,6 +21,7 @@ export const DB_ERROR_CODES = [
   'guest_phone_or_customer_required',
   'invalid_confirmation_channel',
   'invalid_consent_action',
+  'lead_time_not_met',
   'not_authorized_to_delete_this_customer',
   'order_cannot_be_fulfilled_without_confirmation',
   'order_number_generation_exhausted',
