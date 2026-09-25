@@ -473,6 +473,24 @@
         "5": "Friday",
         "6": "Saturday"
       }
+    },
+    "push": {
+      "title": "Notifications on this device",
+      "extra_note": "Push notifications are an extra. Every new order and custom cake request is also sent to your email, always.",
+      "enable": "Turn on notifications",
+      "disable": "Turn off on this device",
+      "working": "One moment...",
+      "state_on": "On",
+      "state_off": "Off",
+      "status_label": "Status on this device:",
+      "unsupported": "This browser cannot receive notifications. New orders will still reach you by email.",
+      "denied": "Notifications are blocked for this site in the browser. To allow them: open the browser's site settings (the lock icon next to the address), set Notifications to Allow, then press the button again. Until then, new orders reach you by email.",
+      "dismissed": "Notifications were not turned on. You can try again any time.",
+      "failed": "Could not turn on notifications. Try again in a moment. New orders still reach you by email.",
+      "disabled_confirmation": "Notifications are off for this device.",
+      "devices": "{count, plural, =0 {No device receives notifications yet.} one {One device receives notifications.} other {# devices receive notifications.}}",
+      "not_configured": "Notifications are not set up on the server yet. New orders reach you by email.",
+      "unsubscribe_failed": "Could not turn off notifications. Try again in a moment."
     }
   },
   "notification": {
@@ -520,5 +538,9 @@
       "quota_title": "Emails today: {count} of {cap}",
       "quota_body": "Above {cap} emails a day, emails stop until tomorrow. Push notifications continue."
     }
+  },
+  "push": {
+    "permission_prompt": "Turn on notifications on this device to hear about new orders right away.",
+    "enabled_confirmation": "Notifications are on for this device."
   }
 }

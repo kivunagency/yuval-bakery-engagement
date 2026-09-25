@@ -289,3 +289,10 @@
   .admin-warn { background: color-mix(in srgb, var(--warn) 18%, transparent); }
   .admin-ok { background: color-mix(in srgb, var(--ok) 16%, transparent); }
 }
+
+/* Web push on this device (client-012), inside Settings. */
+.admin-push { margin-block-start: var(--s6); display: flex; flex-direction: column; gap: var(--s3); }
+.admin-push .admin-section-title { margin-block: 0; font-size: 26px; }
+.admin-push .admin-hint { margin: 0; }
+.admin-push-status { margin: 0; font-size: 16px; }
+.admin-push-note { margin: 0; padding: var(--s3); border-radius: var(--r-control); background: var(--warn-bg); color: var(--ink); }

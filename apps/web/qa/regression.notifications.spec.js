@@ -369,3 +369,238 @@ test.describe('job-002 email caps are counted in the DB, under concurrency', () 
     });
   });
 });
+
+// ---------------------------------------------------------------- client-012
+const { join } = require('node:path');
+const { createUser, uiLogin } = require('./helpers/admin-ui');
+
+const SCREENS = join(__dirname, '..', 'test-results', 'screens');
+
+function collectErrors(page) {
+  const errors = [];
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  page.on('pageerror', (e) => errors.push(e.message));
+  return errors;
+}
+
+/** The baseline every admin screen shares (same checks as regression.admin.spec.js). */
+async function adminBaseline(page, name, errors) {
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'he');
+  await page.evaluate(() => document.fonts.ready);
+  expect(await page.evaluate(() => document.fonts.check('400 16px "IBM Plex Sans Hebrew"'))).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  const small = await page.evaluate(() =>
+    [...document.querySelectorAll('a, button, input, select, textarea, [role="button"], [role="switch"]')]
+      .filter((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden' && (r.width < 44 || r.height < 44);
+      })
+      .map((el) => el.outerHTML.slice(0, 80)),
+  );
+  expect(small).toEqual([]);
+  await page.screenshot({ path: join(SCREENS, `admin-push-${name}.png`), fullPage: true });
+  expect(errors).toEqual([]);
+}
+
+/**
+ * Headless Chromium has no push service, so PushManager.subscribe is replaced
+ * by one returning a subscription for OUR stand-in push service with keys the
+ * test holds. Everything else is real: permission, service worker, the API
+ * route, the DB function, and the sender posting to that endpoint.
+ */
+async function stubPushManager(page, sub) {
+  await page.addInitScript((s) => {
+    let current = null;
+    const make = () => ({
+      endpoint: s.endpoint,
+      toJSON: () => ({ endpoint: s.endpoint, expirationTime: null, keys: { p256dh: s.p256dh, auth: s.auth } }),
+      unsubscribe: async () => ((current = null), true),
+    });
+    PushManager.prototype.subscribe = async function () {
+      current = make();
+      return current;
+    };
+    PushManager.prototype.getSubscription = async function () {
+      return current;
+    };
+  }, sub);
+}
+
+test.describe('client-012 admin push subscribe', () => {
+  test('API: aal2 admin only, same Origin, strict body, push-service hosts only', async ({ page }) => {
+    const anon = await page.request.post('/api/admin/push-subscriptions', { data: {}, headers: { origin: 'http://localhost:3100' } });
+    expect(anon.status()).toBe(401);
+
+    const user = await createUser({ withTotp: true });
+    await uiLogin(page, user);
+    const origin = new URL(page.url()).origin;
+    const keys = subscriptionKeys();
+    const good = { endpoint: `https://fcm.googleapis.com/fcm/send/${crypto.randomUUID()}`, keys: { p256dh: keys.p256dh, auth: keys.auth } };
+    const post = (data, headers = { origin }) => page.request.post('/api/admin/push-subscriptions', { data, headers });
+
+    expect((await post(good, { origin: 'https://evil.test' })).status()).toBe(403);
+    expect((await post(good, {})).status()).toBe(403);
+    expect(await (await post({ ...good, admin_id: crypto.randomUUID() })).json()).toEqual({ error: 'invalid_input' });
+    expect(await (await post({ ...good, keys: { ...good.keys, auth: 'x' } })).json()).toEqual({ error: 'invalid_input' });
+    for (const endpoint of ['https://evil.test/push', 'http://169.254.169.254/latest', 'https://fcm.googleapis.com.evil.test/x']) {
+      const r = await post({ ...good, endpoint });
+      expect(r.status(), endpoint).toBe(400);
+      expect(await r.json()).toEqual({ error: 'endpoint_not_allowed' });
+    }
+
+    const ok = await post(good);
+    expect(ok.status()).toBe(201);
+    await db.withClient(async (c) => {
+      const { rows } = await c.query('SELECT admin_id, revoked_at FROM push_subscriptions WHERE endpoint = $1', [good.endpoint]);
+      expect(rows).toEqual([{ admin_id: user.userId, revoked_at: null }]);
+    });
+    const del = await page.request.delete('/api/admin/push-subscriptions', { data: { endpoint: good.endpoint }, headers: { origin } });
+    expect(await del.json()).toEqual({ revoked: true });
+    await db.withClient(async (c) => {
+      const { rows } = await c.query('SELECT revoked_at FROM push_subscriptions WHERE endpoint = $1', [good.endpoint]);
+      expect(rows[0].revoked_at).not.toBeNull();
+    });
+  });
+
+  test('aal1 (password, no TOTP) cannot register', async ({ page }) => {
+    const user = await createUser({ withTotp: true });
+    await page.goto('/admin/login');
+    await page.getByLabel('אימייל').fill(user.email);
+    await page.getByLabel('סיסמה').fill(user.password);
+    await page.getByRole('button', { name: 'כניסה', exact: true }).click();
+    await page.waitForURL('**/admin/login/verify');
+    const keys = subscriptionKeys();
+    const r = await page.request.post('/api/admin/push-subscriptions', {
+      data: { endpoint: 'https://fcm.googleapis.com/fcm/send/x', keys: { p256dh: keys.p256dh, auth: keys.auth } },
+      headers: { origin: new URL(page.url()).origin },
+    });
+    expect(r.status()).toBe(401);
+  });
+
+  test('settings screen: turn on, the next order reaches this device, turn off', async ({ page, context }) => {
+    const notification = await loadNotificationModule();
+    const keys = subscriptionKeys();
+    const service = await pushService(keys);
+    try {
+      await context.grantPermissions(['notifications']);
+      await stubPushManager(page, { endpoint: service.endpoint, p256dh: keys.p256dh, auth: keys.auth });
+      const errors = collectErrors(page);
+      const user = await createUser({ withTotp: true });
+      await uiLogin(page, user);
+      const res = await page.goto('/admin/settings');
+      const csp = res?.headers()['content-security-policy'] ?? '';
+      expect(csp).toContain("worker-src 'self'");
+
+      const card = page.getByTestId('push-card');
+      await expect(card).toHaveAttribute('data-state', 'off');
+      await expect(card).toContainText('התראות הן תוספת');
+      await expect(page.getByTestId('push-devices')).toHaveText('עוד אין מכשיר שמקבל התראות.');
+      await adminBaseline(page, 'off', errors);
+
+      await page.getByTestId('push-toggle').click();
+      await expect(card).toHaveAttribute('data-state', 'on');
+      await expect(page.getByTestId('push-message')).toHaveText('ההתראות פעילות במכשיר הזה.');
+      await expect(page.getByTestId('push-devices')).toHaveText('מכשיר אחד מקבל התראות.');
+      await expect(page.getByTestId('push-status')).toHaveText('פעילות');
+      // the real service worker is registered for /admin/ only
+      const scope = await page.evaluate(async () => (await navigator.serviceWorker.getRegistration('/admin/'))?.scope ?? null);
+      expect(scope).toMatch(/\/admin\/$/);
+      await adminBaseline(page, 'on', errors);
+
+      await db.withClient(async (c) => {
+        const { rows } = await c.query('SELECT admin_id FROM push_subscriptions WHERE endpoint = $1 AND revoked_at IS NULL', [service.endpoint]);
+        expect(rows).toEqual([{ admin_id: user.userId }]);
+        // a new order now reaches this device through the real sender
+        const order = await orderWithEmail(c, `guest-${crypto.randomUUID()}@example.test`);
+        await notification.OrderCreated({ orderId: order.id });
+        expect(service.received).toHaveLength(1);
+        expect(service.received[0].payload.title).toContain(order.order_number);
+      });
+
+      await page.getByTestId('push-toggle').click();
+      await expect(card).toHaveAttribute('data-state', 'off');
+      await expect(page.getByTestId('push-message')).toHaveText('ההתראות כבויות במכשיר הזה.');
+      await expect(page.getByTestId('push-devices')).toHaveText('עוד אין מכשיר שמקבל התראות.');
+      await db.withClient(async (c) => {
+        const { rows } = await c.query('SELECT revoked_at FROM push_subscriptions WHERE endpoint = $1', [service.endpoint]);
+        expect(rows[0].revoked_at).not.toBeNull();
+      });
+      expect(errors).toEqual([]);
+    } finally {
+      await service.close();
+    }
+  });
+
+  test('the service worker shows a pushed notification (title, body, link, RTL)', async ({ page, context }) => {
+    await context.grantPermissions(['notifications']);
+    const user = await createUser({ withTotp: true });
+    await uiLogin(page, user);
+    await page.goto('/admin/settings');
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.register('/sw.js', { scope: '/admin/' });
+      await navigator.serviceWorker.ready;
+    });
+    const cdp = await context.newCDPSession(page);
+    const regs = [];
+    cdp.on('ServiceWorker.workerRegistrationUpdated', (e) => regs.push(...e.registrations));
+    await cdp.send('ServiceWorker.enable');
+    await expect.poll(() => regs.find((r) => r.scopeURL.endsWith('/admin/') && !r.isDeleted)).toBeTruthy();
+    const reg = regs.find((r) => r.scopeURL.endsWith('/admin/') && !r.isDeleted);
+    const payload = { title: 'הזמנה חדשה K7Q2M', body: 'הקישו לפתיחת ההזמנה.', url: '/admin/orders/x', tag: 'order-x' };
+    await cdp.send('ServiceWorker.deliverPushMessage', { origin: new URL(page.url()).origin, registrationId: reg.registrationId, data: JSON.stringify(payload) });
+    await expect
+      .poll(async () =>
+        page.evaluate(async () => {
+          const r = await navigator.serviceWorker.getRegistration('/admin/');
+          return (await r.getNotifications()).map((n) => ({ title: n.title, body: n.body, tag: n.tag, dir: n.dir, lang: n.lang, url: n.data && n.data.url }));
+        }),
+      )
+      .toEqual([{ title: payload.title, body: payload.body, tag: 'order-x', dir: 'rtl', lang: 'he', url: '/admin/orders/x' }]);
+  });
+
+  test('permission denied: explains how to allow, says email still arrives, nothing breaks', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(Notification, 'permission', { get: () => 'denied' });
+      Notification.requestPermission = async () => 'denied';
+    });
+    const errors = collectErrors(page);
+    const user = await createUser({ withTotp: true });
+    await uiLogin(page, user);
+    await page.goto('/admin/settings');
+    const card = page.getByTestId('push-card');
+    await expect(card).toHaveAttribute('data-state', 'denied');
+    await expect(page.getByTestId('push-note')).toContainText('חסומות בדפדפן');
+    await expect(page.getByTestId('push-note')).toContainText('במייל');
+    await page.getByTestId('push-toggle').click(); // asking again stays calm
+    await expect(card).toHaveAttribute('data-state', 'denied');
+    await adminBaseline(page, 'denied', errors);
+  });
+
+  test('prompt dismissed: stays off with a gentle message', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(Notification, 'permission', { get: () => 'default' });
+      Notification.requestPermission = async () => 'default';
+    });
+    const user = await createUser({ withTotp: true });
+    await uiLogin(page, user);
+    await page.goto('/admin/settings');
+    await page.getByTestId('push-toggle').click();
+    await expect(page.getByTestId('push-card')).toHaveAttribute('data-state', 'off');
+    await expect(page.getByTestId('push-message')).toHaveText('ההתראות לא הופעלו. אפשר לנסות שוב בכל זמן.');
+  });
+
+  test('a browser without push (older iPhone, in-app browser): says so, email still arrives', async ({ page }) => {
+    await page.addInitScript(() => {
+      delete window.PushManager;
+    });
+    const errors = collectErrors(page);
+    const user = await createUser({ withTotp: true });
+    await uiLogin(page, user);
+    await page.goto('/admin/settings');
+    await expect(page.getByTestId('push-card')).toHaveAttribute('data-state', 'unsupported');
+    await expect(page.getByTestId('push-note')).toContainText('במייל');
+    await expect(page.getByTestId('push-toggle')).toHaveCount(0);
+    await adminBaseline(page, 'unsupported', errors);
+  });
+});

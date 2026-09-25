@@ -18,6 +18,9 @@ export async function middleware(request: NextRequest) {
     `img-src 'self' data: blob: ${supabaseUrl}`,
     `font-src 'self'`,
     `connect-src 'self' ${supabaseUrl}`,
+    // client-012: the admin push service worker (/sw.js). With 'strict-dynamic'
+    // in script-src, 'self' there is ignored, so workers need their own directive.
+    `worker-src 'self'`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

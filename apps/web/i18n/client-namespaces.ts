@@ -7,7 +7,7 @@ const PUBLIC = ['errors', 'catalog', 'day_state', 'business', 'returns_policy', 
 
 export const CLIENT_SCOPES = {
   public: PUBLIC,
-  admin: [...PUBLIC, 'admin'],
+  admin: [...PUBLIC, 'admin', 'push'],
 } as const;
 
 export type ClientScope = keyof typeof CLIENT_SCOPES;
