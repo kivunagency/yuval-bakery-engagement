@@ -31,14 +31,15 @@ A public ordering PWA (linked from Instagram bio) plus an admin area, for a sing
   - AC: catalog is usable and readable on mobile (primary traffic source is Instagram bio link).
 
 ### 3.2 Custom cake request
+- **US-0 (guest contact, Ran 2026-09-25)**: a guest checkout or custom-cake request requires a phone number (mandatory, validated as an Israeli mobile). Email is optional. The s.14C written order confirmation goes to the phone. The channel (SMS provider, metered, vs WhatsApp click-to-send by Yuval) is an open decision; see Section 10.
 - **US-2**: As a customer, I can request a custom cake with a free-text inscription and an inspiration photo upload, so I can order something not in the standard catalog.
   - AC: the request form captures: inscription text, one or more inspiration photo uploads, desired delivery/pickup date, and free-text notes.
   - AC: submitting a custom-cake request does NOT create a payable order and does NOT reserve capacity yet; it creates a request in `pending_review` state.
   - AC: Yuval reviews the request in admin, sets a price and a time cost (oven minutes + work minutes), and either approves or declines it.
   - AC: on approval, the system checks capacity for the requested day using the time cost Yuval set; if capacity is insufficient, Yuval is warned before confirming and must pick another day or override with an explicit acknowledgment (never a silent overbook).
-  - AC: on approval, the customer is notified (email, and web push if registered) that the custom cake is approved, with price and a payment link; the order enters `payment_pending`.
+  - AC: on approval, the customer is notified (email if given, web push if registered, and for a guest a WhatsApp click-to-send from Yuval to the mandatory phone) that the custom cake is approved, with price and a payment link; the order enters `payment_pending`.
   - AC: on decline, the customer is notified with an optional reason field Yuval can fill in.
-  - AC: uploaded inspiration photos are private to Yuval's review (not published to the public catalog) unless Yuval explicitly chooses to reuse an image in the catalog later, as a separate action.
+  - AC: uploaded inspiration photos are private to Yuval's review and are NEVER published to the public catalog. There is no promote-to-catalog action (Ran 2026-09-25, on rotem's copyright and minors' privacy finding). The catalog uses only photos Yuval uploads herself in the admin.
 
 ### 3.3 Checkout: guest and registered
 - **US-3**: As a customer, I can complete an order as a guest without creating an account.
@@ -188,7 +189,7 @@ Carried from rotem's pre-PRD findings in BRIEF.md; binding for MVP unless noted.
 - **Retention**: a defined retention period for customer data, to be set with Yuval's accountant (open, Section 10); until confirmed, the system must support a configurable retention/deletion policy rather than hardcoding "keep forever."
 - **Admin MFA**: Yuval's admin login requires multi-factor authentication, given the PII and payment-adjacent data the admin handles.
 - **Rule 33 (public-site baseline)**: this is a public site reachable without login, so it carries the full 18-item baseline at PROD gate, including an accessibility statement, alt text on product photos, AA contrast, keyboard navigation, 44px touch targets, and IS 5568 applicability check (possible small-business exemption, amount to verify before launch).
-- **File uploads (inspiration photos)**: treated as untrusted user content; stored privately (not publicly served) until/unless Yuval explicitly promotes an image to the public catalog (US-2 AC).
+- **File uploads (inspiration photos)**: treated as untrusted user content; stored privately, never publicly served, and never promoted to the catalog (US-2 AC).
 - **Cyber-IAM scope**: customer authentication (registered profiles) and admin authentication are both in scope for erez's Mode B threat model at BUILD Phase 3, given PII and the admin's operational control over pricing and capacity.
 
 ## 9. Non-Goals (MVP)

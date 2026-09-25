@@ -52,6 +52,14 @@ The daily limit is **oven time and working time**, not a count per item. So capa
 - **Customer profiles + loyalty**: customers may register a profile; Yuval can send birthday and anniversary benefits, open punch cards (כרטיסיות הנחה) and run promotions. **Guest checkout must stay available** without registration.
   - Compliance to design in (rotem's Mode A already flagged it): marketing messages need a separate, unticked opt-in (Communications Law s.30A); birthday/anniversary dates are extra PII, optional fields with a stated purpose; customer auth brings cyber-iam into scope.
 
+## Decisions, 2026-09-25 evening (Ran, after phases 1-3)
+- All accounts (Netlify, hosted Postgres, Resend, domain) are created under **Yuval's** ownership, not Kivun's org.
+- Customer inspiration photos are **never** shown in the public catalog; no promote action.
+- Guest checkout: **phone mandatory**, email optional.
+- Risk accepted: no managed WAF on Netlify free (low traffic); Cloudflare DNS proxy when a domain exists.
+- Timezone for lead time and day boundaries: **Asia/Jerusalem**.
+- Still open: who holds the admin second factor and emergency access; written-confirmation channel for a guest with phone only (SMS is metered, Rule 30).
+
 ## Open decisions
 3. (superseded by the delivery settings screen above)
 4. Blackout days / working days.
