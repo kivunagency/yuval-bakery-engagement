@@ -43,6 +43,8 @@ else
   record "smoke.spec.js (live url)" "DID NOT RUN (SMOKE_BASE_URL not set, nothing deployed yet)"
 fi
 record "job-001 scheduled on Netlify" "DID NOT RUN (no Netlify site yet, infra-002)"
+record "job-002 real email via Resend" "DID NOT RUN (no Resend account yet, Yuval's; capture adapter used)"
+record "job-002 real web push to a device" "DID NOT RUN (stand-in push service on 127.0.0.1 only)"
 
 echo; echo "================ verify-all ================"
 fail=0
