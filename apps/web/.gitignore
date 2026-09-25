@@ -3,3 +3,4 @@ test-results/
 playwright-report/
 .next/
 tsconfig.tsbuildinfo
+netlify/functions/

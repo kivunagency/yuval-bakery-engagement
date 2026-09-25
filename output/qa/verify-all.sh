@@ -22,14 +22,15 @@ run "lint" npm run -s lint
 run "typecheck" npm run -s typecheck
 run "unit tests" npm run -s test
 run "build" npm run -s build
+run "build netlify functions (job-001 bundles)" npm run -s build:functions
 
 if bash scripts/local-stack/up.sh; then
   record "local stack up (pg17 + auth + postgrest)" PASSED
-  run "regression.spec.js (Playwright)" npx playwright test -c qa/playwright.config.js --project=mobile
+  run "regression specs incl. regression.jobs (Playwright)" npx playwright test -c qa/playwright.config.js --project=mobile
   bash scripts/local-stack/down.sh >/dev/null
 else
   record "local stack up (pg17 + auth + postgrest)" FAILED
-  record "regression.spec.js (Playwright)" "DID NOT RUN"
+  record "regression specs incl. regression.jobs (Playwright)" "DID NOT RUN"
 fi
 
 if [ -n "${SMOKE_BASE_URL:-}" ]; then
@@ -37,6 +38,7 @@ if [ -n "${SMOKE_BASE_URL:-}" ]; then
 else
   record "smoke.spec.js (live url)" "DID NOT RUN (SMOKE_BASE_URL not set, nothing deployed yet)"
 fi
+record "job-001 scheduled on Netlify" "DID NOT RUN (no Netlify site yet, infra-002)"
 
 echo; echo "================ verify-all ================"
 fail=0
