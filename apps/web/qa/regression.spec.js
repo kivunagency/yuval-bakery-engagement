@@ -89,7 +89,9 @@ test.describe('auth chain: Supabase Auth -> aal2 JWT -> DB admin check', () => {
     const { data: isAdmin, error } = await client.rpc('is_admin_aal2');
     expect(error).toBeNull();
     expect(isAdmin).toBe(true);
-    const day = new Date(Date.now() + 40 * 864e5).toISOString().slice(0, 10);
+    // A random day years out: other suites book real orders on near dates, and
+    // setting a total below what is already reserved is (correctly) refused.
+    const day = new Date(Date.UTC(2031 + Math.floor(Math.random() * 20), Math.floor(Math.random() * 12), 1 + Math.floor(Math.random() * 28))).toISOString().slice(0, 10);
     const { data: row, error: setError } = await client.rpc('fn_admin_set_day_capacity', {
       p_day: day, p_oven_minutes_total: 200, p_work_minutes_total: 300, p_is_blackout: false,
     });
