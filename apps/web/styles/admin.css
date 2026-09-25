@@ -191,3 +191,101 @@
   .admin-form-error { background: color-mix(in srgb, var(--danger) 16%, transparent); }
   .admin-badge { background: color-mix(in srgb, var(--warn) 18%, transparent); }
 }
+
+/* Capacity screen (client-007), after mockup.html section (d). */
+.admin-dayhead { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-block: var(--s2) var(--s3); }
+.admin-daytitle { font-family: var(--font-display); font-weight: 700; font-size: 36px; line-height: 1; }
+.admin-daynav { display: flex; gap: var(--s1); }
+.admin-round {
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.admin-round svg { inline-size: 22px; block-size: 22px; }
+.admin-today-link { margin-block: 0 var(--s2); }
+.admin-cap { background: var(--surface); border-radius: var(--r-card); padding: var(--s4); box-shadow: var(--shadow-1); }
+.admin-res { margin-block-end: var(--s4); }
+.admin-res-h { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; }
+.admin-res-h b { font-weight: 600; }
+.admin-res-h span { color: var(--ink-2); font-size: 14px; }
+.admin-bar { display: block; inline-size: 100%; block-size: 28px; margin-block-start: 6px; border-radius: 8px; overflow: hidden; }
+.admin-bar-seg { fill: var(--ink); }
+.admin-bar-seg-0 { fill-opacity: 0.88; }
+.admin-bar-seg-1 { fill-opacity: 0.7; }
+.admin-bar-seg-2 { fill-opacity: 0.55; }
+.admin-bar-free { fill: transparent; stroke: var(--line-strong); stroke-width: 1.5px; stroke-dasharray: 5 4; }
+.admin-bar-legend { font-size: 14px; color: var(--ink-2); margin-block: 4px 0; }
+.admin-capacity-form { display: flex; flex-direction: column; gap: var(--s3); }
+.admin-edit-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.admin-edit-row .admin-field input { min-block-size: 48px; font-size: 17px; font-weight: 600; text-align: start; }
+.admin-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-block-size: 44px; font-size: 15px; }
+.admin-switch {
+  inline-size: 52px;
+  block-size: 44px;
+  flex: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  position: relative;
+  cursor: pointer;
+}
+.admin-switch::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 6px;
+  block-size: 32px;
+  border-radius: 999px;
+  background: var(--line-strong);
+  transition: background-color var(--dur-2) var(--ease);
+}
+/* Off: knob on the inline-start side (right in RTL). On: inline-end. */
+.admin-switch::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 9px;
+  inset-inline-start: 3px;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 50%;
+  background: var(--surface);
+  transition: inset-inline-start var(--dur-2) var(--ease);
+}
+.admin-switch[aria-checked='true']::before { background: var(--accent); }
+.admin-switch[aria-checked='true']::after { inset-inline-start: 23px; }
+.admin-warn {
+  margin: 0;
+  padding: var(--s3);
+  border-radius: var(--r-control);
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-weight: 600;
+  font-size: 14px;
+}
+.admin-ok { margin: 0; padding: var(--s3); border-radius: var(--r-control); background: var(--ok-bg); color: var(--ok); font-weight: 600; }
+.admin-actions { display: flex; flex-direction: column; gap: var(--s2); }
+.admin-actions .btn { inline-size: 100%; }
+.admin-section-title { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 1; margin-block: var(--s8) var(--s3); }
+.admin-pattern { display: flex; flex-direction: column; gap: var(--s3); }
+.admin-pattern-day {
+  margin: 0;
+  border: 0;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-1);
+  padding: var(--s3) var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.admin-pattern-name { padding: 0; font-weight: 700; font-size: 16px; float: inline-start; inline-size: 100%; margin-block-end: var(--s1); }
+@media (prefers-color-scheme: dark) {
+  .admin-warn { background: color-mix(in srgb, var(--warn) 18%, transparent); }
+  .admin-ok { background: color-mix(in srgb, var(--ok) 16%, transparent); }
+}

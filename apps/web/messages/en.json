@@ -419,6 +419,60 @@
         "invalid_code": "The code is incorrect or has expired. Type the code the app shows now.",
         "session_expired": "The session has ended. Sign in again."
       }
+    },
+    "capacity": {
+      "title": "Calendar",
+      "day_title": "{weekday} {date}",
+      "day_nav": "Change day",
+      "previous_day": "Previous day",
+      "next_day": "Next day",
+      "back_to_today": "Back to today",
+      "day_section": "Capacity of the day",
+      "resource": {
+        "oven": "Oven",
+        "work": "Work"
+      },
+      "used_of_total": "{used} of {total} min",
+      "orders_count": "{count, plural, =0 {No orders.} one {One order.} other {# orders.}}",
+      "sentence_free_oven": "{free} oven minutes left of {total}.",
+      "sentence_free_work": "{free} work minutes left of {total}.",
+      "sentence_closed": "The day is closed to new orders.",
+      "sentence_unpaid_oven": "{unpaid} of the booked minutes are in orders not paid yet.",
+      "sentence_unpaid_work": "{unpaid} of the booked minutes are in orders not paid yet.",
+      "day_not_set": "No capacity is set for this day, so customers cannot order for it. Save minutes below to open it.",
+      "oven_minutes": "Oven minutes per day",
+      "work_minutes": "Work minutes per day",
+      "blackout_toggle": "Closed day (no orders taken)",
+      "blackout_has_orders": "{count, plural, one {There is one order on this day.} other {There are # orders on this day.}} Closing the day does not cancel them.",
+      "source_manual": "Set by hand for this day. The weekly pattern does not change it.",
+      "source_pattern": "Follows the weekly pattern.",
+      "source_none": "Not saved yet.",
+      "save_day": "Save the day",
+      "reset_to_pattern": "Back to the weekly pattern",
+      "saved": "Saved.",
+      "reset_done": "The day follows the weekly pattern again.",
+      "error_below_reserved": "Orders already booked {oven} oven minutes and {work} work minutes on this day. The totals cannot go below that.",
+      "error_invalid_minutes": "Enter whole minutes, from 0 to 1440.",
+      "error_session": "The session has ended. Sign in again.",
+      "error_no_pattern": "There is no weekly pattern for this weekday yet.",
+      "error_generic": "Saving failed. Try again.",
+      "weekly_pattern": "Weekly pattern",
+      "pattern_empty": "No weekly pattern yet. Until one is saved, only days set by hand are open.",
+      "working_day": "Working day",
+      "pattern_explain": "Saving writes these numbers into the coming days. Days you set by hand, and days whose orders already need more, stay as they are.",
+      "save_pattern": "Save the weekly pattern",
+      "pattern_saved": "The weekly pattern was saved. {written, plural, =0 {No day needed a change} one {One day was updated} other {# days were updated}} in the next {days} days.",
+      "pattern_kept_manual": "{count, plural, one {One day set by hand stayed as it was.} other {# days set by hand stayed as they were.}}",
+      "pattern_kept_below": "{count, plural, one {One day was not changed} other {# days were not changed}} because its orders already need more.",
+      "weekday": {
+        "0": "Sunday",
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday"
+      }
     }
   }
 }
