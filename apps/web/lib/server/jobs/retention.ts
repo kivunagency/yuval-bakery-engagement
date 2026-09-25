@@ -15,6 +15,7 @@ const STEPS = [
   { step: 'purge_lookup_attempts', fn: 'fn_purge_old_lookup_attempts', schema: count },
   { step: 'purge_audit_log', fn: 'fn_purge_old_audit_log', schema: count },
   { step: 'purge_push_subscriptions', fn: 'fn_purge_old_push_subscriptions', schema: count },
+  { step: 'purge_notification_attempts', fn: 'fn_purge_old_notification_attempts', schema: count },
 ] as const;
 
 type StepResult = { step: string; ok: true; result: unknown } | { step: string; ok: false; error: string };

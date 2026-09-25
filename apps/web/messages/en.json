@@ -474,5 +474,51 @@
         "6": "Saturday"
       }
     }
+  },
+  "notification": {
+    "common": {
+      "fulfillment": {
+        "delivery": "delivery",
+        "pickup": "pickup"
+      },
+      "footer_admin": "Automatic message from the ordering site. Every new order also arrives as a push notification on devices where you turned it on.",
+      "footer_customer": "A service message about your order from {businessName}. It contains no advertising.",
+      "contact": "Questions? Phone or WhatsApp: {phone}",
+      "name_hidden": "(name hidden: it looked like a link)",
+      "name_missing": "(no name)"
+    },
+    "new_order": {
+      "subject": "New order {orderNumber}",
+      "body": "{customerName} placed order {orderNumber} for {date} ({fulfillment}). Total: {total}.",
+      "cta": "Open the order"
+    },
+    "new_custom_cake": {
+      "subject": "New custom cake request from {customerName}",
+      "body": "{customerName} asked for a custom cake for {date}. The request is waiting for your review.",
+      "cta": "Open the request"
+    },
+    "order_confirmation": {
+      "subject": "Order {orderNumber} received",
+      "body": "Thank you. We received order {orderNumber} for {date}. The order confirmation is attached as a PDF file.",
+      "payment": "The order is confirmed once payment is received. Please put the order number in the payment note."
+    },
+    "custom_cake_approved": {
+      "subject": "Your custom cake is approved: order {orderNumber}",
+      "body": "Your custom cake request for {date} is approved. Price: {price}. Order number: {orderNumber}.",
+      "payment": "To confirm the order, please pay by {deadline}. The payment details will reach you from us; put the order number in the payment note."
+    },
+    "custom_cake_declined": {
+      "subject": "About your custom cake request",
+      "body": "We are sorry, we cannot take your custom cake request for {date}.",
+      "reason": "Reason: {reason}"
+    },
+    "push": {
+      "new_order_title": "New order {orderNumber}",
+      "new_order_body": "Tap to open the order.",
+      "new_custom_cake_title": "New custom cake request",
+      "new_custom_cake_body": "Tap to review the request.",
+      "quota_title": "Emails today: {count} of {cap}",
+      "quota_body": "Above {cap} emails a day, emails stop until tomorrow. Push notifications continue."
+    }
   }
 }

@@ -474,5 +474,51 @@
         "6": "שבת"
       }
     }
+  },
+  "notification": {
+    "common": {
+      "fulfillment": {
+        "delivery": "משלוח",
+        "pickup": "איסוף"
+      },
+      "footer_admin": "הודעה אוטומטית מאתר ההזמנות. כל הזמנה חדשה מגיעה גם כהתראה במכשירים שבהם ההתראות פעילות.",
+      "footer_customer": "הודעת שירות על ההזמנה שלך מ{businessName}. אין בה פרסום.",
+      "contact": "שאלות? טלפון או וואטסאפ: {phone}",
+      "name_hidden": "(השם הוסתר: נראה כמו קישור)",
+      "name_missing": "(ללא שם)"
+    },
+    "new_order": {
+      "subject": "הזמנה חדשה {orderNumber}",
+      "body": "{customerName} ביצע/ה את הזמנה {orderNumber} ליום {date} ({fulfillment}). סכום: {total}.",
+      "cta": "לפתיחת ההזמנה"
+    },
+    "new_custom_cake": {
+      "subject": "בקשה חדשה לעוגה בהתאמה אישית מ{customerName}",
+      "body": "{customerName} ביקש/ה עוגה בהתאמה אישית ליום {date}. הבקשה ממתינה לבדיקה שלך.",
+      "cta": "לפתיחת הבקשה"
+    },
+    "order_confirmation": {
+      "subject": "קיבלנו את הזמנה {orderNumber}",
+      "body": "תודה! קיבלנו את הזמנה {orderNumber} ליום {date}. אישור ההזמנה מצורף כקובץ PDF.",
+      "payment": "ההזמנה מאושרת כשהתשלום מתקבל. נא לרשום את מספר ההזמנה בהערת התשלום."
+    },
+    "custom_cake_approved": {
+      "subject": "העוגה שביקשת אושרה: הזמנה {orderNumber}",
+      "body": "הבקשה לעוגה בהתאמה אישית ליום {date} אושרה. מחיר: {price}. מספר הזמנה: {orderNumber}.",
+      "payment": "כדי לאשר את ההזמנה, נא לשלם עד {deadline}. פרטי התשלום יגיעו אליך מאיתנו; נא לרשום את מספר ההזמנה בהערת התשלום."
+    },
+    "custom_cake_declined": {
+      "subject": "לגבי הבקשה לעוגה בהתאמה אישית",
+      "body": "מצטערים, לא נוכל לקבל את הבקשה לעוגה בהתאמה אישית ליום {date}.",
+      "reason": "הסיבה: {reason}"
+    },
+    "push": {
+      "new_order_title": "הזמנה חדשה {orderNumber}",
+      "new_order_body": "הקישו לפתיחת ההזמנה.",
+      "new_custom_cake_title": "בקשה חדשה לעוגה בהתאמה אישית",
+      "new_custom_cake_body": "הקישו לבדיקת הבקשה.",
+      "quota_title": "מיילים היום: {count} מתוך {cap}",
+      "quota_body": "מעל {cap} מיילים ביום, המיילים נעצרים עד מחר. התראות ממשיכות להגיע."
+    }
   }
 }
