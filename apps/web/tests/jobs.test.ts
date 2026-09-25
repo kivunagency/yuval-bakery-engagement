@@ -60,7 +60,7 @@ describe('runRetention', () => {
     expect(out.ok).toBe(false);
     expect(out.steps.map((s) => [s.step, s.ok])).toEqual([
       ['anonymize_due_records', true], ['purge_order_attempts', true], ['purge_lookup_attempts', true],
-      ['purge_audit_log', false], ['purge_push_subscriptions', true],
+      ['purge_audit_log', false], ['purge_push_subscriptions', true], ['purge_notification_attempts', true],
     ]);
     const hb = calls.find((c) => c.fn === 'fn_record_cron_run');
     expect(hb?.args).toEqual({ p_job_name: 'retention_sweep', p_ok: false, p_error: 'purge_audit_log: retention_setting_missing: audit_log_retention_years' });

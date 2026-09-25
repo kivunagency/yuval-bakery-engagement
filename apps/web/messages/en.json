@@ -672,6 +672,25 @@
       "error_session": "The session expired. Sign in again.",
       "error_invalid": "Check the price (above 0) and the minutes (0 to 1440).",
       "error_generic": "Something went wrong. Try again."
+    },
+    "push": {
+      "title": "Notifications on this device",
+      "extra_note": "Push notifications are an extra. Every new order and custom cake request is also sent to your email, always.",
+      "enable": "Turn on notifications",
+      "disable": "Turn off on this device",
+      "working": "One moment...",
+      "state_on": "On",
+      "state_off": "Off",
+      "status_label": "Status on this device:",
+      "unsupported": "This browser cannot receive notifications. New orders will still reach you by email.",
+      "denied": "Notifications are blocked for this site in the browser. To allow them: open the browser's site settings (the lock icon next to the address), set Notifications to Allow, then press the button again. Until then, new orders reach you by email.",
+      "dismissed": "Notifications were not turned on. You can try again any time.",
+      "failed": "Could not turn on notifications. Try again in a moment. New orders still reach you by email.",
+      "disabled_confirmation": "Notifications are off for this device.",
+      "devices": "{count, plural, =0 {No device receives notifications yet.} one {One device receives notifications.} other {# devices receive notifications.}}",
+      "not_configured": "Notifications are not set up on the server yet. New orders reach you by email.",
+      "unsubscribe_failed": "Could not turn off notifications. Try again in a moment.",
+      "ios_note": "On iPhone and iPad, notifications work from ⁦iOS 16.4⁩, and only in the app added to the home screen: open this page in Safari, tap Share, then Add to Home Screen, and open the site from the new icon. Then turn notifications on there."
     }
   },
   "custom_cake": {
@@ -866,5 +885,55 @@
     "unsubscribe_invalid_body": "It may be incomplete. Open it again from the email, or contact us.",
     "unsubscribe_unavailable_title": "Something went wrong",
     "unsubscribe_unavailable_body": "The removal was not saved. Try again in a few minutes, or contact us."
+  },
+  "notification": {
+    "common": {
+      "fulfillment": {
+        "delivery": "delivery",
+        "pickup": "pickup"
+      },
+      "footer_admin": "Automatic message from the ordering site. Every new order also arrives as a push notification on devices where you turned it on.",
+      "footer_customer": "A service message about your order from {businessName}. It contains no advertising.",
+      "contact": "Questions? Phone or WhatsApp: {phone}",
+      "name_hidden": "(name hidden: it looked like a link)",
+      "name_missing": "(no name)"
+    },
+    "new_order": {
+      "subject": "New order {orderNumber}",
+      "body": "{customerName} placed order {orderNumber} for {date} ({fulfillment}). Total: {total}.",
+      "cta": "Open the order"
+    },
+    "new_custom_cake": {
+      "subject": "New custom cake request from {customerName}",
+      "body": "{customerName} asked for a custom cake for {date}. The request is waiting for your review.",
+      "cta": "Open the request"
+    },
+    "order_confirmation": {
+      "subject": "Order {orderNumber} received",
+      "body": "Thank you. We received order {orderNumber} for {date}. The order confirmation is attached as a PDF file.",
+      "payment": "The order is confirmed once payment is received. Please put the order number in the payment note."
+    },
+    "custom_cake_approved": {
+      "subject": "Your custom cake is approved: order {orderNumber}",
+      "body": "Your custom cake request for {date} is approved. Price: {price}. Order number: {orderNumber}.",
+      "payment": "To confirm the order, please pay by {deadline}. The payment details will reach you from us; put the order number in the payment note."
+    },
+    "custom_cake_declined": {
+      "subject": "About your custom cake request",
+      "body": "We are sorry, we cannot take your custom cake request for {date}.",
+      "reason": "Reason: {reason}"
+    },
+    "push": {
+      "new_order_title": "New order {orderNumber}",
+      "new_order_body": "Tap to open the order.",
+      "new_custom_cake_title": "New custom cake request",
+      "new_custom_cake_body": "Tap to review the request.",
+      "quota_title": "Emails today: {count} of {cap}",
+      "quota_body": "Above {cap} emails a day, emails stop until tomorrow. Push notifications continue."
+    }
+  },
+  "push": {
+    "permission_prompt": "Turn on notifications on this device to hear about new orders right away.",
+    "enabled_confirmation": "Notifications are on for this device."
   }
 }

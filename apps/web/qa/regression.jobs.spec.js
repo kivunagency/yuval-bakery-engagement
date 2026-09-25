@@ -181,6 +181,7 @@ test.describe('job-001 daily retention (netlify/functions/retention-daily.mjs)',
       expect(body.heartbeat).toBe('written_by_wrapper');
       expect(body.steps.map((s) => s.step)).toEqual([
         'anonymize_due_records', 'purge_order_attempts', 'purge_lookup_attempts', 'purge_audit_log', 'purge_push_subscriptions',
+        'purge_notification_attempts',
       ]);
       expect(body.steps.every((s) => s.ok)).toBe(true);
       expect(Object.keys(body.did_not_run)).toEqual(['storage_photo_deletion', 'storage_confirmation_pdf_deletion', 'customer_hard_delete']);

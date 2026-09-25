@@ -45,6 +45,8 @@ fi
 record "Storage server in the local stack (photo upload E2E)" "DID NOT RUN (supabase/storage not in the local stack yet)"
 record "job-001 scheduled on Netlify" "DID NOT RUN (no Netlify site yet, infra-002)"
 record "api-010 hosted Auth mail (custom SMTP + template)" "DID NOT RUN (Yuval's Supabase + Resend accounts, infra)"
+record "job-002 real email via Resend" "DID NOT RUN (no Resend account yet, Yuval's; capture adapter used)"
+record "job-002 real web push to a device" "DID NOT RUN (stand-in push service on 127.0.0.1 only)"
 
 echo; echo "================ verify-all ================"
 fail=0

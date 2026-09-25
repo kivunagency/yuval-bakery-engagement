@@ -99,6 +99,12 @@ for i in $(seq 1 60); do
   [ "$i" = 60 ] && { echo "stack did not become healthy (auth=$a rest=$r)"; tail -20 "$STATE"/*.log; exit 1; }
 done
 
+# job-002: web push test keys (VAPID, P-256), minted per run like the JWT
+# secret. Never committed; DEV/PROD keys come from Netlify env (Yuval's).
+read -r VAPID_PUBLIC VAPID_PRIVATE < <(node -e '
+  const e=require("crypto").createECDH("prime256v1");e.generateKeys();
+  console.log(e.getPublicKey().toString("base64url")+" "+e.getPrivateKey().toString("base64url"))')
+
 cat > "$APP/.env.local" <<ENV
 # Written by scripts/local-stack/up.sh. Local stack only, regenerated every run.
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:$GW_PORT
@@ -108,5 +114,11 @@ SUPABASE_JWT_SECRET=$JWT_SECRET
 DATABASE_URL_TEST=postgres://postgres@127.0.0.1:$PG_PORT/postgres
 APP_ENV=local
 SITE_URL=$SITE_URL
+VAPID_PUBLIC_KEY=$VAPID_PUBLIC
+VAPID_PRIVATE_KEY=$VAPID_PRIVATE
+VAPID_SUBJECT=mailto:qa@example.test
+EMAIL_PROVIDER=capture
+EMAIL_CAPTURE_DIR=$STATE/outbox
+PUSH_ALLOW_LOCAL_ENDPOINTS=1
 ENV
 echo "local stack up: api http://127.0.0.1:$GW_PORT  db 127.0.0.1:$PG_PORT  (.env.local written)"
