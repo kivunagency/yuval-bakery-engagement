@@ -1,12 +1,19 @@
 // @ts-check
 // Checkout and payment (session E): api-003 POST /api/orders and the read
-// paths. Needs the local stack (npm run stack:up) and a production build
-// (npm run build). API tests use far-future days of their own (no shared state).
+// paths, client-003 the checkout screen. Needs the local stack (npm run
+// stack:up) and a production build (npm run build).
+//
+// API tests use far-future days of their own (no shared state). Screen tests
+// need days inside the 14-day strip: offsets 4..7 are reshaped for the test
+// and restored afterwards, with the test's own orders removed (catalog tests
+// use offsets 9..12).
 const { test, expect } = require('@playwright/test');
 const crypto = require('node:crypto');
+const { join } = require('node:path');
 const { createClient } = require('@supabase/supabase-js');
 const { localEnv } = require('./helpers/env');
 const db = require('./helpers/db');
+const { checkPublicBaseline, SCREENS } = require('./helpers/baseline');
 
 const VERSIONS = { privacy: 'privacy-2026-10-v1', terms: 'terms-2026-10-v1', cancellation: 'cancellation-2026-10-v1' };
 const CART_KEY = 'yb.cart.v1';
@@ -250,5 +257,171 @@ test.describe('api-003 read paths', () => {
     const ok = await service.rpc('fn_payment_link_settings');
     expect(ok.error).toBeNull();
     expect(Object.keys(ok.data).sort()).toEqual(['bit', 'paybox']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Screens. Days 4..7 of the strip are reshaped and restored.
+// ---------------------------------------------------------------------------
+async function withStripDays(fn) {
+  const setup = await withDb(async (c) => {
+    const today = (await c.query(`SELECT fn_business_date(now())::text AS d`)).rows[0].d;
+    const days = [4, 5, 6, 7].map((n) => {
+      const d = new Date(`${today}T12:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + n);
+      return d.toISOString().slice(0, 10);
+    });
+    const saved = (await c.query('SELECT * FROM capacity_day_ledger WHERE day = ANY($1::date[])', [days])).rows;
+    await c.query('DELETE FROM capacity_day_ledger WHERE day = ANY($1::date[])', [days]);
+    for (const d of days) await c.query(`INSERT INTO capacity_day_ledger (day, oven_minutes_total, work_minutes_total) VALUES ($1, 300, 300)`, [d]);
+    const p = await product(c, { price: 14, oven: 5, work: 5 });
+    const z = await zone(c, 35);
+    return { days, saved, p, z };
+  });
+  try {
+    return await fn(setup);
+  } finally {
+    await withDb(async (c) => {
+      await c.query(`DELETE FROM orders WHERE delivery_date = ANY($1::date[]) AND guest_name LIKE 'QA %'`, [setup.days]);
+      await c.query('DELETE FROM capacity_day_ledger WHERE day = ANY($1::date[])', [setup.days]);
+      for (const r of setup.saved) {
+        await c.query(
+          `INSERT INTO capacity_day_ledger (day, oven_minutes_total, work_minutes_total, oven_minutes_reserved, work_minutes_reserved,
+             oven_minutes_unpaid_reserved, work_minutes_unpaid_reserved, is_blackout, source)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [r.day, r.oven_minutes_total, r.work_minutes_total, r.oven_minutes_reserved, r.work_minutes_reserved,
+            r.oven_minutes_unpaid_reserved, r.work_minutes_unpaid_reserved, r.is_blackout, r.source],
+        );
+      }
+      await c.query('UPDATE products SET is_published = false WHERE id = $1', [setup.p.id]);
+      await c.query('DELETE FROM delivery_zones WHERE id = $1', [setup.z.id]);
+    });
+  }
+}
+
+async function withCart(page, cart) {
+  // Each test is its own client for the SEC-005 per-IP limit (3 orders an
+  // hour): Netlify sets this header in production, the local server does not.
+  await page.setExtraHTTPHeaders({ 'x-nf-client-connection-ip': ip() });
+  await page.addInitScript(([key, value]) => {
+    if (!window.sessionStorage.getItem('qa.cart.set')) {
+      window.sessionStorage.setItem(key, value);
+      window.sessionStorage.setItem('qa.cart.set', '1');
+    }
+  }, [CART_KEY, JSON.stringify(cart)]);
+}
+
+async function fillGuest(page, { name = 'QA Screen', tel = phone() } = {}) {
+  await page.fill('#name', name);
+  await page.fill('#phone', tel);
+}
+
+test.describe('client-003: checkout screen', () => {
+  test('baseline (RTL, CSP, 44px, 390px, fonts, no console errors) with a cart; the first frame carries its data', async ({ page, request }) => {
+    await withStripDays(async ({ days, p }) => {
+      const html = await (await request.get('/checkout')).text();
+      expect(html).toContain(p.name); // server-rendered products (the cart lines are matched in the browser)
+      expect(html).toMatch(/data-state="too_soon"/);
+      await withCart(page, { day: days[0], lines: [{ productId: p.id, quantity: 2 }] });
+      await checkPublicBaseline(page, '/checkout', 'checkout-light');
+    });
+  });
+
+  test('empty cart: a way back to the catalog, no form', async ({ page }) => {
+    await page.goto('/checkout');
+    await expect(page.getByTestId('checkout-empty')).toBeVisible();
+    await expect(page.getByTestId('checkout-form')).toHaveCount(0);
+  });
+
+  test('compliance order: privacy notice before the first personal field; fee, total, cancellation notice and business details before the submit button', async ({ page }) => {
+    await withStripDays(async ({ days, p }) => {
+      await withCart(page, { day: days[0], lines: [{ productId: p.id, quantity: 1 }] });
+      await page.goto('/checkout');
+      const order = await page.evaluate(() => {
+        const all = [...document.querySelectorAll('[data-testid], input, select, textarea, button[type=submit]')];
+        const at = (sel) => all.indexOf(document.querySelector(sel));
+        return {
+          notice: at('[data-testid="privacy-notice-at-collection"]'), city: at('#city'), address: at('#address'), name: at('#name'), phone: at('#phone'),
+          summary: at('[data-testid="summary"]'), cancel: at('[data-testid="cancellation-exemption-notice"]'),
+          biz: at('[data-testid="business-details-summary"]'), submit: at('[data-testid="checkout-submit"]'), hint: at('[data-testid="notes-field-hint"]'), notes: at('#notes'),
+        };
+      });
+      expect(order.notice).toBeGreaterThan(-1);
+      for (const k of ['city', 'address', 'name', 'phone']) expect(order.notice, k).toBeLessThan(order[k]);
+      for (const k of ['summary', 'cancel', 'biz']) expect(order[k], k).toBeLessThan(order.submit);
+      expect(order.hint).toBeGreaterThan(order.notes);
+      await expect(page.locator('[data-testid="privacy-notice-at-collection"]')).toHaveAttribute('data-context', 'checkout');
+      await expect(page.locator('#notes')).toHaveAttribute('aria-describedby', /notes-hint/);
+    });
+  });
+
+  test('delivery: choosing a city shows its zone fee at once (aria-live), the total follows, and the order page shows the same total', async ({ page }) => {
+    await withStripDays(async ({ days, p, z }) => {
+      await withCart(page, { day: days[1], lines: [{ productId: p.id, quantity: 3 }] });
+      await page.goto('/checkout');
+      await expect(page.locator(`[data-day="${days[1]}"]`)).toHaveAttribute('aria-checked', 'true'); // the cart's day
+      await expect(page.getByTestId('zone-fee')).toHaveAttribute('aria-live', 'polite');
+      await page.selectOption('#city', z.city);
+      await expect(page.getByTestId('zone-fee')).toContainText(z.name);
+      await expect(page.getByTestId('zone-fee')).toContainText('35');
+      await expect(page.getByTestId('summary-total')).toContainText('77'); // 3 x 14 + 35
+      await page.locator('[data-testid="slots"] button:not([disabled])').first().click();
+      await page.fill('#address', 'QA street 3');
+      await fillGuest(page);
+      await page.screenshot({ path: join(SCREENS, 'checkout-filled.png'), fullPage: true });
+      await page.getByTestId('checkout-submit').click();
+      await page.waitForURL(/\/order\/[A-Za-z0-9_-]{22}$/);
+      const token = page.url().split('/order/')[1];
+      const view = await (await page.request.get(`/api/orders/${token}`)).json();
+      expect([view.subtotal, view.deliveryFee, view.total]).toEqual([42, 35, 77]); // the DB's total = the preview
+      expect(await page.evaluate((k) => window.sessionStorage.getItem(k), CART_KEY)).toBe(JSON.stringify({ day: null, lines: [] }));
+    });
+  });
+
+  test('"my city is not listed" switches to pickup with an explanation', async ({ page }) => {
+    await withStripDays(async ({ days, p }) => {
+      await withCart(page, { day: days[0], lines: [{ productId: p.id, quantity: 1 }] });
+      await page.goto('/checkout');
+      await page.selectOption('#city', '__not_listed__');
+      await expect(page.getByTestId('city-not-covered')).toBeVisible();
+      await expect(page.getByRole('button', { name: /איסוף עצמי/ })).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('#city')).toHaveCount(0);
+    });
+  });
+
+  test('client-side checks name the fields; nothing is sent until they pass', async ({ page }) => {
+    await withStripDays(async ({ days, p }) => {
+      await withCart(page, { day: days[0], lines: [{ productId: p.id, quantity: 1 }] });
+      const calls = [];
+      page.on('request', (r) => r.url().includes('/api/orders') && calls.push(r.url()));
+      await page.goto('/checkout');
+      await page.getByRole('button', { name: /איסוף עצמי/ }).click();
+      await page.fill('#phone', '03-1234567');
+      await page.getByTestId('checkout-submit').click();
+      await expect(page.locator('#phone')).toHaveAttribute('aria-invalid', 'true');
+      await expect(page.locator('#name')).toHaveAttribute('aria-invalid', 'true');
+      await expect(page.locator('#slot-error')).toBeVisible();
+      expect(calls).toEqual([]);
+    });
+  });
+
+  test('the day fills up after the page loaded: the DB refuses, the screen says so, shows fresh day states and nothing is booked', async ({ page }) => {
+    await withStripDays(async ({ days, p }) => {
+      await withCart(page, { day: days[2], lines: [{ productId: p.id, quantity: 1 }] });
+      await page.goto('/checkout');
+      await page.getByRole('button', { name: /איסוף עצמי/ }).click();
+      await page.locator('[data-testid="slots"] button:not([disabled])').first().click();
+      await fillGuest(page);
+      await withDb((c) => c.query('UPDATE capacity_day_ledger SET oven_minutes_reserved = 300, work_minutes_reserved = 300 WHERE day = $1', [days[2]]));
+      const before = await withDb((c) => db.ledger(c, days[2]));
+      await page.getByTestId('checkout-submit').click();
+      await expect(page.getByTestId('pick-another-day')).toBeVisible();
+      await expect(page.getByTestId('checkout-error')).toHaveAttribute('data-error', 'day_full');
+      await expect(page.locator(`[data-day="${days[2]}"]`)).toHaveAttribute('data-state', 'full');
+      await expect(page.locator(`[data-day="${days[2]}"]`)).toHaveAttribute('aria-checked', 'false');
+      expect(page.url()).toContain('/checkout');
+      expect(await withDb((c) => db.ledger(c, days[2]))).toEqual(before);
+      await page.screenshot({ path: join(SCREENS, 'checkout-day-gone.png'), fullPage: true });
+    });
   });
 });

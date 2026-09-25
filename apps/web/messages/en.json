@@ -474,5 +474,72 @@
         "6": "Saturday"
       }
     }
+  },
+  "checkout": {
+    "title": "When and how",
+    "back_to_catalog": "Back to the catalog",
+    "empty_title": "Your cart is empty",
+    "empty_body": "No products chosen yet.",
+    "delivery_or_pickup": "How you get it",
+    "delivery": "Delivery",
+    "pickup": "Pickup",
+    "select_date": "Date",
+    "legend_full": "Full: no room in the oven",
+    "legend_closed": "Closed: day off",
+    "no_days": "No free days in the next two weeks. You can contact us.",
+    "select_slot_delivery": "Delivery time",
+    "select_slot_pickup": "Pickup time",
+    "slot_label": "between {start} and {end}",
+    "no_slots": "Delivery and pickup hours are not set yet. You can contact us.",
+    "slot_needs_day": "Choose a date first, then a time.",
+    "select_city": "City for delivery",
+    "city_placeholder": "Choose a city",
+    "city_not_listed": "My city is not on the list",
+    "city_not_covered": "There is no delivery to that city, pickup only. We switched to pickup.",
+    "city_hint": "A city not on the list: no delivery there, pickup is possible.",
+    "zone_fee": "Delivery {fee}",
+    "no_zones": "Delivery is not available yet, pickup only.",
+    "details_heading": "Contact details",
+    "guest_fields": {
+      "name": "Full name",
+      "phone": "Mobile phone",
+      "phone_hint": "For example 050-1234567. Only for contact about this order.",
+      "email": "Email (optional)",
+      "email_hint": "To get the order confirmation by email.",
+      "address": "Delivery address",
+      "address_hint": "Street, house number, floor and apartment.",
+      "notes": "Notes (optional)"
+    },
+    "summary_heading": "Summary",
+    "line": "{name}, {quantity} units",
+    "delivery_line": "Delivery to {city}",
+    "pickup_line": "Pickup",
+    "total": "To pay",
+    "summary_note": "The final amount is set when the order is saved and appears on the payment screen.",
+    "submit": "Continue to payment",
+    "submitting": "Saving the order...",
+    "field_errors": {
+      "required": "Required",
+      "phone": "An Israeli mobile number, for example 050-1234567",
+      "email": "The email address is not valid",
+      "day": "Choose a date",
+      "slot": "Choose a time",
+      "city": "Choose a city"
+    },
+    "errors": {
+      "day_full": "The day you chose filled up in the meantime. Choose another day; the order was not saved.",
+      "day_almost_full": "The day you chose is almost full. Choose another day, or contact us.",
+      "order_too_big": "The order is too big for one day. Contact us and we will arrange it.",
+      "too_soon": "The time you chose is too close; orders are at least 24 hours ahead. Choose another day or time.",
+      "slot_unavailable": "The time you chose is no longer available. Choose another time.",
+      "city_not_served": "There is no delivery to this city right now. You can choose pickup.",
+      "product_unavailable": "One of the products is no longer available. Go back to the catalog to update the cart.",
+      "too_many_attempts": "Too many attempts from this connection. Try again in an hour, or contact us.",
+      "too_many_open_orders": "This phone already has orders waiting for payment. Pay for them first, or contact us.",
+      "invalid_input": "Some details are not valid. Check the marked fields.",
+      "forbidden_origin": "We could not save the order. Reload the page and try again.",
+      "server_error": "We could not save the order. Try again in a moment."
+    },
+    "pick_another_day": "Choose another day"
   }
 }
