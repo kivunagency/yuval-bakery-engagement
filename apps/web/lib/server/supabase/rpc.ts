@@ -16,6 +16,7 @@ export const DB_ERROR_CODES = [
   'consent_not_own',
   'consent_version_mismatch',
   'custom_cake_request_not_pending',
+  'day_range_invalid',
   'day_unavailable',
   'delivery_zone_unavailable',
   'guest_phone_or_customer_required',
