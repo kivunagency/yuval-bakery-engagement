@@ -23,6 +23,7 @@ into a cache outside the repo. Seed data is `supabase/seed.sql` (synthetic only)
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Vitest unit tests (`tests/`) |
 | `npm run test:e2e` | Playwright: `qa/regression.spec.js` (needs `stack:up` and `npm run build`), `qa/smoke.spec.js` (needs `SMOKE_BASE_URL`, otherwise DID NOT RUN) |
+| `npm run build:functions` | bundles the Netlify Scheduled Functions (`netlify/src/*.ts` -> `netlify/functions/*.mjs`, job-001) |
 | `bash ../../output/qa/verify-all.sh` | everything, one verdict table |
 
 ## Layout
@@ -35,6 +36,8 @@ lib/server/          DB, auth, secrets. Every file starts with import 'server-on
 lib/shared/          no I/O: types (DB enums mirrored and tested), Zod contracts, Asia/Jerusalem time
 messages/            en.json (keys, primary) and he.json (UI text)
 supabase/migrations  the migrations that ship to Supabase (moved from output/db/)
+lib/server/jobs/     scheduled jobs (expiry sweep, daily retention), called by netlify/src/*
+netlify/src/         Netlify Scheduled Functions, thin wrappers (built output netlify/functions/ is gitignored)
 qa/                  Playwright regression + smoke
 ```
 
