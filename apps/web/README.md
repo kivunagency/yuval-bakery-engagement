@@ -31,11 +31,15 @@ into a cache outside the repo. Seed data is `supabase/seed.sql` (synthetic only)
 app/                 routes (server components by default); app/api/*/route.ts with Zod contracts
 lib/server/          DB, auth, secrets. Every file starts with import 'server-only'
   supabase/          createUserClient (acts as the signed-in user), serviceClient, anonClient, callRpc
-  auth/admin.ts      getAdminSession(): verified user + aal2 + admins membership, or null
+  auth/admin.ts      getAdminSession(): verified user + aal2 (TOTP within 12h) + admins membership, or null;
+                     requireAdminPage(): same, redirecting to /admin/login. Call it in EVERY admin page.
+  auth/admin-login.ts  password -> TOTP enrol/verify -> aal2, rate limited in the DB, uniform errors
 lib/shared/          no I/O: types (DB enums mirrored and tested), Zod contracts, Asia/Jerusalem time
 messages/            en.json (keys, primary) and he.json (UI text)
 supabase/migrations  the migrations that ship to Supabase (moved from output/db/)
-qa/                  Playwright regression + smoke
+qa/                  Playwright regression + smoke (regression.<domain>.spec.js per domain)
+app/(admin)/admin/   admin shell (bottom tabs) and its screens; app/(admin-auth)/admin/login/ the login flow
+styles/admin.css     admin-only styles
 ```
 
 ## Rules that bite in code review

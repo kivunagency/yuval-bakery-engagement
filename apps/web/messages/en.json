@@ -14,5 +14,59 @@
     "back_home": "Back to the home page",
     "generic_title": "Something went wrong",
     "retry": "Try again"
+  },
+  "admin": {
+    "shell": {
+      "title": "Management",
+      "sign_out": "Sign out",
+      "nav_label": "Management navigation",
+      "tabs": {
+        "orders": "Orders",
+        "capacity": "Calendar",
+        "catalog": "Products",
+        "settings": "Settings"
+      },
+      "pages": {
+        "orders": "Orders",
+        "custom_cakes": "Custom cake requests",
+        "capacity": "Calendar",
+        "catalog": "Products",
+        "settings": "Settings"
+      },
+      "placeholder": {
+        "badge": "Coming soon",
+        "body": "This screen is being built."
+      }
+    },
+    "login": {
+      "title": "Sign in to management",
+      "intro": "For the business owner only.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "code_label": "6-digit code",
+      "code_hint": "The code in the authenticator app changes every 30 seconds.",
+      "enrol_title": "Set up the authenticator app",
+      "enrol_intro": "Management needs a second step: a code from an authenticator app on your phone. This is done once.",
+      "enrol_step_install": "Install an authenticator app, for example Google Authenticator or Microsoft Authenticator.",
+      "enrol_step_scan": "In the app, add an account and scan this code.",
+      "enrol_step_code": "Type the 6 digits the app shows.",
+      "enrol_qr_alt": "QR code to add this account to the authenticator app",
+      "enrol_manual": "If scanning does not work, type this key into the app instead:",
+      "enrol_reload_note": "Opening this page again creates a new code. Use only the code shown now.",
+      "enrol_submit": "Finish setup",
+      "verify_title": "Code from the authenticator app",
+      "verify_intro": "Open the authenticator app on your phone and type the code it shows.",
+      "verify_submit": "Confirm",
+      "lost_phone": "Lost the phone with the app? Contact Ran to restore access.",
+      "other_account": "Sign out and sign in with another account",
+      "errors": {
+        "invalid": "The email or password is incorrect.",
+        "rate_limited": "Too many attempts. Try again in 15 minutes.",
+        "unavailable": "Sign-in is not available right now. Try again in a few minutes.",
+        "invalid_code": "The code is incorrect or has expired. Type the code the app shows now.",
+        "session_expired": "The session has ended. Sign in again."
+      }
+    }
   }
 }
