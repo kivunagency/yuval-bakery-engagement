@@ -20,3 +20,4 @@ Next steps:
 ---
 
 - 2026-09-25: PRD-01 approved by Ran with one change: delivery pricing by city zones instead of distance ranges. Loyalty stays Phase 2 (maya recommendation, not objected). Next: design + architecture.
+- 2026-09-25: build-pipeline phases 1-3 done (design, architecture, threat model, compliance, infra). Stopped before DB design pending Ran decisions.
