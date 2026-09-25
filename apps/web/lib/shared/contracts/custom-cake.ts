@@ -139,3 +139,18 @@ export type CustomCakeAdminError =
   | 'capacity_changed'
   | 'unavailable';
 export type CustomCakeAdminErrorBody = { error: CustomCakeAdminError; check?: CustomCakeCapacityCheck };
+
+/** One pending request as the admin queue shows it (client-008). */
+export type QueuePhoto = { path: string; url: string | null };
+export type QueueItem = {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  whatsappOk: boolean;
+  inscription: string | null;
+  notes: string | null;
+  desiredDate: string;
+  createdAt: string;
+  photos: QueuePhoto[];
+};

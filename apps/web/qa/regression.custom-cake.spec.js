@@ -391,3 +391,142 @@ test.describe('api-006 approve / decline', () => {
     expect(disagreements).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// client-008: admin queue /admin/custom-cakes (under the Orders tab).
+// ---------------------------------------------------------------------------
+const { join } = require('node:path');
+const { SCREENS } = require('./helpers/baseline');
+
+/** A pending request with a unique name, on its own day; returns the card locator too. */
+async function queued(page, request, over = {}, capacity = { oven: 300, work: 300 }) {
+  const day = await withClient((db) => freshDay(db, capacity));
+  const name = `QA Queue ${Math.random().toString(36).slice(2, 8)}`;
+  const res = await post(request, body({ desiredDate: day, name, ...over }));
+  expect(res.status()).toBe(201);
+  const { requestId } = await res.json();
+  created.push(requestId);
+  return { requestId, day, name, card: page.getByTestId('custom-cake-card').filter({ hasText: name }) };
+}
+
+test.describe('client-008 admin custom-cake queue', () => {
+  test('without an admin session the queue redirects to login', async ({ page }) => {
+    await page.goto('/admin/custom-cakes');
+    await expect(page).toHaveURL(/\/admin\/login$/);
+  });
+
+  test('arrives server-rendered with the request, customer text escaped, the Orders tab active; 390px checks', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    const q = await queued(page, request, { inscription: '<img src=x onerror=alert(1)>', notes: 'שכבה של <b>שוקולד</b>\nבלי אגוזים', phone: '052-555-1234', whatsappFollowupOk: true });
+    // A photo row whose file Storage cannot serve (no Storage locally): the card says so.
+    await withClient((db) => db.query('INSERT INTO custom_cake_photos (custom_cake_request_id, storage_path) VALUES ($1, $2)', [q.requestId, `requests/${q.requestId}/00000000-0000-4000-8000-000000000000.jpg`]));
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('dialog', (d) => { errors.push(`dialog ${d.message()}`); d.dismiss(); });
+    await uiLogin(page, admin);
+
+    const html = await (await page.request.get('/admin/custom-cakes')).text();
+    expect(html).toContain(q.name);
+    await page.goto('/admin/custom-cakes');
+    await expect(page.getByRole('heading', { level: 1, name: 'בקשות לעוגה בעיצוב אישי' })).toBeVisible();
+    await expect(page.locator('.admin-tabs a[aria-current="page"]')).toHaveText('הזמנות');
+    const card = q.card;
+    await expect(card).toBeVisible();
+    const weekday = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][new Date(`${q.day}T12:00:00Z`).getUTCDay()];
+    await expect(card.getByRole('heading', { level: 2 })).toHaveText(`ליום ${weekday} ${Number(q.day.slice(8))}.${Number(q.day.slice(5, 7))}`);
+    await expect(card.locator('.ltr.num').first()).toHaveText('052-555-1234');
+    await expect(card.getByText('<img src=x onerror=alert(1)>')).toBeVisible();
+    await expect(card.locator('img[src="x"]')).toHaveCount(0);
+    await expect(card.locator('b')).toHaveCount(0);
+    await expect(card.getByText('הסכימו לתשובה בוואטסאפ')).toBeVisible();
+    await expect(card.getByText('אי אפשר להציג את תמונה 1 כרגע.')).toBeVisible();
+    await expect(card.getByText('הקלדת הדקות', { exact: false })).toBeVisible();
+
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    const small = await card.evaluate((el) =>
+      [...el.querySelectorAll('a, button, input, textarea')]
+        .filter((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && (r.width < 44 || r.height < 44); })
+        .map((n) => n.outerHTML.slice(0, 80)),
+    );
+    expect(small).toEqual([]);
+    await card.scrollIntoViewIfNeeded();
+    await card.screenshot({ path: join(SCREENS, 'admin-custom-cake-card.png') });
+    expect(errors).toEqual([]);
+  });
+
+  test('live capacity warning comes from the DB; approve shows the order and a WhatsApp link', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    const q = await queued(page, request, { phone: '050-777-8899' }, { oven: 100, work: 100 });
+    await uiLogin(page, admin);
+    await page.goto('/admin/custom-cakes');
+    const card = q.card;
+    await card.getByLabel('מחיר (₪)').fill('420');
+    await card.getByLabel('דקות תנור').fill('120');
+    await card.getByLabel('דקות עבודה').fill('30');
+    await expect(card.getByTestId('capacity-answer')).toContainText('לא נכנס ביום הזה. נשארו 100 דק׳ תנור ו-100 דק׳ עבודה.');
+    await expect(card.getByRole('button', { name: 'אישור ויצירת הזמנה' })).toBeDisabled();
+    await card.getByLabel('דקות תנור').fill('60');
+    await expect(card.getByTestId('capacity-answer')).toHaveText('נכנס. נשארו ביום 100 דק׳ תנור ו-100 דק׳ עבודה.');
+    await card.screenshot({ path: join(SCREENS, 'admin-custom-cake-fits.png') });
+    await card.getByRole('button', { name: 'אישור ויצירת הזמנה' }).click();
+
+    await expect(card.getByText('אושר. הזמנה על סך 420 ₪ מחכה לתשלום.')).toBeVisible();
+    const wa = card.getByRole('link', { name: 'שליחה בוואטסאפ' });
+    await expect(wa).toHaveAttribute('href', /^https:\/\/wa\.me\/972507778899\?text=/);
+    await expect(wa).toHaveAttribute('target', '_blank');
+    const orderNumber = (await card.locator('.admin-cc-order').textContent())?.trim();
+    expect(decodeURIComponent((await wa.getAttribute('href')).split('?text=')[1])).toContain(orderNumber);
+    await card.screenshot({ path: join(SCREENS, 'admin-custom-cake-approved.png') });
+    const r = await withClient((db) => db.query('SELECT r.status, o.status AS order_status, o.order_number FROM custom_cake_requests r JOIN orders o ON o.id = r.order_id WHERE r.id = $1', [q.requestId]));
+    expect(r.rows[0]).toEqual({ status: 'approved', order_status: 'payment_pending', order_number: orderNumber });
+
+    // Handled requests leave the queue.
+    await page.reload();
+    await expect(page.getByTestId('custom-cake-card').filter({ hasText: q.name })).toHaveCount(0);
+  });
+
+  test('capacity taken after the check: "capacity changed, re-check", nothing saved', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    const q = await queued(page, request, {}, { oven: 100, work: 100 });
+    await uiLogin(page, admin);
+    await page.goto('/admin/custom-cakes');
+    const card = q.card;
+    await card.getByLabel('מחיר (₪)').fill('300');
+    await card.getByLabel('דקות תנור').fill('60');
+    await card.getByLabel('דקות עבודה').fill('60');
+    await expect(card.getByTestId('capacity-answer')).toContainText('נכנס.');
+    await withClient((db) => db.query('UPDATE capacity_day_ledger SET oven_minutes_reserved = 70, work_minutes_reserved = 70 WHERE day = $1', [q.day]));
+    await card.getByRole('button', { name: 'אישור ויצירת הזמנה' }).click();
+    await expect(card.getByRole('alert')).toHaveText('הקיבולת השתנתה, צריך לבדוק שוב: ביום הזה כבר אין מקום לעוגה. לא נשמר כלום.');
+    await expect(card.getByTestId('capacity-answer')).toContainText('לא נכנס ביום הזה. נשארו 30 דק׳ תנור ו-30 דק׳ עבודה.');
+    await card.screenshot({ path: join(SCREENS, 'admin-custom-cake-capacity-changed.png') });
+    const r = await withClient((db) => db.query('SELECT status FROM custom_cake_requests WHERE id = $1', [q.requestId]));
+    expect(r.rows[0].status).toBe('pending_review');
+  });
+
+  test('decline with a reason: WhatsApp link carries it, request declined', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    const q = await queued(page, request);
+    await uiLogin(page, admin);
+    await page.goto('/admin/custom-cakes');
+    const card = q.card;
+    await card.getByRole('button', { name: 'דחייה' }).click();
+    await card.getByLabel('סיבה (לא חובה)').fill('אין מקום בתנור ביום הזה.');
+    await card.getByRole('button', { name: 'דחיית הבקשה' }).click();
+    await expect(card.getByText('הבקשה נדחתה.')).toBeVisible();
+    const href = await card.getByRole('link', { name: 'שליחה בוואטסאפ' }).getAttribute('href');
+    expect(decodeURIComponent(href.split('?text=')[1])).toContain('אין מקום בתנור ביום הזה.');
+    const r = await withClient((db) => db.query('SELECT status, decline_reason FROM custom_cake_requests WHERE id = $1', [q.requestId]));
+    expect(r.rows[0]).toEqual({ status: 'declined', decline_reason: 'אין מקום בתנור ביום הזה.' });
+  });
+
+  test('there is no promote-to-catalog action anywhere on the queue', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    const q = await queued(page, request);
+    await uiLogin(page, admin);
+    await page.goto('/admin/custom-cakes');
+    await expect(q.card).toBeVisible();
+    await expect(page.getByRole('button', { name: /קטלוג|catalog/i })).toHaveCount(0);
+    await expect(page.getByTestId('custom-cake-card').locator('a[href*="catalog"], form[action*="catalog"]')).toHaveCount(0);
+  });
+});
