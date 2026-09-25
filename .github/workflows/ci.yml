@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  db:
+    name: db (migrations + privilege test, postgres 17)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash output/db/tests/run.sh
+
+  web:
+    name: web (lint, types, unit, build, regression)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: python3 scripts/check-dashes.py apps output/qa CLAUDE.md
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: bash scripts/local-stack/up.sh
+      - run: npx playwright test -c qa/playwright.config.js --project=mobile
+      - if: failure()
+        run: tail -n 50 .local-stack/*.log || true
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-screens
+          path: apps/web/test-results/
+          if-no-files-found: ignore

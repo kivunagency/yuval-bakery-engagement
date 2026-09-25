@@ -9,13 +9,17 @@ BEGIN;
 
 -- Fake admin (Yuval), assumes auth.users id below was created via
 -- `supabase auth admin create-user` in the local stack first.
+-- Guarded: on the local stack users are created through the Auth admin API
+-- with random ids, so these two rows are skipped there (no auth.users match).
 INSERT INTO admins (id, display_name, mfa_enrolled_at)
-VALUES ('00000000-0000-0000-0000-000000000001', 'יובל (דמו מקומי)', now())
+SELECT '00000000-0000-0000-0000-000000000001', 'יובל (דמו מקומי)', now()
+WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-000000000001')
 ON CONFLICT (id) DO NOTHING;
 
 -- Fake registered customer.
 INSERT INTO customers (id, name, phone, email, marketing_opt_in, privacy_notice_version)
-VALUES ('00000000-0000-0000-0000-000000000002', 'דנה כהן (דמו)', '+972500000001', 'demo-dana@example.test', false, 'privacy-2026-10-v1')
+SELECT '00000000-0000-0000-0000-000000000002', 'דנה כהן (דמו)', '+972500000001', 'demo-dana@example.test', false, 'privacy-2026-10-v1'
+WHERE EXISTS (SELECT 1 FROM auth.users WHERE id = '00000000-0000-0000-0000-000000000002')
 ON CONFLICT (id) DO NOTHING;
 
 -- Delivery zones
@@ -45,6 +49,11 @@ INSERT INTO capacity_day_ledger (day, oven_minutes_total, work_minutes_total)
 VALUES
   (CURRENT_DATE + 2, 240, 240),
   (CURRENT_DATE + 3, 60, 60) -- deliberately small pool, for the concurrency test
+ON CONFLICT (day) DO NOTHING;
+
+-- The rest of the next two weeks, so the day strip has something to show.
+INSERT INTO capacity_day_ledger (day, oven_minutes_total, work_minutes_total)
+SELECT CURRENT_DATE + n, 240, 300 FROM generate_series(1, 14) AS n
 ON CONFLICT (day) DO NOTHING;
 
 COMMIT;

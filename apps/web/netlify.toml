@@ -1,0 +1,11 @@
+# Netlify site config (ADR-001). Base directory on Netlify: apps/web.
+# Environment variables are set in the Netlify UI per site (DEV / PROD), never here.
+[build]
+  command = "npm ci && npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Deploy previews and branch deploys run against DEV only (SEC-020).
