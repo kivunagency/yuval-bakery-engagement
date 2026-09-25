@@ -202,3 +202,145 @@ test.describe('api-005 POST /api/custom-cake-requests', () => {
     expect(rows.rows[0].storage_path).toMatch(new RegExp(`^requests/${requestId}/[0-9a-f-]{36}\\.jpg$`));
   });
 });
+
+// ---------------------------------------------------------------------------
+// client-002: the public form at /custom-cake and its confirmation screen.
+// ---------------------------------------------------------------------------
+const { checkPublicBaseline } = require('./helpers/baseline');
+
+test.describe('client-002 custom-cake form', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setExtraHTTPHeaders({ 'x-nf-client-connection-ip': randomIp() });
+  });
+
+  test('baseline: /custom-cake', async ({ page }) => {
+    await checkPublicBaseline(page, '/custom-cake', 'custom-cake-form');
+  });
+
+  test('baseline: /custom-cake/sent, with and without the photo note', async ({ page }) => {
+    await checkPublicBaseline(page, '/custom-cake/sent', 'custom-cake-sent');
+    await checkPublicBaseline(page, '/custom-cake/sent?photos=unavailable', 'custom-cake-sent-photos-unavailable');
+    await expect(page.getByText('התמונות לא עלו. אפשר לשלוח אותן אלינו בוואטסאפ.')).toBeVisible();
+    // Only the two known values render a note; anything else is ignored.
+    await page.goto('/custom-cake/sent?photos=<b>x</b>');
+    await expect(page.locator('main')).not.toContainText('<b>');
+    await expect(page.getByText('התמונות לא עלו')).toHaveCount(0);
+  });
+
+  test('the catalog row links here and the page arrives server-rendered', async ({ page, request }) => {
+    const html = await (await request.get('/custom-cake')).text();
+    expect(html).toContain('data-testid="privacy-notice-at-collection"');
+    expect(html).toContain('data-context="custom_cake"');
+    await page.goto('/');
+    await page.locator('a[href="/custom-cake"]').first().click();
+    await expect(page).toHaveURL(/\/custom-cake$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'עוגה בהתאמה אישית' })).toBeVisible();
+  });
+
+  test('privacy notice comes before the first personal field; notes hint is wired; date minimum is the lead time', async ({ page }) => {
+    await page.goto('/custom-cake');
+    const order = await page.evaluate(() => {
+      const notice = document.querySelector('[data-testid="privacy-notice-at-collection"]');
+      const firstInput = document.querySelector('form input, form textarea');
+      return notice && firstInput ? notice.compareDocumentPosition(firstInput) & Node.DOCUMENT_POSITION_FOLLOWING : 0;
+    });
+    expect(order).toBeTruthy();
+    const notes = page.getByLabel('מה עוד חשוב שנדע (לא חובה)');
+    const hintId = await page.getByTestId('notes-field-hint').getAttribute('id');
+    expect((await notes.getAttribute('aria-describedby')) ?? '').toContain(hintId);
+    expect(await page.getByLabel('לאיזה יום?').getAttribute('min')).toBe(await earliestDate(0));
+    // Inputs keep their own direction: phone and email are LTR.
+    await expect(page.getByLabel('טלפון נייד')).toHaveAttribute('dir', 'ltr');
+    await expect(page.getByLabel('אימייל (לא חובה)')).toHaveAttribute('dir', 'ltr');
+  });
+
+  test('without the rights confirmation nothing is sent and the error says why', async ({ page }) => {
+    const phone = randomPhone();
+    await page.goto('/custom-cake');
+    await page.getByLabel('שם', { exact: true }).fill('QA Form Guest');
+    await page.getByLabel('טלפון נייד').fill(phone.replace('+972', '0'));
+    await page.getByLabel('לאיזה יום?').fill(await earliestDate(50));
+    let posted = false;
+    page.on('request', (r) => r.url().includes('/api/custom-cake-requests') && (posted = true));
+    await page.getByRole('button', { name: 'שליחת הבקשה' }).click();
+    await expect(page.getByText('צריך לאשר את הזכויות בתמונות כדי לשלוח.')).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: /התמונות שאני מעלה/ })).toBeFocused();
+    expect(posted).toBe(false);
+  });
+
+  test('field errors: bad phone, empty name, a day inside the lead time', async ({ page }) => {
+    await page.goto('/custom-cake');
+    await page.getByLabel('טלפון נייד').fill('03-1234567');
+    await page.getByLabel('לאיזה יום?').fill(await earliestDate(-1));
+    await page.getByRole('checkbox', { name: /התמונות שאני מעלה/ }).check();
+    await page.getByRole('button', { name: 'שליחת הבקשה' }).click();
+    await expect(page.getByText('צריך למלא שם, עד 60 תווים.')).toBeVisible();
+    await expect(page.getByText('צריך מספר נייד ישראלי שמתחיל ב-05.')).toBeVisible();
+    await expect(page.getByText('היום הזה קרוב מדי. אפשר לבקש לפחות 24 שעות מראש.')).toBeVisible();
+    await expect(page.getByLabel('שם', { exact: true })).toBeFocused();
+    await expect(page.getByLabel('טלפון נייד')).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  test('send a request: lands on the confirmation, the row is pending_review with what was typed', async ({ page }) => {
+    const phone = randomPhone();
+    const day = await earliestDate(51);
+    await page.goto('/custom-cake');
+    await page.getByLabel('שם', { exact: true }).fill('QA Form Guest');
+    await page.getByLabel('טלפון נייד').fill(phone.replace('+972', '0'));
+    await page.getByLabel('אימייל (לא חובה)').fill('qa-form@example.test');
+    await page.getByRole('checkbox', { name: 'אפשר לחזור אליי בוואטסאפ' }).check();
+    await page.getByLabel('לאיזה יום?').fill(day);
+    await page.getByLabel('טקסט על העוגה (לא חובה)').fill('מזל טוב נועה 7');
+    await expect(page.getByText('14 מתוך 120 תווים')).toBeVisible();
+    await page.getByLabel('מה עוד חשוב שנדע (לא חובה)').fill('שכבות שוקולד');
+    await page.getByRole('checkbox', { name: /התמונות שאני מעלה/ }).check();
+    await page.getByRole('button', { name: 'שליחת הבקשה' }).click();
+    await expect(page).toHaveURL(/\/custom-cake\/sent$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'הבקשה נשלחה' })).toBeVisible();
+
+    const rows = await withClient((db) =>
+      db.query('SELECT id, status, requester_name, requester_email, whatsapp_followup_ok, inscription_text, notes, desired_date::text AS d FROM custom_cake_requests WHERE requester_phone = $1', [phone]),
+    );
+    expect(rows.rows).toHaveLength(1);
+    created.push(rows.rows[0].id);
+    expect(rows.rows[0]).toMatchObject({
+      status: 'pending_review', requester_name: 'QA Form Guest', requester_email: 'qa-form@example.test',
+      whatsapp_followup_ok: true, inscription_text: 'מזל טוב נועה 7', notes: 'שכבות שוקולד', d: day,
+    });
+  });
+
+  test('a photo that cannot be uploaded: the request is kept and the confirmation says to send it on WhatsApp', async ({ page }) => {
+    test.skip(await storageUp(), 'Storage is up: the degraded path is not reachable');
+    const phone = randomPhone();
+    const photo = await sharp({ create: { width: 32, height: 32, channels: 3, background: '#aa5500' } }).jpeg().toBuffer();
+    await page.goto('/custom-cake');
+    await page.getByLabel('שם', { exact: true }).fill('QA Photo Guest');
+    await page.getByLabel('טלפון נייד').fill(phone.replace('+972', '0'));
+    await page.getByLabel('לאיזה יום?').fill(await earliestDate(52));
+    await page.getByLabel('תמונות השראה (לא חובה)').setInputFiles({ name: 'cake.jpg', mimeType: 'image/jpeg', buffer: photo });
+    await page.getByRole('checkbox', { name: /התמונות שאני מעלה/ }).check();
+    await page.getByRole('button', { name: 'שליחת הבקשה' }).click();
+    await expect(page).toHaveURL(/\/custom-cake\/sent\?photos=unavailable$/);
+    await expect(page.getByText('התמונות לא עלו. אפשר לשלוח אותן אלינו בוואטסאפ.')).toBeVisible();
+    await expect(page.getByTestId('contact-block')).toBeVisible();
+    const rows = await withClient((db) => db.query('SELECT id FROM custom_cake_requests WHERE requester_phone = $1', [phone]));
+    expect(rows.rows).toHaveLength(1);
+    created.push(rows.rows[0].id);
+  });
+
+  test('a 4th photo or an SVG is refused in the browser before anything is sent', async ({ page }) => {
+    await page.goto('/custom-cake');
+    await page.getByLabel('שם', { exact: true }).fill('QA Photo Guest');
+    await page.getByLabel('טלפון נייד').fill(randomPhone().replace('+972', '0'));
+    await page.getByLabel('לאיזה יום?').fill(await earliestDate(53));
+    await page.getByLabel('תמונות השראה (לא חובה)').setInputFiles([
+      { name: 'x.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>') },
+    ]);
+    await page.getByRole('checkbox', { name: /התמונות שאני מעלה/ }).check();
+    let posted = false;
+    page.on('request', (r) => r.url().includes('/api/custom-cake-requests') && (posted = true));
+    await page.getByRole('button', { name: 'שליחת הבקשה' }).click();
+    await expect(page.getByText('עד 3 תמונות, JPG, PNG או WebP, עד 10MB כל אחת.', { exact: true })).toBeVisible();
+    expect(posted).toBe(false);
+  });
+});
