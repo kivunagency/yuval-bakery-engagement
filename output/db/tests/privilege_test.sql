@@ -20,3 +20,13 @@ SELECT 'T4_customer_mark_paid' AS t, fn_mark_order_paid(gen_random_uuid());
 RESET ROLE; SET ROLE anon;
 UPDATE capacity_day_ledger SET oven_minutes_total = 0;
 RESET ROLE;
+-- 6-8 (api-009): clear error codes instead of a raw CHECK violation, and anon cannot call it.
+UPDATE capacity_day_ledger SET oven_minutes_reserved = 100 WHERE day = '2026-10-01';
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2","role":"authenticated"}',false);
+SELECT 'T6_total_below_reserved' AS t, fn_admin_set_day_capacity('2026-10-01',50,420,false);
+SELECT 'T7_invalid_minutes' AS t, fn_admin_set_day_capacity('2026-10-02',-1,420,false);
+SELECT 'T7b_manual_source' AS t, (fn_admin_set_day_capacity('2026-10-01',100,420,true)).source;
+RESET ROLE; SET ROLE anon;
+SELECT 'T8_anon_set_capacity' AS t, fn_admin_set_day_capacity('2026-10-03',1,1,false);
+RESET ROLE;

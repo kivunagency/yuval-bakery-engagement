@@ -9,6 +9,17 @@ export function jerusalemDate(at: Date): string {
   return dateFmt.format(at);
 }
 
+/**
+ * First delivery date allowed for an order placed at `now`: the Jerusalem
+ * date 24 real hours later (BRIEF: minimum 24 hours, Asia/Jerusalem). Same
+ * rule as fn_earliest_delivery_date in the DB, which enforces it; this copy is
+ * for the day picker. A delivery on this date at an hour less than 24 hours
+ * away still needs the time-window check at checkout (ADR-002).
+ */
+export function earliestDeliveryDate(now: Date): string {
+  return jerusalemDate(new Date(now.getTime() + 24 * 3600 * 1000));
+}
+
 /** Add whole calendar days to a YYYY-MM-DD date. */
 export function addDays(isoDate: string, days: number): string {
   const d = new Date(`${isoDate}T12:00:00Z`);

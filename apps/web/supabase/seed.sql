@@ -43,17 +43,19 @@ INSERT INTO products (id, name, description, price_displayed, cost_basis, oven_m
    'קמח, שוקולד, ביצים, סוכר, חמאה', ARRAY['gluten', 'dairy', 'eggs'], true, 'עוגת שוקולד פרוסה על מגש הגשה', true, true)
 ON CONFLICT (id) DO NOTHING;
 
+-- Capacity days are Jerusalem dates (fn_business_date, blindspot-002), never
+-- CURRENT_DATE, which is the UTC date on Supabase.
 -- Capacity: today and tomorrow, generous pools for local testing of the
 -- race/overbooking scenario in db/qa/capacity_invariant_test.sql.
 INSERT INTO capacity_day_ledger (day, oven_minutes_total, work_minutes_total)
 VALUES
-  (CURRENT_DATE + 2, 240, 240),
-  (CURRENT_DATE + 3, 60, 60) -- deliberately small pool, for the concurrency test
+  (fn_business_date() + 2, 240, 240),
+  (fn_business_date() + 3, 60, 60) -- deliberately small pool, for the concurrency test
 ON CONFLICT (day) DO NOTHING;
 
 -- The rest of the next two weeks, so the day strip has something to show.
 INSERT INTO capacity_day_ledger (day, oven_minutes_total, work_minutes_total)
-SELECT CURRENT_DATE + n, 240, 300 FROM generate_series(1, 14) AS n
+SELECT fn_business_date() + n, 240, 300 FROM generate_series(1, 14) AS n
 ON CONFLICT (day) DO NOTHING;
 
 COMMIT;

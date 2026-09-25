@@ -119,6 +119,38 @@ approve transaction rolls back and the admin UI shows "capacity changed,
 re-check before approving" rather than silently overbooking (PRD US-2 AC:
 "never a silent overbook").
 
+## Business day and lead time (blindspot-002, 2026-09-26)
+
+**Assumption, recorded as the task asks (Ran decided the zone 2026-09-25;
+the reading of "24 hours" below is to confirm with Yuval before PROD):**
+
+- A business day is a calendar date in **Asia/Jerusalem**, with its summer
+  and winter offsets. `capacity_day_ledger.day` and `orders.delivery_date`
+  are such dates. The DB session zone is UTC (local stack: `Etc/UTC`; hosted
+  Supabase: UTC by default, assumed, re-check at infra-001), so business
+  logic never uses `CURRENT_DATE` or `now()::date`. It uses
+  `fn_business_date(instant)`, which is `(instant AT TIME ZONE 'Asia/Jerusalem')::date`.
+- Lead time: the earliest delivery date for an order placed at instant `t`
+  is `fn_business_date(t + interval '24 hours')`. `'24 hours'`, not
+  `'1 day'`, so a DST night is still 24 real hours. The DB refuses any
+  standard order or custom-cake request for an earlier date, raising
+  `lead_time_not_met` from a BEFORE INSERT trigger. Orders created by
+  approving a custom cake are exempt: the customer's lead time was checked on
+  the request, and Yuval may approve closer to the day.
+- **What the date-only floor does not cover**: an order placed Monday 10:00
+  for Tuesday is allowed by the floor, even though a Tuesday 08:00 slot would
+  be only 22 hours away. `delivery_time_window` is free text today, so only
+  the checkout route can apply the hour-level check (api-003). **Question for
+  Yuval**: should "at least 24 hours" instead mean the whole delivery day
+  (Monday 10:00 means Wednesday at the earliest)? That is the stricter
+  reading. It would be a one-line change in `fn_earliest_delivery_date` and
+  `earliestDeliveryDate` (`lib/shared/time/jerusalem.ts`), which are kept
+  equal by a parity test.
+- Worked examples, in the tests, with the real reason the zone matters:
+  00:30 Jerusalem on Sat 26 Sep 2026 is still Fri 25 Sep in UTC. A UTC rule
+  would have treated Saturday as "tomorrow" and let a customer order for the
+  same day.
+
 ## Scope note
 
 This is deliberately a single-table ledger, not a per-order-line

@@ -5,7 +5,40 @@
   },
   "business": {
     "details": {
-      "name": "[Business name]"
+      "name": "[Business name]",
+      "owner_name": "[Owner name]",
+      "registration_number": "[Osek type and number]",
+      "address": "[Business address]",
+      "phone": "[Business phone]",
+      "email": "[Business email]",
+      "contact": "Business and contact details"
+    },
+    "labels": {
+      "name": "Business name",
+      "owner_name": "Owner",
+      "registration": "Business registration",
+      "address": "Address",
+      "phone": "Phone",
+      "email": "Email"
+    },
+    "status": {
+      "exempt": "Osek patur (exempt dealer) no.",
+      "licensed": "Osek murshe (licensed dealer) no."
+    },
+    "price": {
+      "final_price": "final price",
+      "incl_vat": "incl. VAT"
+    },
+    "all_details_link": "All business details",
+    "legal_draft_notice": "Draft text, pending legal review. Details in square brackets are not set yet.",
+    "version_label": "Text version:",
+    "page": {
+      "title": "Business details",
+      "ordering_title": "Ordering, prices and delivery",
+      "ordering_body": "Orders are placed on this site at least 24 hours before the delivery or pickup time. Before payment you see the products, the date and time, and the final total.",
+      "prices_body": "The prices shown are final prices. The delivery fee depends on the delivery city and is shown before payment.",
+      "delivery_body": "Deliveries are made by the business's courier to the cities offered at checkout. You can also pick up the order yourself.",
+      "payment_body": "Payment is by Bit or PayBox, through a link shown after you order. Write the order number in the payment note. The order is confirmed once the payment is received."
     }
   },
   "errors": {
@@ -14,5 +47,432 @@
     "back_home": "Back to the home page",
     "generic_title": "Something went wrong",
     "retry": "Try again"
+  },
+  "contact": {
+    "title": "Contact us",
+    "call": "Call",
+    "whatsapp": "Message on WhatsApp",
+    "about_order": "About order",
+    "whatsapp_prefill_order": "Hi, I have a question about order {orderNumber}",
+    "phone_placeholder": "[Business phone]",
+    "whatsapp_placeholder": "[WhatsApp number]"
+  },
+  "footer": {
+    "nav_label": "Site information",
+    "links": {
+      "business": "Business details",
+      "privacy": "Privacy",
+      "accessibility": "Accessibility statement",
+      "terms": "Terms of use",
+      "returns": "Cancellation policy"
+    }
+  },
+  "returns_policy": {
+    "exemption_notice": {
+      "title": "Cancelling an order",
+      "catalog": "Fresh food product: the order cannot be cancelled after it is confirmed, under the Consumer Protection Law.",
+      "custom_cake": "Made especially for you: a custom cake cannot be cancelled after the order is confirmed, under the Consumer Protection Law.",
+      "before_payment": "Until you pay, you can still cancel the order: contact us by phone or WhatsApp.",
+      "defects": "This does not affect your rights if a product is defective.",
+      "version": "Text version:",
+      "policy_link": "Full cancellation policy"
+    },
+    "title": "Cancellation and returns policy",
+    "intro": "Our products are fresh food, and custom cakes are made especially for each customer. So the general right to cancel a distance purchase does not apply to them once the order is confirmed. This page explains what you can still do.",
+    "catalog_title": "Products from the catalog",
+    "custom_cake_title": "Custom cakes",
+    "sections": {
+      "before_payment": {
+        "title": "Before payment",
+        "body": "Until you pay, you can cancel the order at no cost: contact us by phone or WhatsApp with the order number. An unpaid order is also released automatically after the time shown on the payment screen."
+      },
+      "after_payment": {
+        "title": "After payment",
+        "body": "After payment the order is confirmed and preparation begins, so it cannot be cancelled under the Consumer Protection Law."
+      },
+      "goodwill": {
+        "title": "Beyond what the law requires",
+        "body": "[Cancellation policy beyond the law, if any (for example cancellation up to 48 hours before the date): pending the business's decision.]"
+      },
+      "defects": {
+        "title": "A defective product",
+        "body": "None of the above affects your rights if a product is defective or not what you ordered. Contact us as soon as possible."
+      },
+      "business_cancels": {
+        "title": "If the business cancels",
+        "body": "[What happens if the business has to cancel a paid order, and how the refund is made: pending the business's decision.]"
+      },
+      "how": {
+        "title": "How to contact us",
+        "body": "By phone or WhatsApp, using the contact details at the bottom of every page. Please have the order number ready."
+      }
+    }
+  },
+  "privacy": {
+    "notice": {
+      "title": "How we use your details",
+      "collected_data": "{businessName} uses the details you enter here (name, phone and, for delivery, address) and is the owner of the database.",
+      "purpose_checkout": "They are used to carry out your order and coordinate the handover.",
+      "purpose_registration": "They are used to manage your account and show your orders. Marketing messages are sent only if you tick the separate box.",
+      "purpose_custom_cake": "They are used to review your custom cake request, set a price and carry out the order.",
+      "recipients_uncle": "For a delivery, your name, phone, address, time window and delivery notes are passed to the business's courier. The data is stored with hosting providers outside Israel.",
+      "photos": "Inspiration photos are seen only by the baker, are never published, and are deleted after the order.",
+      "retention": "You are not legally required to give these details, but without them we cannot carry out the order. Retention periods and your rights:",
+      "full_notice_link": "full privacy notice"
+    },
+    "notes_hint": "No need to write medical information here. For allergy questions, call us.",
+    "page": {
+      "title": "Privacy notice",
+      "intro": "This notice explains which details we collect when you order, why, who receives them, how long we keep them and what your rights are.",
+      "unset_number": "[not set]",
+      "owner": {
+        "title": "Who owns the database",
+        "body": "The database is owned by the business below. You can contact us about your details by phone or email."
+      },
+      "collected": {
+        "title": "What we collect",
+        "name": "Name.",
+        "phone": "Phone number (required, to coordinate the order).",
+        "address": "Street address and city, for delivery only. Not collected for pickup.",
+        "email": "Email, optional, to send you the order confirmation in writing.",
+        "notes": "Order notes and delivery notes you choose to write.",
+        "inscription": "Cake inscription text (it sometimes includes a child's name and age).",
+        "photos": "Inspiration photos for a custom cake.",
+        "profile_dates": "For registered customers who want benefits: birthday and anniversary (day and month only, no year). Optional."
+      },
+      "not_collected": {
+        "title": "What we do not collect:",
+        "birth_year": "Year of birth.",
+        "id_number": "ID number.",
+        "payment": "Payment details (you pay directly in Bit or PayBox).",
+        "location": "GPS location. We do not use analytics or advertising tracking."
+      },
+      "obligation": {
+        "title": "Do you have to give these details?",
+        "body": "There is no legal obligation. Without a name, phone and (for delivery) an address we cannot carry out the order."
+      },
+      "purposes": {
+        "title": "What the details are used for",
+        "order": "Carrying out the order.",
+        "delivery": "Coordinating the delivery or pickup.",
+        "account": "Managing a registered account and its order history.",
+        "marketing": "Marketing messages (benefits, promotions, a birthday greeting with a benefit) only if you ticked the separate consent box. You can unsubscribe at any time."
+      },
+      "recipients": {
+        "title": "Who receives the details",
+        "courier": "The business's courier, for deliveries only: name, address, phone, time window and delivery notes. Not the items, prices or inscription.",
+        "hosting": "Infrastructure providers: Netlify (website hosting) and Supabase (database and photos).",
+        "email": "Resend (sending email), if you gave an email address.",
+        "whatsapp": "WhatsApp (Meta), when the business contacts you on WhatsApp.",
+        "receipts": "The business's receipts software, if your name is written on a receipt."
+      },
+      "abroad": {
+        "title": "Transfer abroad",
+        "body": "The providers above store the data on servers outside Israel."
+      },
+      "retention": {
+        "title": "How long we keep the details",
+        "orders": "Identifying details on an order (name, phone, address, email, notes, inscription): {months} months after the order is completed, then deleted and the order is anonymized.",
+        "financial": "Items, amounts and dates of an order, without identifying details: for the period required for accounting.",
+        "photos": "Inspiration photos: {days} days after the order is completed, declined or expired, then deleted.",
+        "profile": "A registered profile: until you delete it, or after {months} months without activity, with notice 30 days in advance.",
+        "consent": "Records of marketing consent and its withdrawal: kept as evidence of consent.",
+        "pending": "These periods are pending confirmation by the business's accountant."
+      },
+      "rights": {
+        "title": "Your rights",
+        "access": "To see the details we hold about you (answer within 30 days).",
+        "correction": "To ask us to correct details that are wrong.",
+        "marketing": "To be removed from marketing messages at any time, by the link in any message or by asking us.",
+        "registered": "Registered customers can also download their details and delete their account. To use any of these rights, contact us by phone or email."
+      },
+      "photos": {
+        "title": "Inspiration photos",
+        "body": "Photos you upload for a custom cake are seen only by the baker, for making your cake. They are never published and are deleted {days} days after the order."
+      },
+      "health": {
+        "title": "Health information",
+        "body": "No need to write medical information in the notes. For allergy questions, call us."
+      },
+      "cookies": {
+        "title": "Cookies",
+        "body": "The site uses only essential cookies (keeping you signed in). No analytics, advertising or third-party cookies, so there is no cookie banner."
+      }
+    }
+  },
+  "accessibility": {
+    "statement": {
+      "title": "Accessibility statement",
+      "updated": "Last updated: {date}",
+      "commitment": {
+        "title": "Our commitment",
+        "body": "We want everyone, including people with disabilities, to be able to browse and order on this site. The site is built to Israeli Standard 5568 (based on WCAG 2.0), level AA."
+      },
+      "status": {
+        "title": "Accessibility status",
+        "body": "The site was built with accessibility in mind from the first screen. A full audit of the site against the standard has not been completed yet, so we do not claim full conformance."
+      },
+      "done": {
+        "title": "What has been done",
+        "language": "The site is in Hebrew, laid out right to left, and declares its language to assistive technology.",
+        "contrast": "Text and background colours meet the AA contrast ratio.",
+        "keyboard": "The site is built so every action can be done with the keyboard, with a visible focus ring and a \"skip to main content\" link.",
+        "targets": "Buttons and links are at least 44 by 44 pixels.",
+        "motion": "Motion is limited to short button transitions, and turns off entirely with the \"reduce motion\" setting.",
+        "alt": "Every product photo has a text description, and a product cannot be published without one.",
+        "allergens": "Allergens are written as text on every product, not only as an icon or in a tooltip.",
+        "state": "Status (for example a full day) is never shown by colour alone."
+      },
+      "limits": {
+        "title": "Known limitations",
+        "not_audited": "Screen reader use and <ltr>200%</ltr> zoom have not been fully tested yet.",
+        "external": "Payment happens in Bit or PayBox and contact in WhatsApp: those apps are not under our control.",
+        "content": "Product photos and descriptions are added by the business; if one is missing a description, please tell us."
+      },
+      "exemption": {
+        "title": "Exemption",
+        "body": "[Pending check: a small business may be exempt from the accessibility regulations depending on its annual turnover. The exemption amount and whether it applies to this business have not been verified.] Either way, we build the site to the standard."
+      },
+      "contact_title": "Accessibility contact",
+      "contact": "Found something hard to use? Contact the business owner directly. Tell us which page, what the problem was and how to reach you, and we will get back to you.",
+      "email_label": "Email:",
+      "email_placeholder": "[Business email]"
+    }
+  },
+  "terms": {
+    "title": "Terms of use",
+    "sections": {
+      "about": {
+        "title": "About the site",
+        "body": "This site is operated by {businessName}, a home bakery."
+      },
+      "ordering": {
+        "title": "Ordering",
+        "body": "You can order up to the days shown as available, at least 24 hours before the delivery or pickup time. Each day's availability depends on the baking time left that day. An order is reserved when you place it and confirmed once the payment is received."
+      },
+      "custom_cakes": {
+        "title": "Custom cakes",
+        "body": "A custom cake request is not an order yet. The business reviews it, sets a price and confirms the date, and only then sends a payment link. Photos you upload must be yours or ones you have the right to share with the business, and they are used only for making the cake."
+      },
+      "prices": {
+        "title": "Prices and delivery fees",
+        "body": "The prices shown are final prices. The delivery fee depends on the delivery city and is shown before payment."
+      },
+      "payment": {
+        "title": "Payment",
+        "body": "Payment is by Bit or PayBox, through the link shown after the order, with the order number in the payment note. An unpaid order is released after the time shown on the payment screen."
+      },
+      "delivery": {
+        "title": "Delivery and pickup",
+        "body": "Delivery is made by the business's courier to the cities offered at checkout, within the time window you chose. [What happens if nobody is available to receive the order: pending the business's decision.]"
+      },
+      "allergens": {
+        "title": "Allergens",
+        "body": "Ingredients and allergens are listed on every product as entered by the business. The products are made in a home kitchen. [Trace wording: pending the business.] For allergy questions, call us before ordering."
+      },
+      "liability": {
+        "title": "Liability",
+        "body": "[Liability wording: pending legal review.]"
+      },
+      "law": {
+        "title": "Governing law and jurisdiction",
+        "body": "[Governing law and jurisdiction: pending legal review.]"
+      },
+      "changes": {
+        "title": "Changes and related policies",
+        "body": "The version of these terms is shown at the top of this page; an order records the version shown when it was placed."
+      }
+    },
+    "links": {
+      "business": "Business details",
+      "returns": "Cancellation policy",
+      "privacy": "Privacy notice"
+    }
+  },
+  "day_state": {
+    "weekday_short": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "weekday_long": {
+      "sun": "Sunday",
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday"
+    },
+    "word": {
+      "open": "Open",
+      "limited": "Few left",
+      "full": "Full",
+      "closed": "Closed",
+      "selected": "Selected"
+    },
+    "aria": {
+      "open": "room available",
+      "limited": "only a little room left",
+      "full": "full, no room left in the oven",
+      "closed": "closed, day off",
+      "too_soon": "too soon, order at least 24 hours ahead",
+      "selected": "selected"
+    },
+    "label": "{weekday} {date}, {state}",
+    "day_short": "{weekday} {date}",
+    "day_long": "{weekday} {date}"
+  },
+  "catalog": {
+    "title": "Catalog",
+    "products_heading": "Products",
+    "day_question": "Which day?",
+    "filter_none": "Pick a day to see what still fits in the oven that day.",
+    "filter_day": "Showing what fits in the oven on <b>{day}</b>",
+    "choose_day_first": "Pick a day first, then add to the cart.",
+    "add": "Add",
+    "unavailable": "Unavailable",
+    "out_of_stock": "Sold out this week",
+    "does_not_fit": "Does not fit on {day}",
+    "does_not_fit_until": "Does not fit on {day}, available from {next}",
+    "allergens_label": "Allergens",
+    "no_known_allergens": "No known allergens",
+    "may_contain": "May contain {allergen}",
+    "allergen": {
+      "gluten": "Gluten",
+      "eggs": "Eggs",
+      "dairy": "Milk",
+      "nuts": "Nuts",
+      "almonds": "Almonds",
+      "peanuts": "Peanuts",
+      "sesame": "Sesame",
+      "soy": "Soy"
+    },
+    "ingredients_label": "Ingredients",
+    "details_summary": "Ingredients and details",
+    "price_incl_vat": "Prices include VAT",
+    "price_final": "Prices are final",
+    "photo_placeholder": "Photo coming soon",
+    "cart_label": "Cart, {count, plural, =0 {empty} one {1 item} other {# items}}",
+    "added": "{name} added to the cart",
+    "empty": "No products in the catalog yet.",
+    "kitchen_notice": "[Home kitchen allergen statement, wording from Yuval]",
+    "custom_cake": {
+      "title": "Custom cake",
+      "body": "Write what you would like on the cake and attach an inspiration photo. The price is set after Yuval sees the request.",
+      "cta": "Send a request"
+    }
+  },
+  "admin": {
+    "shell": {
+      "title": "Management",
+      "sign_out": "Sign out",
+      "nav_label": "Management navigation",
+      "tabs": {
+        "orders": "Orders",
+        "capacity": "Calendar",
+        "catalog": "Products",
+        "settings": "Settings"
+      },
+      "pages": {
+        "orders": "Orders",
+        "custom_cakes": "Custom cake requests",
+        "capacity": "Calendar",
+        "catalog": "Products",
+        "settings": "Settings"
+      },
+      "placeholder": {
+        "badge": "Coming soon",
+        "body": "This screen is being built."
+      }
+    },
+    "login": {
+      "title": "Sign in to management",
+      "intro": "For the business owner only.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "code_label": "6-digit code",
+      "code_hint": "The code in the authenticator app changes every 30 seconds.",
+      "enrol_title": "Set up the authenticator app",
+      "enrol_intro": "Management needs a second step: a code from an authenticator app on your phone. This is done once.",
+      "enrol_step_install": "Install an authenticator app, for example Google Authenticator or Microsoft Authenticator.",
+      "enrol_step_scan": "In the app, add an account and scan this code.",
+      "enrol_step_code": "Type the 6 digits the app shows.",
+      "enrol_qr_alt": "QR code to add this account to the authenticator app",
+      "enrol_manual": "If scanning does not work, type this key into the app instead:",
+      "enrol_reload_note": "Opening this page again creates a new code. Use only the code shown now.",
+      "enrol_submit": "Finish setup",
+      "verify_title": "Code from the authenticator app",
+      "verify_intro": "Open the authenticator app on your phone and type the code it shows.",
+      "verify_submit": "Confirm",
+      "lost_phone": "Lost the phone with the app? Contact Ran to restore access.",
+      "other_account": "Sign out and sign in with another account",
+      "errors": {
+        "invalid": "The email or password is incorrect.",
+        "rate_limited": "Too many attempts. Try again in 15 minutes.",
+        "unavailable": "Sign-in is not available right now. Try again in a few minutes.",
+        "invalid_code": "The code is incorrect or has expired. Type the code the app shows now.",
+        "session_expired": "The session has ended. Sign in again."
+      }
+    },
+    "capacity": {
+      "title": "Calendar",
+      "day_title": "{weekday} {date}",
+      "day_nav": "Change day",
+      "previous_day": "Previous day",
+      "next_day": "Next day",
+      "back_to_today": "Back to today",
+      "day_section": "Capacity of the day",
+      "resource": {
+        "oven": "Oven",
+        "work": "Work"
+      },
+      "used_of_total": "{used} of {total} min",
+      "orders_count": "{count, plural, =0 {No orders.} one {One order.} other {# orders.}}",
+      "sentence_free_oven": "{free} oven minutes left of {total}.",
+      "sentence_free_work": "{free} work minutes left of {total}.",
+      "sentence_closed": "The day is closed to new orders.",
+      "sentence_unpaid_oven": "{unpaid} of the booked minutes are in orders not paid yet.",
+      "sentence_unpaid_work": "{unpaid} of the booked minutes are in orders not paid yet.",
+      "day_not_set": "No capacity is set for this day, so customers cannot order for it. Save minutes below to open it.",
+      "oven_minutes": "Oven minutes per day",
+      "work_minutes": "Work minutes per day",
+      "blackout_toggle": "Closed day (no orders taken)",
+      "blackout_has_orders": "{count, plural, one {There is one order on this day.} other {There are # orders on this day.}} Closing the day does not cancel them.",
+      "source_manual": "Set by hand for this day. The weekly pattern does not change it.",
+      "source_pattern": "Follows the weekly pattern.",
+      "source_none": "Not saved yet.",
+      "save_day": "Save the day",
+      "reset_to_pattern": "Back to the weekly pattern",
+      "saved": "Saved.",
+      "reset_done": "The day follows the weekly pattern again.",
+      "error_below_reserved": "Orders already booked {oven} oven minutes and {work} work minutes on this day. The totals cannot go below that.",
+      "error_invalid_minutes": "Enter whole minutes, from 0 to 1440.",
+      "error_session": "The session has ended. Sign in again.",
+      "error_no_pattern": "There is no weekly pattern for this weekday yet.",
+      "error_generic": "Saving failed. Try again.",
+      "weekly_pattern": "Weekly pattern",
+      "pattern_empty": "No weekly pattern yet. Until one is saved, only days set by hand are open.",
+      "working_day": "Working day",
+      "pattern_explain": "Saving writes these numbers into the coming days. Days you set by hand, and days whose orders already need more, stay as they are.",
+      "save_pattern": "Save the weekly pattern",
+      "pattern_saved": "The weekly pattern was saved. {written, plural, =0 {No day needed a change} one {One day was updated} other {# days were updated}} in the next {days} days.",
+      "pattern_kept_manual": "{count, plural, one {One day set by hand stayed as it was.} other {# days set by hand stayed as they were.}}",
+      "pattern_kept_below": "{count, plural, one {One day was not changed} other {# days were not changed}} because its orders already need more.",
+      "weekday": {
+        "0": "Sunday",
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday"
+      }
+    }
   }
 }

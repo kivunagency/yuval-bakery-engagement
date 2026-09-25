@@ -52,5 +52,9 @@ expect() { # expect <label> <count> <pattern>
 expect "T1,T2,T4 non-admin or aal1 callers rejected" 3 "ERROR:  admin_aal2_required"
 expect "T3 admin with aal2 sets capacity" 1 "T3_admin_aal2_set_capacity | 2026-10-01"
 expect "T5 anon cannot write capacity_day_ledger" 1 "permission denied for table capacity_day_ledger"
+expect "T6 total below reserved -> capacity_total_below_reserved" 1 "ERROR:  capacity_total_below_reserved: oven 100 work 0"
+expect "T7 minutes outside 0..1440 -> capacity_invalid_minutes" 1 "ERROR:  capacity_invalid_minutes"
+expect "T7b a hand-set day is source=manual" 1 "T7b_manual_source | manual"
+expect "T8 anon cannot call fn_admin_set_day_capacity" 1 "permission denied for function fn_admin_set_day_capacity"
 [ $fail = 0 ] && echo PASSED || echo FAILED
 exit $fail
