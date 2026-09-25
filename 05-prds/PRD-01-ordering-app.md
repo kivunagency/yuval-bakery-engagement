@@ -53,13 +53,14 @@ A public ordering PWA (linked from Instagram bio) plus an admin area, for a sing
   - AC: only dates at least 24 hours from the current time are selectable (minimum lead time, per BRIEF).
   - AC: available dates reflect the day's remaining oven-minute and work-minute capacity against everything already in the product's time cost (see Section 4).
   - AC: a blackout day (capacity = 0) is not selectable, and is visibly distinct from "fully booked."
-  - AC: for delivery, the customer sees the delivery fee for their address's distance range (Section 3.5) before confirming, and total price (product + delivery fee, VAT included) before payment (per rotem's pricing-transparency requirement).
+  - AC: for delivery, the customer sees the delivery fee for their city's zone (US-6) before confirming, and total price (product + delivery fee, VAT included) before payment (per rotem's pricing-transparency requirement).
 
 ### 3.5 Delivery pricing settings (admin)
-- **US-6**: As Yuval, I can define delivery pricing by distance range, so delivery fees reflect my uncle's actual driving cost.
-  - AC: admin screen lets Yuval define an ordered list of distance ranges (e.g., 0-5km, 5-10km) each with a flat fee, and a maximum delivery distance beyond which delivery is not offered (pickup only).
-  - AC: distance is computed from Yuval's kitchen address to the customer's delivery address via a geocoding/distance API chosen at BUILD (alex), which MUST be cached (repeated addresses do not re-hit the metered API) and MUST have a Rule 30 spend cap + alert configured before first use.
-  - AC: if an address falls beyond the max distance, checkout shows "delivery not available to this address, pickup only" rather than a broken or infinite fee.
+- **US-6**: As Yuval, I can define delivery zones by city, so delivery fees reflect where my uncle drives. (Changed by Ran 2026-09-25: zones by city, not distance ranges.)
+  - AC: admin screen lets Yuval create delivery zones; each zone has a name, a flat fee, and a list of cities (one city or a group of cities). A city belongs to at most one zone.
+  - AC: at checkout the customer picks their city from a list of the cities Yuval serves (no free-text city, so no typo mismatch); the zone fee is shown immediately.
+  - AC: no geocoding or distance API is used. Delivery pricing has no metered third-party dependency.
+  - AC: if the customer's city is not in any zone, checkout shows "delivery not available to this city, pickup only".
 
 ### 3.6 Delivery list for the uncle
 - **US-7**: As Yuval, I can generate today's (or any day's) delivery list, so my uncle knows where to go.
@@ -157,7 +158,7 @@ Loyalty applies only to **registered, opted-in** customers (BRIEF: guest checkou
 - Custom cake requests with manual Yuval approval, pricing, and time-cost setting (US-2)
 - Guest checkout (US-3) and optional customer registration, without loyalty features yet (US-4, data model only)
 - Delivery/pickup selection with 24h lead time and capacity-driven availability (US-5)
-- Delivery pricing settings by distance range, with cached/capped distance lookup (US-6)
+- Delivery zones by city with a flat fee per zone (US-6)
 - Delivery list generation for the uncle (US-7)
 - Bit/PayBox link-out payment with manual "paid" confirmation and payment-pending expiry (US-8, US-9)
 - Web push + email new-order notifications to Yuval (US-10)

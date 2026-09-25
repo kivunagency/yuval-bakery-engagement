@@ -48,7 +48,7 @@ The daily limit is **oven time and working time**, not a count per item. So capa
 ## Decisions, 2026-09-25 (Ran)
 - WhatsApp: MVP = click-to-send prefilled message from the admin (free, manual). Automated WhatsApp API is v2.
 - Custom cakes: Yuval approves each one manually before payment and sets its price and its time cost on the day.
-- **Delivery pricing settings screen**: Yuval defines distance ranges and a fee per range (e.g. 0-5 km, 5-10 km), plus max distance. Fee shown before payment. Distance calculation method is an architecture decision (alex): any geocoding/routing API is metered, so it needs a cache and a spend cap + alert (Rule 30) from day one.
+- **Delivery pricing settings screen** (revised by Ran 2026-09-25): Yuval defines zones, each a city or a group of cities, with a flat fee per zone. Customer picks a city from her list. No distance/geocoding API, so no metered dependency.
 - **Customer profiles + loyalty**: customers may register a profile; Yuval can send birthday and anniversary benefits, open punch cards (כרטיסיות הנחה) and run promotions. **Guest checkout must stay available** without registration.
   - Compliance to design in (rotem's Mode A already flagged it): marketing messages need a separate, unticked opt-in (Communications Law s.30A); birthday/anniversary dates are extra PII, optional fields with a stated purpose; customer auth brings cyber-iam into scope.
 

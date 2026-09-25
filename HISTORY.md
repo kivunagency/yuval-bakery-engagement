@@ -18,3 +18,5 @@ Next steps:
 - Begin research (Phase 1 of /prep-first-meeting if prospect)
 
 ---
+
+- 2026-09-25: PRD-01 approved by Ran with one change: delivery pricing by city zones instead of distance ranges. Loyalty stays Phase 2 (maya recommendation, not objected). Next: design + architecture.
