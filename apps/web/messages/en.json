@@ -541,5 +541,43 @@
       "server_error": "We could not save the order. Try again in a moment."
     },
     "pick_another_day": "Choose another day"
+  },
+  "payment": {
+    "page_title": "Payment",
+    "saved": "The order is saved for {day}",
+    "order_number_heading": "Your order number. Write it in the payment note:",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copy_label": "Copy order number {orderNumber}",
+    "amount": "Amount to transfer",
+    "hold_today": "Your place in the oven is held until {time} today. If the payment does not arrive by then, the place is released to others.",
+    "hold_other_day": "Your place in the oven is held until {time} on {day}. If the payment does not arrive by then, the place is released to others.",
+    "methods_heading": "How to pay",
+    "bit_link": "Pay with Bit",
+    "paybox_link": "Pay with PayBox",
+    "link_placeholder": "[{method} link not set yet]",
+    "instructions": {
+      "step1": "Choose an app and type in the amount, {amount}.",
+      "step2": "In the note field write the order number <b>{orderNumber}</b>.",
+      "step3": "When the payment arrives the order is confirmed by hand, usually within a few hours."
+    },
+    "keep_link": "Keep the link to this page: it is how you get back to your order.",
+    "details_heading": "Order details",
+    "when": "When",
+    "slot": "between {start} and {end}",
+    "how": "How",
+    "delivery_to": "Delivery to {city}",
+    "pickup": "Pickup",
+    "items_heading": "Products",
+    "line": "{name}, {quantity} units",
+    "delivery_fee": "Delivery",
+    "total": "Total",
+    "status": {
+      "paid": "The payment was received. Thank you!",
+      "fulfilled": "The order was fulfilled.",
+      "expired": "The payment time ran out and the place was released. You can order again.",
+      "cancelled": "The order was cancelled."
+    },
+    "confirmation_pending": "A confirmation you can download will be added here."
   }
 }

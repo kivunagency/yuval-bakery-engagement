@@ -541,5 +541,43 @@
       "server_error": "לא הצלחנו לשמור את ההזמנה. נסו שוב בעוד רגע."
     },
     "pick_another_day": "לבחירת יום אחר"
+  },
+  "payment": {
+    "page_title": "תשלום",
+    "saved": "ההזמנה נשמרה ל{day}",
+    "order_number_heading": "מספר ההזמנה שלך. כתבו אותו בהערה של התשלום:",
+    "copy": "העתקה",
+    "copied": "הועתק",
+    "copy_label": "העתקת מספר ההזמנה {orderNumber}",
+    "amount": "סכום להעברה",
+    "hold_today": "המקום בתנור שמור לך עד {time} היום. אם התשלום לא יגיע עד אז, המקום יתפנה לאחרים.",
+    "hold_other_day": "המקום בתנור שמור לך עד {time} ב{day}. אם התשלום לא יגיע עד אז, המקום יתפנה לאחרים.",
+    "methods_heading": "איך משלמים",
+    "bit_link": "תשלום ב-Bit",
+    "paybox_link": "תשלום ב-PayBox",
+    "link_placeholder": "[קישור {method} ממתין להגדרה]",
+    "instructions": {
+      "step1": "בוחרים אפליקציה ומקלידים את הסכום, {amount}.",
+      "step2": "בשדה ההערה כותבים את מספר ההזמנה <b>{orderNumber}</b>.",
+      "step3": "כשהתשלום מתקבל ההזמנה מאושרת ידנית, בדרך כלל תוך כמה שעות."
+    },
+    "keep_link": "שמרו את הקישור לדף הזה: דרכו חוזרים להזמנה.",
+    "details_heading": "פרטי ההזמנה",
+    "when": "מתי",
+    "slot": "בין {start} ל-{end}",
+    "how": "איך",
+    "delivery_to": "משלוח ל{city}",
+    "pickup": "איסוף עצמי",
+    "items_heading": "מוצרים",
+    "line": "{name}, {quantity} יח׳",
+    "delivery_fee": "משלוח",
+    "total": "סה״כ",
+    "status": {
+      "paid": "התשלום התקבל. תודה!",
+      "fulfilled": "ההזמנה סופקה.",
+      "expired": "זמן התשלום עבר והמקום שוחרר. אפשר להזמין מחדש.",
+      "cancelled": "ההזמנה בוטלה."
+    },
+    "confirmation_pending": "כאן יתווסף אישור הזמנה להורדה."
   }
 }

@@ -1,6 +1,6 @@
 // @ts-check
 // Checkout and payment (session E): api-003 POST /api/orders and the read
-// paths, client-003 the checkout screen. Needs the local stack (npm run
+// paths, client-003 the checkout screen, client-004 the order/payment page. Needs the local stack (npm run
 // stack:up) and a production build (npm run build).
 //
 // API tests use far-future days of their own (no shared state). Screen tests
@@ -374,6 +374,7 @@ test.describe('client-003: checkout screen', () => {
       const token = page.url().split('/order/')[1];
       const view = await (await page.request.get(`/api/orders/${token}`)).json();
       expect([view.subtotal, view.deliveryFee, view.total]).toEqual([42, 35, 77]); // the DB's total = the preview
+      await expect(page.getByTestId('order-total')).toContainText('77'); // client-004: the page shows it
       expect(await page.evaluate((k) => window.sessionStorage.getItem(k), CART_KEY)).toBe(JSON.stringify({ day: null, lines: [] }));
     });
   });
@@ -423,5 +424,107 @@ test.describe('client-003: checkout screen', () => {
       expect(await withDb((c) => db.ledger(c, days[2]))).toEqual(before);
       await page.screenshot({ path: join(SCREENS, 'checkout-day-gone.png'), fullPage: true });
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// client-004: the order and payment page
+// ---------------------------------------------------------------------------
+async function newOrder(request, fulfillment = 'pickup') {
+  const made = await withDb(async (c) => ({ p: await product(c, { price: 14 }), day: await db.freshDay(c, { oven: 100, work: 100 }), slot: await lastSlot(c), z: await zone(c, 25) }));
+  const extra = fulfillment === 'delivery' ? { fulfillment, city: made.z.city, address: 'QA street 9' } : {};
+  const res = await post(request, body(made.p, made.day, made.slot, extra));
+  expect(res.status()).toBe(201);
+  const { token } = await res.json();
+  const row = await withDb((c) => orderByToken(c, token));
+  return { token, row, ...made };
+}
+
+async function setLinks(bit, paybox) {
+  await withDb((c) => c.query(
+    `UPDATE app_settings SET value = CASE key WHEN 'payment_link_bit' THEN $1::jsonb ELSE $2::jsonb END WHERE key IN ('payment_link_bit', 'payment_link_paybox')`,
+    [JSON.stringify(bit), JSON.stringify(paybox)]));
+}
+
+test.describe('client-004: order and payment page', () => {
+  test.describe.configure({ mode: 'serial' }); // payment link settings are global
+
+  test('baseline, no Referer and no indexing, order number big in a dashed frame, total, hold time, placeholders while links are unset', async ({ page, request }) => {
+    await setLinks(null, null);
+    const { token, row } = await newOrder(request, 'delivery');
+    const res = await checkPublicBaseline(page, `/order/${token}`, 'order-light');
+    expect(res.headers()['referrer-policy']).toBe('no-referrer');
+    expect(res.headers()['x-robots-tag']).toContain('noindex');
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+
+    const code = page.getByTestId('order-number');
+    await expect(code).toHaveText(row.order_number);
+    const style = await code.evaluate((el) => {
+      const s = getComputedStyle(el);
+      const frame = getComputedStyle(el.parentElement);
+      return { size: s.fontSize, family: s.fontFamily, border: frame.borderTopStyle, dir: getComputedStyle(el.firstElementChild).direction };
+    });
+    expect(style).toMatchObject({ size: '56px', border: 'dashed', dir: 'ltr' });
+    expect(style.family).toContain('Karantina');
+    await expect(page.getByTestId('order-total')).toContainText('53'); // 2 x 14 + 25
+    await expect(page.getByTestId('hold-until')).toContainText(/\d{2}:\d{2}/);
+    await expect(page.getByTestId('pay-bit-placeholder')).toContainText('[');
+    await expect(page.getByTestId('pay-paybox-placeholder')).toContainText('[');
+    await expect(page.locator('[data-testid="contact-block"]').first()).toContainText(row.order_number);
+    await expect(page.getByTestId('business-details-summary')).toBeVisible();
+    await expect(page.getByTestId('cancellation-exemption-notice')).toBeVisible();
+    await expect(page.getByTestId('order-details')).not.toContainText('QA street');
+  });
+
+  test('with links set: two buttons of equal size and style, rel=noreferrer; a link off the allowlist stays a placeholder', async ({ page, request }) => {
+    const { token } = await newOrder(request);
+    try {
+      await setLinks('https://www.bitpay.co.il/app/me/qa-test', 'https://payboxapp.page.link/qa-test');
+      await page.goto(`/order/${token}`);
+      const bit = page.getByTestId('pay-bit');
+      const paybox = page.getByTestId('pay-paybox');
+      await expect(bit).toHaveAttribute('href', 'https://www.bitpay.co.il/app/me/qa-test');
+      await expect(paybox).toHaveAttribute('href', 'https://payboxapp.page.link/qa-test');
+      for (const a of [bit, paybox]) await expect(a).toHaveAttribute('rel', /noreferrer/);
+      const boxes = await Promise.all([bit, paybox].map((a) => a.evaluate((el) => {
+        const s = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        return [Math.round(r.width), Math.round(r.height), s.backgroundColor, s.borderTopWidth, s.fontSize];
+      })));
+      expect(boxes[0]).toEqual(boxes[1]);
+      expect(boxes[0][1]).toBeGreaterThanOrEqual(56);
+      await page.screenshot({ path: join(SCREENS, 'order-links-set.png'), fullPage: true });
+
+      await setLinks('https://evil.example/pay', 'http://payboxapp.page.link/x');
+      await page.reload();
+      await expect(page.getByTestId('pay-bit-placeholder')).toBeVisible();
+      await expect(page.getByTestId('pay-paybox-placeholder')).toBeVisible();
+    } finally {
+      await setLinks(null, null);
+    }
+  });
+
+  test('copy button copies the order number', async ({ page, context, request }) => {
+    const { token, row } = await newOrder(request);
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto(`/order/${token}`);
+    await page.getByTestId('copy-order-number').click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(row.order_number);
+  });
+
+  test('an order that is no longer waiting shows its status and no payment buttons', async ({ page, request }) => {
+    const { token, row } = await newOrder(request);
+    await withDb((c) => c.query(`SELECT fn_release_order_capacity($1, 'expired', 'system', 'qa')`, [row.id]));
+    await page.goto(`/order/${token}`);
+    await expect(page.getByTestId('order-status')).toHaveAttribute('data-status', 'expired');
+    await expect(page.locator('[data-testid^="pay-"]')).toHaveCount(0);
+  });
+
+  test('an unknown token, an order number or an id in the URL: the same 404', async ({ request }) => {
+    const { row } = await newOrder(request);
+    for (const key of [crypto.randomBytes(16).toString('base64url'), row.order_number, row.id]) {
+      const r = await request.get(`/order/${encodeURIComponent(key)}`);
+      expect(r.status(), key).toBe(404);
+    }
   });
 });
