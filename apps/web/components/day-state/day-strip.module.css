@@ -1,0 +1,10 @@
+.strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px var(--s4) var(--s4);
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--s4);
+  scrollbar-width: none;
+}
+.strip::-webkit-scrollbar { display: none; }

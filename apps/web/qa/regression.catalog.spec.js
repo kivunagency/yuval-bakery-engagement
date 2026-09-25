@@ -280,3 +280,210 @@ test.describe('api-002: GET /api/capacity (public day states)', () => {
     expect(disagreements).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// client-001: the catalog screen at `/`. Days inside the 14-day strip are
+// changed for a test and restored afterwards.
+// ---------------------------------------------------------------------------
+
+const { join } = require('node:path');
+const SCREENS = join(__dirname, '..', 'test-results', 'screens');
+const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+
+/** Run fn with some strip days reshaped; the ledger rows are restored after. */
+async function withDays(offsets, shape, fn) {
+  const { days, saved } = await withDb(async (db) => {
+    const today = await jerusalemToday(db);
+    const ds = offsets.map((o) => plusDays(today, o));
+    const rows = (await db.query('SELECT * FROM capacity_day_ledger WHERE day = ANY($1::date[])', [ds])).rows;
+    for (const [i, d] of ds.entries()) await setDay(db, d, shape[i]);
+    return { days: ds, saved: rows };
+  });
+  try {
+    return await fn(days);
+  } finally {
+    await withDb(async (db) => {
+      await db.query('DELETE FROM capacity_day_ledger WHERE day = ANY($1::date[])', [days]);
+      for (const r of saved)
+        await setDay(db, r.day, {
+          oven: r.oven_minutes_total, work: r.work_minutes_total, ovenRes: r.oven_minutes_reserved, workRes: r.work_minutes_reserved,
+          ovenUnpaid: r.oven_minutes_unpaid_reserved, workUnpaid: r.work_minutes_unpaid_reserved, blackout: r.is_blackout,
+        });
+    });
+  }
+}
+
+test.describe('client-001: catalog screen', () => {
+  test('first frame is server-rendered with products and day states (no client fetch needed)', async ({ request }) => {
+    const p = await withDb((db) => insertProduct(db));
+    try {
+      const html = await (await request.get('/')).text();
+      expect(html).toContain(p.name);
+      expect(html).toMatch(/role="radiogroup"/);
+      expect(html).toMatch(/data-state="too_soon"/);
+      expect(html).not.toMatch(/minutes|oven_|work_/);
+    } finally {
+      await withDb((db) => deleteProducts(db, [p.id]));
+    }
+  });
+
+  test('the page makes no request to /api/* or PostgREST from the browser', async ({ page }) => {
+    const calls = [];
+    page.on('request', (r) => {
+      if (/\/api\/|\/rest\/v1\//.test(r.url())) calls.push(r.url());
+    });
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    expect(calls).toEqual([]);
+  });
+
+  test('full and closed days differ in word, colour and texture, and are not selectable', async ({ page }) => {
+    await withDays([9, 10], [{ ovenRes: 100, workRes: 10 }, { blackout: true }], async ([fullDay, closedDay]) => {
+      await page.goto('/');
+      const full = page.locator(`[data-day="${fullDay}"]`);
+      const closed = page.locator(`[data-day="${closedDay}"]`);
+      await expect(full).toHaveAttribute('data-state', 'full');
+      await expect(closed).toHaveAttribute('data-state', 'closed');
+      await expect(full).toContainText('מלא');
+      await expect(closed).toContainText('סגור');
+      await expect(full).toHaveAttribute('aria-disabled', 'true');
+      await expect(closed).toHaveAttribute('aria-disabled', 'true');
+      await expect(full).toHaveAttribute('aria-label', /אין מקום בתנור/);
+      await expect(closed).toHaveAttribute('aria-label', /יום חופש/);
+      const bg = (l) => l.evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el).backgroundImage]);
+      const [fullColor, fullImage] = await bg(full);
+      const [, closedImage] = await bg(closed);
+      expect(fullImage).toBe('none');
+      expect(closedImage).toContain('repeating-linear-gradient');
+      expect(fullColor).not.toBe('rgba(0, 0, 0, 0)');
+      await full.click({ force: true });
+      await expect(full).toHaveAttribute('aria-checked', 'false');
+    });
+  });
+
+  test('picking a day marks what does not fit (DB answer), says from when it fits, and keeps it in the URL', async ({ page }) => {
+    const big = await withDb((db) => insertProduct(db, { oven: 50, work: 50 }));
+    try {
+      // day 11: 60/60, so a 50-minute product breaks the 35% single-order cap; day 12: roomy.
+      await withDays([11, 12], [{ oven: 60, work: 60 }, { oven: 300, work: 300 }], async ([small, roomy]) => {
+        await page.goto('/');
+        await page.locator(`[data-day="${small}"]`).click();
+        await expect(page.locator(`[data-day="${small}"]`)).toHaveAttribute('aria-checked', 'true');
+        await expect(page).toHaveURL(new RegExp(`day=${small}`));
+        const card = page.locator(`[data-product-id="${big.id}"]`);
+        await expect(card).toHaveAttribute('data-blocked', 'does_not_fit');
+        const [, m, d] = roomy.split('-').map(Number);
+        await expect(card.locator('p').first()).toContainText(`לא נכנס ביום`);
+        await expect(card.locator('p').first()).toContainText(`פנוי מיום`);
+        await expect(card.locator('p').first()).toContainText(`${d}.${m}`);
+        await expect(card.getByRole('button')).toBeDisabled();
+        await expect(card.getByRole('button')).toHaveText('לא זמין');
+        await expect(page.getByTestId('filterline')).toContainText('מוצג מה שנכנס לתנור של');
+        await page.screenshot({ path: join(SCREENS, 'catalog-day-selected.png'), fullPage: true });
+
+        await page.locator(`[data-day="${roomy}"]`).click();
+        await expect(card).toHaveAttribute('data-blocked', 'none');
+
+        await page.goto(`/?day=${small}`);
+        await expect(page.locator(`[data-day="${small}"]`)).toHaveAttribute('aria-checked', 'true');
+        await expect(card).toHaveAttribute('data-blocked', 'does_not_fit');
+      });
+    } finally {
+      await withDb((db) => deleteProducts(db, [big.id]));
+    }
+  });
+
+  test('sold-out product stays listed, greyed, with a disabled button', async ({ page }) => {
+    const p = await withDb((db) => insertProduct(db, { available: false }));
+    try {
+      await page.goto('/');
+      const card = page.locator(`[data-product-id="${p.id}"]`);
+      await expect(card).toHaveAttribute('data-blocked', 'out_of_stock');
+      await expect(card).toContainText('אזל השבוע');
+      await expect(card.getByRole('button')).toBeDisabled();
+    } finally {
+      await withDb((db) => deleteProducts(db, [p.id]));
+    }
+  });
+
+  test('allergens always visible: solid "contains" chips and dashed "may contain" chips', async ({ page }) => {
+    const p = await withDb((db) => insertProduct(db, { allergens: ['gluten', 'eggs'], mayContain: ['nuts'] }));
+    try {
+      await page.goto('/');
+      const chips = page.locator(`[data-product-id="${p.id}"]`).getByRole('list', { name: 'אלרגנים' }).getByRole('listitem');
+      await expect(chips).toHaveText(['גלוטן', 'ביצים', 'עלול להכיל אגוזים']);
+      await expect(chips.nth(2)).toBeVisible();
+      expect(await chips.nth(0).evaluate((el) => getComputedStyle(el).borderStyle)).toBe('solid');
+      expect(await chips.nth(2).evaluate((el) => getComputedStyle(el).borderStyle)).toBe('dashed');
+    } finally {
+      await withDb((db) => deleteProducts(db, [p.id]));
+    }
+  });
+
+  test('add needs a day first; then the cart holds the line and its day (sessionStorage)', async ({ page }) => {
+    const p = await withDb((db) => insertProduct(db));
+    try {
+      await withDays([12], [{ oven: 300, work: 300 }], async ([day]) => {
+        await page.goto('/');
+        const add = page.locator(`[data-product-id="${p.id}"]`).getByRole('button', { name: /הוספה/ });
+        await add.click();
+        await expect(page.getByTestId('need-day')).toHaveText('קודם בוחרים יום, ואז מוסיפים לסל.');
+        await page.locator(`[data-day="${day}"]`).click();
+        await expect(page.getByTestId('need-day')).toHaveCount(0);
+        await add.click();
+        await add.click();
+        await expect(page.getByTestId('cart-button')).toHaveAttribute('aria-label', 'סל, 2 פריטים');
+        await expect(page.locator('main [role="status"]')).toHaveText(`${p.name} נוסף לסל`);
+        const stored = await page.evaluate(() => JSON.parse(sessionStorage.getItem('yb.cart.v1') ?? 'null'));
+        expect(stored).toEqual({ day, lines: [{ productId: p.id, quantity: 2 }] });
+      });
+    } finally {
+      await withDb((db) => deleteProducts(db, [p.id]));
+    }
+  });
+
+  test('keyboard: the strip is one tab stop and the arrow keys move between selectable days', async ({ page }) => {
+    await page.goto('/');
+    const radios = page.getByRole('radio');
+    const enabled = await radios.evaluateAll((els) => els.filter((e) => e.getAttribute('aria-disabled') !== 'true').map((e) => e.dataset.day));
+    expect(enabled.length).toBeGreaterThan(1);
+    await page.locator(`[data-day="${enabled[0]}"]`).focus();
+    await page.keyboard.press('ArrowLeft'); // RTL: next day is to the left
+    await expect(page.locator(`[data-day="${enabled[1]}"]`)).toBeFocused();
+    await expect(page.locator(`[data-day="${enabled[1]}"]`)).toHaveAttribute('aria-checked', 'true');
+    expect(await radios.evaluateAll((els) => els.filter((e) => e.tabIndex === 0).length)).toBe(1);
+  });
+
+  test('product photo: rendered from the server-built Storage URL with Yuval alt text; placeholder when none', async ({ page }) => {
+    // Storage is not in the local stack: the browser request is answered here.
+    // Real serving from the product-photos bucket is DID NOT RUN.
+    const p = await withDb(async (db) => {
+      const prod = await insertProduct(db);
+      await db.query(`INSERT INTO product_photos (product_id, storage_path, alt_text, position) VALUES ($1, 'qa/p.png', 'עוגה לבדיקה', 0)`, [prod.id]);
+      return prod;
+    });
+    const bare = await withDb((db) => insertProduct(db));
+    try {
+      await page.route('**/storage/v1/object/public/product-photos/**', (route) => route.fulfill({ contentType: 'image/png', body: PNG_1PX }));
+      await page.goto('/');
+      const img = page.locator(`[data-product-id="${p.id}"] img`);
+      await expect(img).toHaveAttribute('alt', 'עוגה לבדיקה');
+      await expect(img).toHaveAttribute('src', /\/storage\/v1\/object\/public\/product-photos\/qa\/p\.png$/);
+      await img.scrollIntoViewIfNeeded();
+      await expect.poll(() => img.evaluate((el) => el.naturalWidth)).toBe(1);
+      await expect(page.locator(`[data-product-id="${bare.id}"]`)).toContainText('תמונה תגיע בקרוב');
+    } finally {
+      await withDb((db) => deleteProducts(db, [p.id, bare.id]));
+    }
+  });
+
+  test('390px screenshots, light and dark, for the rendered-Hebrew check', async ({ page }) => {
+    for (const scheme of ['light', 'dark']) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto('/');
+      await page.evaluate(() => document.fonts.ready);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      await page.screenshot({ path: join(SCREENS, `catalog-${scheme}.png`), fullPage: true });
+    }
+  });
+});
