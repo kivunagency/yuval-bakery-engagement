@@ -18,12 +18,20 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
     // The delivery list carries customers' names, phones and addresses
-    // (SEC-016): no Referer ever leaves it (a later matching rule wins).
+    // (SEC-016): no Referer ever leaves it. Order pages and their API carry a
+    // capability token in the URL: no Referer to Bit/PayBox or anyone else, no
+    // indexing (SEC-003). Listed after the catch-all so these rules win.
     const noReferrer = [{ key: 'Referrer-Policy', value: 'no-referrer' }];
+    const orderHeaders = [
+      { key: 'Referrer-Policy', value: 'no-referrer' },
+      { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+    ];
     return [
       { source: '/:path*', headers: securityHeaders },
       { source: '/admin/delivery', headers: noReferrer },
       { source: '/api/admin/delivery-list', headers: noReferrer },
+      { source: '/order/:path*', headers: orderHeaders },
+      { source: '/api/orders/:path*', headers: orderHeaders },
     ];
   },
 };

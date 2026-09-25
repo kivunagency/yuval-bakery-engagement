@@ -42,3 +42,24 @@ export function jerusalemInstant(isoDate: string, hhmm: string): Date {
   const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'));
   return new Date(guess - (asUtc - guess));
 }
+
+/** Lead time (BRIEF, final): hours before the start of the chosen slot. */
+export const LEAD_TIME_HOURS = 24;
+
+/**
+ * True when a slot starting at `hhmm` (Jerusalem wall clock) on `isoDate` is
+ * at least `leadHours` real hours after `now`. Same rule as
+ * fn_slot_meets_lead_time in the DB, which enforces it at order insert
+ * (trg_orders_lead_time); parity is tested on the shared cases in
+ * qa/db/slot-lead-time.cases.json. This copy only greys out slots on screen.
+ */
+export function slotMeetsLeadTime(isoDate: string, hhmm: string, now: Date, leadHours: number = LEAD_TIME_HOURS): boolean {
+  return jerusalemInstant(isoDate, hhmm).getTime() >= now.getTime() + leadHours * 3600 * 1000;
+}
+
+const hhmmFmt = new Intl.DateTimeFormat('en-GB', { timeZone: BUSINESS_TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+/** HH:MM in Jerusalem at the given instant. */
+export function jerusalemHhmm(at: Date): string {
+  return hhmmFmt.format(at);
+}

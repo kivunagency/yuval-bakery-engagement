@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, earliestDeliveryDate, jerusalemDate, jerusalemInstant } from '@/lib/shared/time/jerusalem';
+import { addDays, earliestDeliveryDate, jerusalemDate, jerusalemHhmm, jerusalemInstant, slotMeetsLeadTime } from '@/lib/shared/time/jerusalem';
+import slotCases from '../qa/db/slot-lead-time.cases.json';
 
 describe('Asia/Jerusalem day boundaries', () => {
   it('23:30 UTC is already the next day in Jerusalem', () => {
@@ -28,5 +29,17 @@ describe('earliest delivery date (24h lead time, Asia/Jerusalem)', () => {
   it.each(cases)('at %s: business date %s, earliest delivery %s', (at, day, earliest) => {
     expect(jerusalemDate(new Date(at))).toBe(day);
     expect(earliestDeliveryDate(new Date(at))).toBe(earliest);
+  });
+});
+
+// api-003: slot-level lead time. Same table as qa/db/slot-lead-time.test.mjs,
+// which runs it against fn_slot_meets_lead_time (the rule the DB enforces).
+describe('slot lead time (24 real hours before the slot start, Asia/Jerusalem)', () => {
+  it.each(slotCases.cases as [string, string, string, boolean, string][])('at %s, slot %s %s: %s (%s)', (at, day, start, ok) => {
+    expect(slotMeetsLeadTime(day, start, new Date(at))).toBe(ok);
+  });
+  it('formats a Jerusalem wall-clock time for the hold message', () => {
+    expect(jerusalemHhmm(new Date('2026-09-26T10:40:00Z'))).toBe('13:40');
+    expect(jerusalemHhmm(new Date('2026-12-01T22:05:00Z'))).toBe('00:05');
   });
 });

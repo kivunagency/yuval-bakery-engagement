@@ -110,3 +110,10 @@ when reached), `email_daily_customer_cap` (60, customer mail stops so admin
 notifications keep room), `email_per_recipient_daily_cap` (3 per customer address).
 The same 80/100 alert must also be set in Resend's own dashboard when Yuval
 creates the account (infra-003).
+## Checkout settings (api-003)
+
+| What | Where | Notes |
+|---|---|---|
+| Delivery/pickup time slots | table `time_slots` (start, end, Asia/Jerusalem) | None ship in the migration (Yuval's hours are open); `seed.sql` has synthetic ones. The first active start is copied into `app_settings.earliest_slot_time` by a trigger: do not edit that key by hand. |
+| Bit / PayBox links | `app_settings` `payment_link_bit`, `payment_link_paybox` | JSON null until set; shown only if https on the host allowlist in `lib/shared/payment/links.ts` (UNVERIFIED hosts). Read through `fn_payment_link_settings()` (service role). |
+| Order creation | `POST /api/orders` -> `fn_create_standard_order` (service role only) | The client never sends an amount; the DB prices, reserves and checks the slot lead time. |

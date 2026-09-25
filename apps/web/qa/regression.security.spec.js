@@ -9,7 +9,6 @@ const { localEnv } = require('./helpers/env');
 // deliberate decision: update this list in the same PR, with the reason.
 const ANON_EXECUTE_ALLOWLIST = [
   'fn_business_date', // blindspot-002: day floor for the day picker
-  'fn_create_standard_order', // guest checkout (api-003 may move it server-side only)
   'fn_earliest_delivery_date', // blindspot-002
   'fn_lookup_order_by_phone_and_number', // US-0d, rate limited in the DB
   'fn_public_day_availability', // api-002, states only
