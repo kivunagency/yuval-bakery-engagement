@@ -26,6 +26,9 @@ never reported as passed.
 | Admin login and TOTP are rate limited: 5 failures per IP and 20 per account per 15 min (`app_settings` `admin_auth_*`), fail closed if the DB is unreachable | `fn_admin_auth_attempt_begin/finish` (service_role only, hashes only) | `regression.admin.spec.js` "rate limit"; fail-closed branch: DID NOT RUN | PASSED (limit), DID NOT RUN (DB-down branch) |
 | Admin logins, TOTP verify, MFA enrolment and sign-out are in `audit_log`; enrolment stamps `admins.mfa_enrolled_at` (SEC-017) | `fn_admin_record_auth_event` (actor = `auth.uid()`) | `regression.admin.spec.js` "first login" reads `audit_log` | PASSED |
 | Sign-out is global (every device) (SEC-013) | `adminSignOut()`: `signOut({ scope: 'global' })` | `regression.admin.spec.js` (session gone after sign-out); other devices: DID NOT RUN | PASSED (this device) |
+| `PATCH /api/admin/capacity/[date]` (api-009): aal2 admin only, same-Origin only, Zod contract (`lib/shared/contracts/capacity.ts`: whole minutes 0..1440, strict keys, real date); writes only through `fn_admin_set_day_capacity` as the admin's own JWT | route + `updateDayCapacity()` (`lib/server/capacity/admin-capacity.ts`, the handler the ops registry must reuse) | `regression.admin.spec.js` "PATCH ..." (401 anon and aal1, 403 no/foreign Origin, 400 per bad field, 200 + audit row with actor = the admin), `tests/capacity-contract.test.ts` | PASSED |
+| A day's total can never be set below what orders already reserve: 409 `below_reserved` with the reserved minutes, never a raw 500 | `fn_admin_set_day_capacity` locks the day (`FOR UPDATE`) and raises `capacity_total_below_reserved`; the ledger CHECK stays as the second line | `run.sh` T6-T8, `regression.admin.spec.js` (409 body, row unchanged) | PASSED |
+| A blackout day keeps its minutes and its existing orders; it only stops new reservations (`fn_reserve_capacity` requires `is_blackout = false`) | `fn_admin_set_day_capacity` | `regression.admin.spec.js` | PASSED |
 
 ## 2. Layers and what proves each one
 
@@ -50,6 +53,8 @@ never reported as passed.
 - Local stack keys are minted per run; nothing there resembles DEV or PROD secrets.
 
 ## 4. Change log
+
+- 2026-09-26 api-009: `PATCH /api/admin/capacity/[date]`. Migration `20260926020100_admin_set_day_capacity_errors.sql`: `fn_admin_set_day_capacity` (same signature and grants) raises `capacity_total_below_reserved` / `capacity_invalid_minutes` instead of a raw CHECK violation, marks the day `source = 'manual'` (new column, existing rows default to manual), audits previous values. Callers: the new route (via `updateDayCapacity`), `run.sh`, `qa/regression.spec.js`.
 
 - 2026-09-26 db-005 admin access: `/admin/login` (password, server action), `/admin/login/enroll` (first TOTP: QR + manual key), `/admin/login/verify`, global sign-out, admin shell with 4 bottom tabs and placeholder pages. Migration `20260926020000_admin_auth_attempts_and_events.sql` (rate limit table and functions, auth audit events).
 
