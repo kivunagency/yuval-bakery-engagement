@@ -293,3 +293,235 @@ test.describe('api-010 POST /api/unsubscribe (one click, no sign-in)', () => {
     expect(bad.headers().location).toContain('/unsubscribe/done?result=invalid');
   });
 });
+
+// ---------------------------------------------------------------------------
+// client-005: the screens
+// ---------------------------------------------------------------------------
+const { checkPublicBaseline } = require('./helpers/baseline');
+
+/** Registers through the real form and opens the mail link in the same browser. Returns the identity. */
+async function registerThroughUi(page, id = newIdentity()) {
+  await page.setExtraHTTPHeaders({ 'x-nf-client-connection-ip': randomIp() });
+  await page.goto('/register');
+  await page.getByLabel('שם מלא').fill(id.name);
+  await page.getByLabel('טלפון נייד').fill(`0${id.phone.slice(4, 6)}-${id.phone.slice(6)}`);
+  await page.getByLabel('אימייל').fill(id.email);
+  await page.getByLabel('סיסמה').fill(id.password);
+  await page.getByLabel('אני בן או בת 18 ומעלה').check();
+  await page.getByRole('button', { name: 'פתיחת חשבון' }).click();
+  await expect(page.getByTestId('register-check-email')).toBeVisible();
+  await page.goto(confirmPathFrom(await waitForMail(id.email)));
+  return id;
+}
+
+async function signInThroughUi(page, email, password) {
+  await page.goto('/account/login');
+  await page.getByLabel('אימייל').fill(email);
+  await page.getByLabel('סיסמה').fill(password);
+  await page.getByRole('button', { name: 'כניסה', exact: true }).click();
+}
+
+async function consentRows(userId) {
+  return withClient(async (db) => (await db.query('SELECT action, source, consent_version FROM consent_events WHERE customer_id = $1 ORDER BY created_at', [userId])).rows);
+}
+
+test.describe('client-005 registration screen', () => {
+  test('/register baseline: RTL, CSP, 44px, no scroll at 390px, no console errors', async ({ page }) => {
+    await checkPublicBaseline(page, '/register', 'registration');
+  });
+
+  test('/register: optional, privacy notice before the first field, NO marketing checkbox, age declaration required', async ({ page }) => {
+    await page.goto('/register');
+    await expect(page.getByTestId('registration-optional')).toContainText('לא חובה');
+    await expect(page.getByTestId('registration-optional').getByRole('link')).toHaveAttribute('href', '/');
+    const notice = page.getByTestId('privacy-notice-at-collection');
+    await expect(notice).toHaveAttribute('data-context', 'registration');
+    // DOM order: the notice precedes the first personal-data input.
+    const before = await page.evaluate(() => {
+      const n = document.querySelector('[data-testid="privacy-notice-at-collection"]');
+      const first = document.querySelector('#reg-name');
+      return !!(n && first && n.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(before).toBe(true);
+    await expect(page.getByTestId('register-form').locator('input[type=checkbox]')).toHaveCount(1); // the age declaration only
+    await expect(page.getByLabel('אני בן או בת 18 ומעלה')).not.toBeChecked();
+    await expect(page.getByTestId('consent-later-note')).toBeVisible();
+
+    await page.getByLabel('שם מלא').fill('QA');
+    await page.getByLabel('טלפון נייד').fill('03-1234567');
+    await page.getByLabel('אימייל').fill(newIdentity().email);
+    await page.getByLabel('סיסמה').fill('short');
+    await page.getByRole('button', { name: 'פתיחת חשבון' }).click();
+    await expect(page.getByTestId('register-error')).toBeVisible();
+    await expect(page.locator('#reg-phone')).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#reg-age')).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  test('full flow: register, confirm from the mail, welcome with the unticked s.30A box, opt in with a birthday', async ({ page }) => {
+    const id = await registerThroughUi(page);
+    await expect(page).toHaveURL(/\/account\/welcome$/);
+    await checkPublicBaseline(page, '/account/welcome', 'registration-welcome');
+
+    const box = page.getByTestId('marketing-optin');
+    await expect(box).not.toBeChecked();
+    await expect(page.locator('#birthday-day')).toBeDisabled();
+    await expect(page.getByTestId('dates-purpose')).toContainText('רק כדי לשלוח לכם הטבה');
+    await expect(page.locator('label[for="marketing-registration"]')).toContainText('באימייל');
+    await expect(page.locator('label[for="marketing-registration"]')).toContainText('להסיר');
+
+    await box.check();
+    await expect(page.locator('#birthday-day')).toBeEnabled();
+    await page.locator('#birthday-day').selectOption('29');
+    await page.locator('#birthday-month').selectOption('2');
+    await page.getByRole('button', { name: 'שמירה' }).click();
+    await expect(page).toHaveURL(/\/account\?saved=preferences$/);
+    await expect(page.getByTestId('detail-birthday')).toContainText('29');
+    await expect(page.getByTestId('detail-marketing')).toContainText('כן');
+
+    const row = await customerRow(id.email);
+    expect(row).toMatchObject({ marketing_opt_in: true, marketing_consent_version: 'marketing-2026-10-v1', birthday_day: 29, birthday_month: 2 });
+    expect(await consentRows(row.id)).toEqual([{ action: 'granted', source: 'registration', consent_version: 'marketing-2026-10-v1' }]);
+  });
+
+  test('skipping the choice records nothing: no consent event, no dates', async ({ page }) => {
+    const id = await registerThroughUi(page);
+    await page.getByTestId('preferences-skip').click();
+    await expect(page).toHaveURL(/\/account$/);
+    const row = await customerRow(id.email);
+    expect(row.marketing_opt_in).toBe(false);
+    expect(await consentRows(row.id)).toEqual([]);
+  });
+
+  test('saving with the box unticked stores no dates even if someone sends them', async ({ page }) => {
+    const id = await registerThroughUi(page);
+    // Force-enable the disabled date fields and submit without consent.
+    await page.evaluate(() => document.querySelectorAll('fieldset').forEach((f) => (f.disabled = false)));
+    await page.locator('#birthday-day').selectOption('5');
+    await page.locator('#birthday-month').selectOption('5');
+    await page.getByRole('button', { name: 'שמירה' }).click();
+    await expect(page).toHaveURL(/\/account\?saved=preferences$/);
+    expect(await customerRow(id.email)).toMatchObject({ marketing_opt_in: false, birthday_day: null });
+  });
+});
+
+test.describe('client-005 account page', () => {
+  test('signed out: /account, /account/welcome and /account/complete go to sign-in', async ({ page }) => {
+    for (const path of ['/account', '/account/welcome', '/account/complete']) {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/account\/login$/);
+    }
+    await checkPublicBaseline(page, '/account/login', 'account-login');
+  });
+
+  test('shows everything stored (s.13), edits phone (s.14), withdraws consent which erases dates, history listed', async ({ page }) => {
+    const id = await registerThroughUi(page);
+    await page.getByTestId('marketing-optin').check();
+    await page.locator('#anniversary-day').selectOption('14');
+    await page.locator('#anniversary-month').selectOption('6');
+    await page.getByRole('button', { name: 'שמירה' }).click();
+    await expect(page).toHaveURL(/\/account\?saved=preferences$/);
+    await checkPublicBaseline(page, '/account', 'account');
+
+    const details = page.getByTestId('account-details');
+    await expect(details).toContainText(id.name);
+    await expect(details).toContainText(id.email);
+    await expect(details).toContainText('privacy-2026-10-v1');
+    await expect(page.getByTestId('detail-anniversary')).toContainText('14');
+    await expect(page.getByTestId('orders-empty')).toBeVisible();
+
+    const newPhone = `+97250${crypto.randomInt(1000000, 9999999)}`;
+    await page.locator('#profile-phone').fill(`0${newPhone.slice(4, 6)}${newPhone.slice(6)}`);
+    await page.getByRole('button', { name: 'שמירת הפרטים' }).click();
+    await expect(page.getByText('הפרטים נשמרו.')).toBeVisible();
+    expect((await customerRow(id.email)).phone).toBe(newPhone);
+
+    await page.getByTestId('marketing-optin').uncheck();
+    await page.getByRole('button', { name: 'שמירה', exact: true }).click();
+    await expect(page.getByTestId('preferences-saved')).toBeVisible();
+    const row = await customerRow(id.email);
+    expect(row).toMatchObject({ marketing_opt_in: false, anniversary_day: null, anniversary_month: null });
+    expect((await consentRows(row.id)).map((e) => `${e.action}/${e.source}`)).toEqual(['granted/registration', 'withdrawn/profile']);
+    await page.reload();
+    await expect(page.getByTestId('consent-history').locator('li')).toHaveCount(2);
+    await expect(page.getByTestId('detail-anniversary')).toContainText('לא נמסר');
+  });
+
+  test('sign out, uniform sign-in errors, sign in, and a customer is not let into /admin', async ({ page }) => {
+    const id = await registerThroughUi(page);
+    await page.goto('/account');
+    await page.getByTestId('sign-out').click();
+    await expect(page).toHaveURL(/\/account\/login\?notice=signed_out$/);
+
+    await page.setExtraHTTPHeaders({ 'x-nf-client-connection-ip': randomIp() });
+    await signInThroughUi(page, id.email, 'wrong-password-123');
+    const wrongPassword = await page.getByTestId('signin-error').textContent();
+    await signInThroughUi(page, newIdentity().email, 'wrong-password-123');
+    expect(await page.getByTestId('signin-error').textContent()).toBe(wrongPassword);
+
+    await signInThroughUi(page, id.email, id.password);
+    await expect(page).toHaveURL(/\/account$/);
+    await page.goto('/admin');
+    await expect(page).toHaveURL(/\/admin\/login$/);
+  });
+
+  test('sign-in rate limit: 5 failures per IP, then refused even with the right password', async ({ page }) => {
+    const c = await createConfirmedCustomer();
+    await page.setExtraHTTPHeaders({ 'x-nf-client-connection-ip': randomIp() });
+    for (let i = 0; i < 5; i++) {
+      await signInThroughUi(page, newIdentity().email, 'wrong-password-123');
+      await expect(page.getByTestId('signin-error')).toHaveText('האימייל או הסיסמה שגויים.');
+    }
+    await signInThroughUi(page, c.email, c.password);
+    await expect(page.getByTestId('signin-error')).toContainText('יותר מדי ניסיונות');
+  });
+
+  test('phone already taken: confirmed user completes details with another phone', async ({ page }) => {
+    const owner = await createConfirmedCustomer();
+    const id = { ...newIdentity(), phone: owner.phone };
+    await registerThroughUi(page, id);
+    await expect(page).toHaveURL(/\/account\/complete\?reason=phone_taken$/);
+    await expect(page.getByTestId('complete-phone-taken')).toBeVisible();
+    await expect(page.getByTestId('privacy-notice-at-collection')).toBeVisible();
+    await checkPublicBaseline(page, '/account/complete?reason=phone_taken', 'account-complete');
+    await page.getByLabel('שם מלא').fill('QA אחרת');
+    await page.getByLabel('טלפון נייד').fill(owner.phone);
+    await page.getByLabel('אני בן או בת 18 ומעלה').check();
+    await page.getByRole('button', { name: 'סיום' }).click();
+    await expect(page.getByTestId('complete-error')).toContainText('כבר שייך');
+    await expect(page.getByLabel('שם מלא')).toHaveValue('QA אחרת'); // typed values survive an error
+    const other = `+97250${crypto.randomInt(1000000, 9999999)}`;
+    await page.getByLabel('טלפון נייד').fill(other);
+    await page.getByRole('button', { name: 'סיום' }).click();
+    await expect(page).toHaveURL(/\/account\/welcome$/);
+    expect(await customerRow(id.email)).toMatchObject({ phone: other, name: 'QA אחרת' });
+  });
+
+  test('footer links to the account on every public page', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('site-footer').getByRole('link', { name: 'החשבון שלי' })).toHaveAttribute('href', '/account');
+  });
+});
+
+test.describe('client-005 /unsubscribe', () => {
+  test('opening the link changes nothing; the one button unsubscribes; baseline on both pages', async ({ page }) => {
+    const c = await createConfirmedCustomer();
+    await c.client.rpc('fn_set_marketing_consent', { p_customer_id: c.userId, p_action: 'granted', p_consent_version: 'marketing-2026-10-v1', p_source: 'profile' });
+    const token = (await customerRow(c.email)).unsubscribe_token;
+
+    await checkPublicBaseline(page, `/unsubscribe?token=${token}`, 'unsubscribe');
+    expect((await customerRow(c.email)).marketing_opt_in).toBe(true);
+    await page.getByRole('button', { name: 'הסירו אותי' }).click();
+    await expect(page).toHaveURL(/\/unsubscribe\/done\?result=done$/);
+    await expect(page.getByTestId('unsubscribe-result')).toHaveAttribute('data-result', 'done');
+    expect((await customerRow(c.email)).marketing_opt_in).toBe(false);
+    await checkPublicBaseline(page, '/unsubscribe/done?result=done', 'unsubscribe-done');
+  });
+
+  test('a missing or malformed token shows no button', async ({ page }) => {
+    for (const q of ['', '?token=abc']) {
+      await page.goto(`/unsubscribe${q}`);
+      await expect(page.getByTestId('unsubscribe-missing')).toBeVisible();
+      await expect(page.getByTestId('unsubscribe-form')).toHaveCount(0);
+    }
+  });
+});
