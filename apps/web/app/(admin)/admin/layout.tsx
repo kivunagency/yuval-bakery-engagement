@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { requireAdminPage } from '@/lib/server/auth/admin';
 import { signOutAction } from '@/app/(admin-auth)/admin/login/actions';
 import { AdminTabs } from '@/components/admin/AdminTabs';
+import { ScopedIntlProvider } from '@/components/i18n/ScopedIntlProvider';
 import '@/styles/admin.css';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -15,6 +16,7 @@ export default async function AdminShellLayout({ children }: { children: React.R
   await requireAdminPage();
   const t = await getTranslations();
   return (
+    <ScopedIntlProvider scope="admin">
     <div className="admin-shell">
       <header className="admin-appbar">
         <p className="admin-brand">
@@ -32,5 +34,6 @@ export default async function AdminShellLayout({ children }: { children: React.R
       </main>
       <AdminTabs />
     </div>
+    </ScopedIntlProvider>
   );
 }

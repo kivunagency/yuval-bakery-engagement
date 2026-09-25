@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
-import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
 import '@fontsource/ibm-plex-sans-hebrew/400.css';
 import '@fontsource/ibm-plex-sans-hebrew/500.css';
@@ -8,6 +7,7 @@ import '@fontsource/ibm-plex-sans-hebrew/600.css';
 import '@fontsource/ibm-plex-sans-hebrew/700.css';
 import '@fontsource/karantina/700.css';
 import './globals.css';
+import { ScopedIntlProvider } from '@/components/i18n/ScopedIntlProvider';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('business.details');
@@ -37,9 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a className="skip-link" href="#main">
           {t('skip_to_content')}
         </a>
-        <NextIntlClientProvider>
-          {children}
-        </NextIntlClientProvider>
+        <ScopedIntlProvider scope="public">{children}</ScopedIntlProvider>
       </body>
     </html>
   );
