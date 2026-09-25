@@ -1,10 +1,10 @@
 import 'server-only';
 import { z } from 'zod';
-import { headers } from 'next/headers';
 import { createUserClient } from '@/lib/server/supabase/server';
 import { serviceClient } from '@/lib/server/supabase/service';
 import { callRpc } from '@/lib/server/supabase/rpc';
 import { getAdminSession } from '@/lib/server/auth/admin';
+import { clientIp } from '@/lib/server/http/client-ip';
 import { adminLoginInput, adminTotpInput } from '@/lib/shared/contracts/admin-auth';
 
 // Admin login flow (db-005, SEC-002, SEC-013):
@@ -20,16 +20,8 @@ export type AdminLoginStep = 'password' | 'enrol' | 'totp' | 'done';
 export type AdminAuthError = 'invalid' | 'rate_limited' | 'unavailable' | 'invalid_code' | 'session_expired';
 export type AdminAuthResult = { ok: true; next: AdminLoginStep } | { ok: false; error: AdminAuthError };
 
-/** Client IP for rate limiting. Netlify sets x-nf-client-connection-ip itself. */
-export async function clientIp(): Promise<string> {
-  const h = await headers();
-  return (
-    h.get('x-nf-client-connection-ip') ??
-    h.get('x-real-ip') ??
-    h.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    'unknown'
-  ).slice(0, 64);
-}
+// Moved to lib/server/http/client-ip.ts (shared with the public write routes).
+export { clientIp };
 
 /** Where the signed-in user (if any) stands in the admin login flow. */
 export async function adminLoginStep(): Promise<AdminLoginStep> {

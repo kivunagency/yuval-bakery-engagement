@@ -622,5 +622,57 @@
       "no_window": "No time set",
       "pii_footer": "Customers' personal information. Delete or shred at the end of the delivery day."
     }
+  },
+  "custom_cake": {
+    "meta_title": "Custom cake request",
+    "title": "Custom cake",
+    "back": "Back to the catalog",
+    "intro": "Tell us what cake you have in mind. We review every request ourselves, set a price and confirm the day. Nothing is charged and no day is held until we approve.",
+    "form": {
+      "contact_legend": "Your details",
+      "name": "Name",
+      "phone": "Mobile phone",
+      "phone_hint": "We will get back to you on this number with a price and a confirmation.",
+      "email": "Email (optional)",
+      "email_hint": "If you fill it in, we will send the confirmation there too.",
+      "whatsapp_ok": "You may reply to me on WhatsApp",
+      "cake_legend": "The cake",
+      "date": "For which day?",
+      "date_hint": "At least 24 hours ahead. The day is not held yet: we confirm it when we approve the request.",
+      "inscription": "Text on the cake (optional)",
+      "inscription_count": "{used} of {max} characters",
+      "notes": "Anything else we should know (optional)",
+      "photos_legend": "Inspiration photos",
+      "upload_photo": "Inspiration photos (optional)",
+      "photos_hint": "Up to {max} photos, JPG, PNG or WebP, up to {mb}MB each. Only we see them, and they are never published.",
+      "upload_rights": "The photos I upload are mine, or I have the right to share them for this order (required).",
+      "no_hold": "Sending the request costs nothing and holds no day. You pay only after we confirm a price.",
+      "submit": "Send the request",
+      "sending": "Sending...",
+      "errors": {
+        "name": "Please enter a name, up to 60 characters.",
+        "phone": "Please enter an Israeli mobile number starting with 05.",
+        "email": "This email address is not valid.",
+        "desiredDate": "Please choose a day.",
+        "too_soon": "This day is too close. Requests need at least 24 hours.",
+        "inscription": "Up to 120 characters.",
+        "notes": "Up to 500 characters.",
+        "photos": "Up to 3 photos, JPG, PNG or WebP, up to 10MB each.",
+        "uploadRightsConfirmed": "Please confirm the rights to the photos to send the request.",
+        "rate_limited": "Several requests were already sent from this device or number. Please try again in an hour, or contact us on WhatsApp.",
+        "unavailable": "We could not send the request right now. Please try again in a moment, or contact us on WhatsApp."
+      }
+    },
+    "submitted_confirmation": "Request sent",
+    "sent": {
+      "body": "We received your cake request. We will review it, set a price and get back to you by phone or WhatsApp.",
+      "steps_title": "What happens now",
+      "step_review": "We check the request and the day you asked for.",
+      "step_price": "If we can make it, we send you a price and a payment link.",
+      "step_hold": "The day is held only after we approve, and only then do you pay.",
+      "photos_unavailable": "The photos did not upload. You can send them to us on WhatsApp.",
+      "photos_partial": "Some of the photos did not upload. You can send them to us on WhatsApp.",
+      "back": "Back to the catalog"
+    }
   }
 }

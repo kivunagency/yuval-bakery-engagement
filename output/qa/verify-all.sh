@@ -42,6 +42,7 @@ if [ -n "${SMOKE_BASE_URL:-}" ]; then
 else
   record "smoke.spec.js (live url)" "DID NOT RUN (SMOKE_BASE_URL not set, nothing deployed yet)"
 fi
+record "Storage server in the local stack (photo upload E2E)" "DID NOT RUN (supabase/storage not in the local stack yet)"
 record "job-001 scheduled on Netlify" "DID NOT RUN (no Netlify site yet, infra-002)"
 
 echo; echo "================ verify-all ================"
