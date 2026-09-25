@@ -44,3 +44,25 @@ qa/                  Playwright regression + smoke
 - Admin actions use `createUserClient()` so the DB sees the admin's own aal2 JWT; never pass an admin id.
 - No second "is there room" check in app code: capacity lives in `fn_reserve_capacity`.
 - Every new route goes into `qa/regression.spec.js` in the same PR, and every behaviour change updates `output/qa/SYSTEM-CONTRACT.md`.
+
+## Public business settings (compliance-002, US-0b)
+
+Yuval edits these `app_settings` keys (admin screen: a later task). Each is a
+JSON string, or JSON `null` while unknown; the site then shows a visible
+placeholder such as `[שם העסק]`. anon reads them only via `fn_public_site_settings()`.
+
+| Key | Shown where |
+|---|---|
+| `business_name` | footer, `/business`, checkout summary |
+| `business_owner_name` | `/business` |
+| `business_registration_number` | `/business`, checkout summary, order confirmation (status wording from `vat_status`) |
+| `business_address` | `/business` (home vs PO box: open legal question) |
+| `business_phone` | contact block (tap to call), `/business` |
+| `business_whatsapp` | contact block (wa.me) |
+| `business_email` | `/business`, privacy notice |
+
+Reusable pieces for other screens: `components/compliance` (`BusinessDetails`,
+`CancellationExemptionNotice`), `components/contact-block` (`ContactBlock`, pass
+`orderNumber` on order pages), `components/price` (`PriceWithVat`, `VatLabel`),
+`lib/shared/compliance/versions.ts` (`TEXT_VERSIONS`: pass these to the order
+functions), `lib/server/compliance/site-settings.ts` (`getPublicSiteSettings`).
