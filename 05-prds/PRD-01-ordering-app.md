@@ -1,7 +1,7 @@
 ---
 client: yuval-bakery
 doc: PRD-01-ordering-app
-status: draft
+status: approved (Ran, 2026-09-25)
 created: 2026-09-25
 owner: maya
 links: [[agents/maya]] [[agents/ran]] [[yuval-bakery]]
