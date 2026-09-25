@@ -1,0 +1,18 @@
+{
+  "app": {
+    "skip_to_content": "Skip to main content",
+    "coming_soon": "Online ordering is being prepared. Meanwhile, order by phone or WhatsApp."
+  },
+  "business": {
+    "details": {
+      "name": "[Business name]"
+    }
+  },
+  "errors": {
+    "not_found_title": "Page not found",
+    "not_found_body": "The page you were looking for does not exist.",
+    "back_home": "Back to the home page",
+    "generic_title": "Something went wrong",
+    "retry": "Try again"
+  }
+}

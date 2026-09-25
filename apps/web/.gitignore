@@ -1,0 +1,5 @@
+.local-stack/
+test-results/
+playwright-report/
+.next/
+tsconfig.tsbuildinfo

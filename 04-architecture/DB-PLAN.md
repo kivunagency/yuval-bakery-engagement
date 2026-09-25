@@ -10,6 +10,12 @@ links: [[agents/dba]] [[agents/rotem]] [[agents/erez]] [[agents/alex]] [[yuval-b
 
 # DB-PLAN: YuvalBakery
 
+> Location note (scaffold, 2026-09-25): the migrations now live in
+> `apps/web/supabase/migrations/` (was `output/db/migrations/`), `indexes.sql`
+> became migration `20260925121100_indexes.sql`, `seed.sql` and the RLS
+> reference moved to `apps/web/supabase/`. Section 11 records the first run on
+> a Supabase-shaped stack.
+
 Engine: Supabase Postgres (ADR-001). DDD mode: on (domain-map.md exists). Table
 naming follows the aggregate roots in domain-map.md section 1.
 
@@ -620,3 +626,30 @@ valid evidence for this invariant.
 stack; Storage bucket policies.
 
 [[agents/dba]] [[agents/rotem]] [[agents/erez]] [[yuval-bakery]] [[compliance-schema-review]]
+
+## 11. First run on a Supabase-shaped stack (scaffold, 2026-09-25)
+
+Closes part of the "real Supabase local stack" item marked DID NOT RUN in
+sections 9 and 10.6. Stack: PostgreSQL 17.10, Supabase Auth v2.180.0 (its own
+`auth` schema migrations, real JWTs), PostgREST v12.2.3, extensions installed
+in schema `extensions` as on hosted Supabase (`apps/web/scripts/local-stack/`).
+
+- RED: `POST /rest/v1/rpc/fn_create_standard_order` as `anon` failed with
+  `function digest(text, unknown) does not exist`. Every SECURITY DEFINER
+  function pinned `search_path = public`; on Supabase pgcrypto is not in
+  `public`. The plain-postgres runs installed the extensions into `public`,
+  so they never saw it. Every guest checkout would have failed in PROD.
+- Fix: `20260925121200_function_search_path_extensions.sql` sets
+  `search_path = public, extensions, pg_temp` on the 31 affected functions.
+  Config only: no body, signature, grant or owner change.
+- GREEN: the same call returned a `payment_pending` order; the ledger moved
+  by exactly the product cost x quantity (4 oven / 6 work minutes);
+  `anon` reading `orders` directly returned `[]`.
+- Real JWT shape for aal2: an admin created through the Auth admin API,
+  TOTP factor enrolled and verified through Auth, gets `is_admin_aal2() = true`
+  and can call `fn_admin_set_day_capacity`; the same admin without MFA
+  (`aal1`) gets `admin_aal2_required`. Automated in
+  `apps/web/qa/regression.spec.js` ("auth chain").
+
+Still DID NOT RUN: hosted Supabase itself (accounts not created yet),
+Storage buckets and their policies.
