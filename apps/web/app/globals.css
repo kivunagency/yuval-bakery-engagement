@@ -24,7 +24,8 @@
     --ink: #ecedef; --ink-2: #a3a8b1; --line: #2e3138; --line-strong: #6b7079;
     --accent: #c42a5a; --accent-press: #a3123f; --accent-soft: #3a1824; --accent-soft-ink: #f37a9e;
     --ok: #6fd19c; --warn: #f2c274; --danger: #ff8a80;
-    --day-full-bg: #33363d; --day-full-ink: #b7bbc3;
+    --ok-bg: #16301f; --warn-bg: #33270f; --danger-bg: #3a1a18;
+    --day-full-bg: #33363d; --day-full-ink: #b7bbc3; --day-closed-bg: #1c1e23; --hatch: #3a3d44;
     --focus: #ecedef;
   }
 }
@@ -50,6 +51,10 @@ h2 { font-size: 16px; line-height: 1.4; }
 .num { font-variant-numeric: tabular-nums; }
 /* Order numbers, phones, codes: isolated LTR inside RTL text (design-tokens.md, RTL section). */
 .ltr { direction: ltr; unicode-bidi: isolate; }
+.visually-hidden {
+  position: absolute; inline-size: 1px; block-size: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
 
 /* Focus ring in ink color, 3px, offset 2px, never blue (design-tokens.md). */
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }

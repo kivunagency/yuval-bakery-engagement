@@ -1,7 +1,6 @@
 {
   "app": {
-    "skip_to_content": "דילוג לתוכן הראשי",
-    "coming_soon": "ההזמנות באתר בהכנה. בינתיים אפשר להזמין בטלפון או בוואטסאפ."
+    "skip_to_content": "דילוג לתוכן הראשי"
   },
   "business": {
     "details": {
@@ -14,5 +13,83 @@
     "back_home": "חזרה לדף הבית",
     "generic_title": "משהו השתבש",
     "retry": "לנסות שוב"
+  },
+  "day_state": {
+    "weekday_short": {
+      "sun": "א׳",
+      "mon": "ב׳",
+      "tue": "ג׳",
+      "wed": "ד׳",
+      "thu": "ה׳",
+      "fri": "ו׳",
+      "sat": "ש׳"
+    },
+    "weekday_long": {
+      "sun": "יום ראשון",
+      "mon": "יום שני",
+      "tue": "יום שלישי",
+      "wed": "יום רביעי",
+      "thu": "יום חמישי",
+      "fri": "יום שישי",
+      "sat": "שבת"
+    },
+    "word": {
+      "open": "פנוי",
+      "limited": "מעט",
+      "full": "מלא",
+      "closed": "סגור",
+      "selected": "נבחר"
+    },
+    "aria": {
+      "open": "יש מקום",
+      "limited": "נשאר מעט מקום",
+      "full": "מלא, אין מקום בתנור",
+      "closed": "סגור, יום חופש",
+      "too_soon": "מוקדם מדי, מזמינים לפחות 24 שעות מראש",
+      "selected": "נבחר"
+    },
+    "label": "{weekday} {date}, {state}",
+    "day_short": "יום {weekday} {date}",
+    "day_long": "{weekday} {date}"
+  },
+  "catalog": {
+    "title": "קטלוג",
+    "products_heading": "המוצרים",
+    "day_question": "לאיזה יום?",
+    "filter_none": "בחרו יום, ונראה לכם מה עוד נכנס לתנור באותו יום.",
+    "filter_day": "מוצג מה שנכנס לתנור של <b>{day}</b>",
+    "choose_day_first": "קודם בוחרים יום, ואז מוסיפים לסל.",
+    "add": "הוספה",
+    "unavailable": "לא זמין",
+    "out_of_stock": "אזל השבוע",
+    "does_not_fit": "לא נכנס ב{day}",
+    "does_not_fit_until": "לא נכנס ב{day}, פנוי מ{next}",
+    "allergens_label": "אלרגנים",
+    "no_known_allergens": "ללא אלרגנים ידועים",
+    "may_contain": "עלול להכיל {allergen}",
+    "allergen": {
+      "gluten": "גלוטן",
+      "eggs": "ביצים",
+      "dairy": "חלב",
+      "nuts": "אגוזים",
+      "almonds": "שקדים",
+      "peanuts": "בוטנים",
+      "sesame": "שומשום",
+      "soy": "סויה"
+    },
+    "ingredients_label": "רכיבים",
+    "details_summary": "רכיבים ופרטים",
+    "price_incl_vat": "המחירים כוללים מע״מ",
+    "price_final": "המחירים סופיים",
+    "photo_placeholder": "תמונה תגיע בקרוב",
+    "cart_label": "סל, {count, plural, =0 {ריק} one {פריט אחד} other {# פריטים}}",
+    "added": "{name} נוסף לסל",
+    "empty": "עדיין אין מוצרים בקטלוג.",
+    "kitchen_notice": "[הצהרת אלרגנים של המטבח הביתי, הנוסח יגיע מיובל]",
+    "custom_cake": {
+      "title": "עוגה בהזמנה אישית",
+      "body": "כתבו מה תרצו על העוגה וצרפו תמונת השראה. המחיר נקבע אחרי שיובל רואה את הבקשה.",
+      "cta": "שליחת בקשה"
+    }
   }
 }

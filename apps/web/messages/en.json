@@ -1,7 +1,6 @@
 {
   "app": {
-    "skip_to_content": "Skip to main content",
-    "coming_soon": "Online ordering is being prepared. Meanwhile, order by phone or WhatsApp."
+    "skip_to_content": "Skip to main content"
   },
   "business": {
     "details": {
@@ -14,5 +13,83 @@
     "back_home": "Back to the home page",
     "generic_title": "Something went wrong",
     "retry": "Try again"
+  },
+  "day_state": {
+    "weekday_short": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "weekday_long": {
+      "sun": "Sunday",
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday"
+    },
+    "word": {
+      "open": "Open",
+      "limited": "Few left",
+      "full": "Full",
+      "closed": "Closed",
+      "selected": "Selected"
+    },
+    "aria": {
+      "open": "room available",
+      "limited": "only a little room left",
+      "full": "full, no room left in the oven",
+      "closed": "closed, day off",
+      "too_soon": "too soon, order at least 24 hours ahead",
+      "selected": "selected"
+    },
+    "label": "{weekday} {date}, {state}",
+    "day_short": "{weekday} {date}",
+    "day_long": "{weekday} {date}"
+  },
+  "catalog": {
+    "title": "Catalog",
+    "products_heading": "Products",
+    "day_question": "Which day?",
+    "filter_none": "Pick a day to see what still fits in the oven that day.",
+    "filter_day": "Showing what fits in the oven on <b>{day}</b>",
+    "choose_day_first": "Pick a day first, then add to the cart.",
+    "add": "Add",
+    "unavailable": "Unavailable",
+    "out_of_stock": "Sold out this week",
+    "does_not_fit": "Does not fit on {day}",
+    "does_not_fit_until": "Does not fit on {day}, available from {next}",
+    "allergens_label": "Allergens",
+    "no_known_allergens": "No known allergens",
+    "may_contain": "May contain {allergen}",
+    "allergen": {
+      "gluten": "Gluten",
+      "eggs": "Eggs",
+      "dairy": "Milk",
+      "nuts": "Nuts",
+      "almonds": "Almonds",
+      "peanuts": "Peanuts",
+      "sesame": "Sesame",
+      "soy": "Soy"
+    },
+    "ingredients_label": "Ingredients",
+    "details_summary": "Ingredients and details",
+    "price_incl_vat": "Prices include VAT",
+    "price_final": "Prices are final",
+    "photo_placeholder": "Photo coming soon",
+    "cart_label": "Cart, {count, plural, =0 {empty} one {1 item} other {# items}}",
+    "added": "{name} added to the cart",
+    "empty": "No products in the catalog yet.",
+    "kitchen_notice": "[Home kitchen allergen statement, wording from Yuval]",
+    "custom_cake": {
+      "title": "Custom cake",
+      "body": "Write what you would like on the cake and attach an inspiration photo. The price is set after Yuval sees the request.",
+      "cta": "Send a request"
+    }
   }
 }
