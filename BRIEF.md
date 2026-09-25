@@ -45,11 +45,16 @@ The daily limit is **oven time and working time**, not a count per item. So capa
 - **Compliance (rotem)**: privacy notice at collection (s.11), defined retention, admin MFA, separate unticked marketing consent, business details under s.14C, prices incl. VAT and delivery cost before payment, cancellation-right exemption for perishable/custom food stated explicitly, allergens per product, IS 5568 (possible small-business exemption, amount UNVERIFIED). Rule 33 applies (public site).
 - **Scope (maya)**: riskiest assumptions: capacity model (now answered), Yuval keeping the app updated (answered: she commits to managing via the app), customers accepting pay-by-link without instant confirmation.
 
+## Decisions, 2026-09-25 (Ran)
+- WhatsApp: MVP = click-to-send prefilled message from the admin (free, manual). Automated WhatsApp API is v2.
+- Custom cakes: Yuval approves each one manually before payment and sets its price and its time cost on the day.
+- **Delivery pricing settings screen**: Yuval defines distance ranges and a fee per range (e.g. 0-5 km, 5-10 km), plus max distance. Fee shown before payment. Distance calculation method is an architecture decision (alex): any geocoding/routing API is metered, so it needs a cache and a spend cap + alert (Rule 30) from day one.
+- **Customer profiles + loyalty**: customers may register a profile; Yuval can send birthday and anniversary benefits, open punch cards (כרטיסיות הנחה) and run promotions. **Guest checkout must stay available** without registration.
+  - Compliance to design in (rotem's Mode A already flagged it): marketing messages need a separate, unticked opt-in (Communications Law s.30A); birthday/anniversary dates are extra PII, optional fields with a stated purpose; customer auth brings cyber-iam into scope.
+
 ## Open decisions
-1. WhatsApp notifications: automated (WhatsApp Cloud API, paid per conversation, needs Meta business verification) vs a free click-to-send link from the admin. Pricing to verify.
-2. Custom cake capacity: time estimate vs manual approval before payment.
-3. Delivery zones and fees.
+3. (superseded by the delivery settings screen above)
 4. Blackout days / working days.
 5. Business name, domain, עוסק status and number.
 6. Retention period for customer data (with accountant).
-7. Ran's answer #7 was left blank on 2026-09-25; ask what he meant to add.
+7. Ran's blank answer #7: assumed to be the profiles/loyalty + delivery-settings additions of 2026-09-25; confirm.
