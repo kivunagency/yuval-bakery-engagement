@@ -268,3 +268,158 @@ test.describe('PATCH /api/admin/capacity/[date] (api-009)', () => {
     expect(r.status()).toBe(401);
   });
 });
+
+test.describe('admin capacity screen (client-007)', () => {
+  // Calendar arithmetic on today's Jerusalem date (adding 24h steps drifts a day across DST).
+  const jlm = (offset) => {
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' }).format(new Date());
+    return new Date(Date.parse(`${today}T12:00:00Z`) + offset * 864e5).toISOString().slice(0, 10);
+  };
+  const weekdayOf = (d) => new Date(`${d}T12:00:00Z`).getUTCDay();
+  const HE_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+
+  /** A test order that holds minutes on `day` (inserted directly: the checkout path is not what is tested here). */
+  async function addOrder(day, status, oven, work) {
+    const n = Math.random().toString(36).slice(2, 8).toUpperCase();
+    await db(
+      `INSERT INTO orders (order_number, lookup_token_hash, lookup_token_expires_at, status, guest_name, guest_phone, fulfillment_type,
+         delivery_date, subtotal_displayed, total_displayed, oven_minutes_cost, work_minutes_cost, privacy_notice_version, terms_version,
+         cancellation_notice_version)
+       VALUES ($1, md5(random()::text), now() + interval '30 days', $2, 'QA', '+972500000009', 'pickup', $3, 100, 100, $4, $5, 'p', 't', 'c')`,
+      [`Q${n}`, status, day, oven, work],
+    );
+  }
+
+  test.afterAll(async () => {
+    // Leave no weekly pattern behind for other domains' tests.
+    await db("DELETE FROM capacity_day_ledger WHERE source = 'pattern' AND oven_minutes_reserved = 0 AND work_minutes_reserved = 0");
+    await db('DELETE FROM capacity_weekly_pattern');
+  });
+
+  test('day view: bar from the orders, sentence for screen readers, 409 shown in words, closed switch RTL', async ({ page }) => {
+    const errors = collectErrors(page);
+    const d = jlm(70 + Math.floor(Math.random() * 200));
+    await db('DELETE FROM orders WHERE delivery_date = $1', [d]);
+    await db('DELETE FROM capacity_day_ledger WHERE day = $1', [d]);
+    await db("INSERT INTO capacity_day_ledger (day, oven_minutes_total, work_minutes_total, source) VALUES ($1, 300, 420, 'manual')", [d]);
+    await addOrder(d, 'paid', 60, 90);
+    await addOrder(d, 'paid', 45, 100);
+    await addOrder(d, 'payment_pending', 30, 40);
+    await db('UPDATE capacity_day_ledger SET oven_minutes_reserved = 135, work_minutes_reserved = 230, oven_minutes_unpaid_reserved = 30, work_minutes_unpaid_reserved = 40 WHERE day = $1', [d]);
+
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    await page.goto(`/admin/capacity?day=${d}`);
+    const [, m, dom] = d.split('-').map(Number);
+    await expect(page.getByTestId('day-title')).toHaveText(`${HE_DAYS[weekdayOf(d)]} ${dom}.${m}`);
+    expect(await page.getByTestId('day-title').evaluate((el) => [getComputedStyle(el).fontFamily, getComputedStyle(el).fontSize])).toEqual([expect.stringContaining('Karantina'), '36px']);
+
+    const oven = page.getByTestId('capacity-oven');
+    await expect(oven.locator('svg')).toHaveAttribute('aria-hidden', 'true');
+    await expect(oven.locator('rect.admin-bar-seg')).toHaveCount(3);
+    await expect(oven.locator('rect.admin-bar-free')).toHaveCount(1);
+    await expect(page.getByTestId('capacity-oven-sentence')).toHaveText('3 הזמנות. נשארו 165 דק׳ תנור מתוך 300. 30 מהדקות שהוזמנו הן בהזמנות שעוד לא שולמו.');
+    await expect(page.getByTestId('capacity-work-sentence')).toHaveText('נשארו 190 דק׳ עבודה מתוך 420. 40 מהדקות שהוזמנו הן בהזמנות שעוד לא שולמו.');
+    await expect(page.getByTestId('day-source')).toHaveText('נקבע ידנית ליום הזה. הדפוס השבועי לא משנה אותו.');
+
+    // Closed-day switch: off = knob at inline-start (the right in RTL), on = inline-end.
+    const sw = page.getByRole('switch', { name: 'יום סגור (לא מקבלים הזמנות)' });
+    await expect(sw).toHaveAttribute('aria-checked', 'false');
+    const knob = () => sw.evaluate((el) => { const s = getComputedStyle(el, '::after'); return { right: s.right, left: s.left }; });
+    await expect.poll(async () => (await knob()).right).toBe('3px');
+    const box = await sw.boundingBox();
+    expect([Math.round(box?.width ?? 0), Math.round(box?.height ?? 0)]).toEqual([52, 44]);
+    await baseline(page, 'capacity-day', errors);
+
+    // Keyboard: the switch toggles with Space.
+    await sw.focus();
+    await page.keyboard.press('Space');
+    await expect(sw).toHaveAttribute('aria-checked', 'true');
+    await expect.poll(async () => (await knob()).right).toBe('23px');
+    await expect(page.getByTestId('blackout-warning')).toHaveText('יש ביום הזה 3 הזמנות. סגירת היום לא מבטלת אותן.');
+    await sw.click();
+
+    // Below what the orders booked: a clear sentence, nothing saved.
+    await page.getByTestId('day-oven').fill('100');
+    await page.getByRole('button', { name: 'שמירת היום' }).click();
+    await expect(page.getByTestId('day-message')).toHaveText('כבר הוזמנו ליום הזה 135 דק׳ תנור ו־230 דק׳ עבודה. אי אפשר לרדת מתחת לזה.');
+    await expect(page.getByTestId('day-message')).toHaveAttribute('role', 'alert');
+    expect((await db('SELECT oven_minutes_total FROM capacity_day_ledger WHERE day = $1', [d]))[0].oven_minutes_total).toBe(300);
+
+    // Not a number: stopped in the form.
+    await page.getByTestId('day-oven').fill('abc');
+    await page.getByRole('button', { name: 'שמירת היום' }).click();
+    await expect(page.getByTestId('day-message')).toHaveText('צריך מספר שלם של דקות, מ־0 עד 1440.');
+
+    // A valid change is saved through the API and shown after refresh.
+    await page.getByTestId('day-oven').fill('360');
+    await page.getByRole('button', { name: 'שמירת היום' }).click();
+    await expect(page.getByTestId('day-message')).toHaveText('נשמר.');
+    await expect(page.getByTestId('capacity-oven-sentence')).toContainText('נשארו 225 דק׳ תנור מתוך 360.');
+    expect((await db('SELECT oven_minutes_total, source FROM capacity_day_ledger WHERE day = $1', [d]))[0]).toEqual({ oven_minutes_total: 360, source: 'manual' });
+    await page.screenshot({ path: join(SCREENS, 'admin-capacity-saved.png'), fullPage: true });
+
+    // Day arrows.
+    await page.getByTestId('next-day').click();
+    await page.waitForURL(`**/admin/capacity?day=${new Date(Date.parse(`${d}T12:00:00Z`) + 864e5).toISOString().slice(0, 10)}`);
+    await page.getByTestId('prev-day').click();
+    await page.waitForURL(`**/admin/capacity?day=${d}`);
+  });
+
+  test('weekly pattern fills future days, never a hand-set day or below reserved; reset to pattern', async ({ page, baseURL }) => {
+    const errors = collectErrors(page);
+    // Three days inside the 60-day horizon, all on the same weekday.
+    const base = 21 + Math.floor(Math.random() * 7);
+    const [free, manual, busy] = [jlm(base), jlm(base + 7), jlm(base + 14)];
+    const wd = weekdayOf(free);
+    for (const x of [free, manual, busy]) {
+      await db('DELETE FROM orders WHERE delivery_date = $1', [x]);
+      await db('DELETE FROM capacity_day_ledger WHERE day = $1', [x]);
+    }
+    await db("INSERT INTO capacity_day_ledger (day, oven_minutes_total, work_minutes_total, source) VALUES ($1, 111, 222, 'manual')", [manual]);
+    await db("INSERT INTO capacity_day_ledger (day, oven_minutes_total, work_minutes_total, source, oven_minutes_reserved) VALUES ($1, 500, 500, 'pattern', 400)", [busy]);
+
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    await page.goto(`/admin/capacity?day=${free}`);
+    await expect(page.getByTestId('day-not-set')).toBeVisible();
+
+    // API contract first: 6 days, a duplicate weekday, no Origin.
+    const six = [0, 1, 2, 3, 4, 5].map((w) => ({ weekday: w, isWorkingDay: true, ovenMinutesTotal: 1, workMinutesTotal: 1 }));
+    expect((await page.request.put('/api/admin/capacity/pattern', { headers: { origin: baseURL ?? '' }, data: { days: six } })).status()).toBe(400);
+    expect((await page.request.put('/api/admin/capacity/pattern', { headers: { origin: baseURL ?? '' }, data: { days: [...six, { ...six[0] }] } })).status()).toBe(400);
+    expect((await page.request.put('/api/admin/capacity/pattern', { data: { days: [...six, { weekday: 6, isWorkingDay: false, ovenMinutesTotal: 0, workMinutesTotal: 0 }] } })).status()).toBe(403);
+
+    // Through the UI: make the weekday a working day with 240 / 300.
+    await page.getByTestId(`pattern-${wd}-working`).click();
+    await page.getByTestId(`pattern-${wd}-oven`).fill('240');
+    await page.getByTestId(`pattern-${wd}-work`).fill('300');
+    await page.getByRole('button', { name: 'שמירת הדפוס השבועי' }).click();
+    await expect(page.getByTestId('pattern-message')).toContainText('הדפוס השבועי נשמר.');
+    await expect(page.getByTestId('pattern-message')).toContainText('כי ההזמנות בהם כבר צריכות יותר');
+
+    const row = async (x) => (await db('SELECT oven_minutes_total, work_minutes_total, is_blackout, source FROM capacity_day_ledger WHERE day = $1', [x]))[0];
+    expect(await row(free)).toEqual({ oven_minutes_total: 240, work_minutes_total: 300, is_blackout: false, source: 'pattern' });
+    expect(await row(manual)).toEqual({ oven_minutes_total: 111, work_minutes_total: 222, is_blackout: false, source: 'manual' });
+    expect(await row(busy)).toEqual({ oven_minutes_total: 500, work_minutes_total: 500, is_blackout: false, source: 'pattern' });
+    const [audit] = await db("SELECT actor_id FROM audit_log WHERE action = 'capacity.weekly_pattern_updated' ORDER BY id DESC LIMIT 1");
+    expect(audit.actor_id).toBe(admin.userId);
+
+    await expect(page.getByTestId('capacity-oven-sentence')).toHaveText('אין הזמנות. נשארו 240 דק׳ תנור מתוך 240.');
+    await expect(page.getByTestId('day-source')).toHaveText('לפי הדפוס השבועי.');
+    await baseline(page, 'capacity-pattern', errors);
+
+    // The hand-set day can go back to the pattern.
+    await page.goto(`/admin/capacity?day=${manual}`);
+    await page.getByRole('button', { name: 'חזרה לדפוס השבועי' }).click();
+    await expect(page.getByTestId('day-message')).toHaveText('היום חזר לדפוס השבועי.');
+    await expect(page.getByTestId('day-source')).toHaveText('לפי הדפוס השבועי.');
+    expect(await row(manual)).toEqual({ oven_minutes_total: 240, work_minutes_total: 300, is_blackout: false, source: 'pattern' });
+
+    // Running the fill again changes nothing (idempotent).
+    const [again] = await db('SELECT fn_materialize_capacity_from_pattern() AS r');
+    expect(again.r.written).toBe(0);
+    // Only service_role (the daily job) and the admin function may run the fill.
+    await expect(db('SET ROLE authenticated; SELECT fn_materialize_capacity_from_pattern()')).rejects.toThrow(/permission denied/);
+  });
+});
