@@ -58,7 +58,8 @@ The daily limit is **oven time and working time**, not a count per item. So capa
 - Guest checkout: **phone mandatory**, email optional.
 - Risk accepted: no managed WAF on Netlify free (low traffic); Cloudflare DNS proxy when a domain exists.
 - Timezone for lead time and day boundaries: **Asia/Jerusalem**.
-- Still open: who holds the admin second factor and emergency access; written-confirmation channel for a guest with phone only (SMS is metered, Rule 30).
+- Admin second factor: Yuval's phone is primary; Ran holds recovery codes as backup.
+- Guest confirmation: on-screen confirmation downloadable as a PDF (email too if given); no SMS in MVP. Contact block on every page: Yuval's phone + direct WhatsApp link. Open: rotem to confirm this meets s.14C.
 
 ## Open decisions
 3. (superseded by the delivery settings screen above)
