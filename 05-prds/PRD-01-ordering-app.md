@@ -33,6 +33,11 @@ A public ordering PWA (linked from Instagram bio) plus an admin area, for a sing
 ### 3.2 Custom cake request
 - **US-0 (guest contact, Ran 2026-09-25)**: a guest checkout or custom-cake request requires a phone number (mandatory, validated as an Israeli mobile). Email is optional. No SMS in MVP (Ran 2026-09-25).
   - AC (order confirmation, Ran 2026-09-25): on checkout completion the customer sees an order confirmation screen (order number, items, date and time, delivery or pickup, total, payment instructions, business details, cancellation terms) and can download it as a file (PDF). Generated from the same source as the screen (Rule 15). Emailed as well when an email was given. Whether a download satisfies the s.14C written-confirmation duty is for rotem to confirm.
+- **US-0c (confirmation delivery, Ran 2026-09-25, rotem's s.14C fix)**: for a guest order with no email, the order cannot move to `fulfilled` until Yuval sends, by WhatsApp click-to-send, a link to the confirmation PDF. The link points to an immutable PDF (not a live page), valid for at least 24 months. The system records `confirmation_delivered_at` and `confirmation_channel` (email | whatsapp_manual). Legal review before launch.
+- **US-0d (find my order, Ran 2026-09-25)**: a customer can return to the app and find their order by **phone number + order number**, then view and re-download the confirmation.
+  - AC: phone alone never reveals an order (anyone who knows a phone number would see an address and a delivery time). Order numbers are random, non-sequential (not guessable from a neighbour's number).
+  - AC: lookup is rate-limited per phone and per IP; failures do not reveal whether the phone exists.
+  - AC: the lookup view masks the street address and shows the rest of the order.
 - **US-0b (contact Yuval, Ran 2026-09-25)**: every page offers a contact block: Yuval's phone (tap to call) and a direct WhatsApp link (wa.me with her number, prefilled with the order number when on an order page). Number is set by Yuval in admin settings.
 - **US-2**: As a customer, I can request a custom cake with a free-text inscription and an inspiration photo upload, so I can order something not in the standard catalog.
   - AC: the request form captures: inscription text, one or more inspiration photo uploads, desired delivery/pickup date, and free-text notes.
