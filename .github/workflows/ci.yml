@@ -43,6 +43,8 @@ jobs:
       - run: npm run build:functions
       - run: npx playwright install --with-deps chromium
       - run: bash scripts/local-stack/up.sh
+      - name: qa-001 capacity race (N concurrent pg connections)
+        run: npm run test:race
       - run: npx playwright test -c qa/playwright.config.js --project=mobile
       - if: failure()
         run: tail -n 50 .local-stack/*.log || true
