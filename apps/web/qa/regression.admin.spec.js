@@ -142,7 +142,8 @@ test.describe('admin login (db-005)', () => {
     });
     expect(bar.h).toBe('3px');
     expect(bar.bg).toBe('rgb(163, 18, 63)'); // --accent
-    await expect(page.getByTestId('coming-soon')).toContainText('בקרוב');
+    // The Orders tab is the real screen since client-009 (qa/regression.admin-orders.spec.js covers it).
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('הזמנות');
     await baseline(page, 'shell-orders', errors);
 
     for (const [name, path] of [['מוצרים', '/admin/catalog'], ['הגדרות', '/admin/settings'], ['יומן', '/admin/capacity']]) {

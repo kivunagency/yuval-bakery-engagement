@@ -1,0 +1,20 @@
+{
+  "comment": "api-003 slot lead time: [instant (UTC), slot date, slot start (Jerusalem wall clock), meets the 24h lead time, why]. Used by qa/db/slot-lead-time.test.mjs (the DB rule) and tests/jerusalem.test.ts (the TS mirror).",
+  "cases": [
+    ["2026-09-25T20:30:00Z", "2026-09-26", "23:30", true, "23:30 Fri (UTC+3): the same time tomorrow is exactly 24h"],
+    ["2026-09-25T20:30:00Z", "2026-09-26", "23:29", false, "one minute short of 24h"],
+    ["2026-09-25T21:30:00Z", "2026-09-27", "00:30", true, "00:30 Sat, UTC still says the 25th: 00:30 Sunday is 24h"],
+    ["2026-09-25T21:30:00Z", "2026-09-27", "00:29", false, "just past midnight, one minute short"],
+    ["2026-09-25T21:30:00Z", "2026-09-26", "23:59", false, "a slot later the same Jerusalem day is under 24h"],
+    ["2026-12-01T21:59:00Z", "2026-12-02", "23:59", true, "23:59 Tue (winter, UTC+2) to 23:59 Wed"],
+    ["2026-12-01T21:59:00Z", "2026-12-02", "23:58", false, "winter, one minute short"],
+    ["2026-10-24T07:00:00Z", "2026-10-25", "09:00", true, "clocks go back that night (25h day): 10:00 Sat to 09:00 Sun is 24 real hours; a wall-clock rule says 23h"],
+    ["2026-10-24T07:00:00Z", "2026-10-25", "08:59", false, "DST end, one minute short of 24 real hours"],
+    ["2026-10-24T21:30:00Z", "2026-10-25", "23:59", true, "00:30 Sun (UTC+3) to 23:59 Sun (UTC+2) is 24h29m"],
+    ["2026-10-24T21:30:00Z", "2026-10-25", "23:00", false, "same night: 23:00 Sun is 23h30m away"],
+    ["2026-03-26T08:00:00Z", "2026-03-27", "10:00", false, "clocks go forward that night (23h day): 10:00 Thu to 10:00 Fri is 23 real hours; a wall-clock rule says 24h"],
+    ["2026-03-26T08:00:00Z", "2026-03-27", "11:00", true, "DST start: 11:00 Fri is exactly 24 real hours"],
+    ["2027-03-25T22:30:00Z", "2027-03-27", "00:30", false, "00:30 Fri 26 Mar 2027 (UTC+2) to 00:30 Sat (UTC+3) is 23h"],
+    ["2027-03-25T22:30:00Z", "2027-03-27", "01:30", true, "same, 01:30 Sat is 24h"]
+  ]
+}

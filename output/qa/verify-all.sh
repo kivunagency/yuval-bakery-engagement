@@ -27,13 +27,13 @@ run "build netlify functions (job-001 bundles)" npm run -s build:functions
 if bash scripts/local-stack/up.sh; then
   record "local stack up (pg17 + auth + postgrest)" PASSED
   run "qa-001 capacity race (N concurrent pg connections)" npm run -s test:race
-  run "blindspot-002 business day + lead time (Asia/Jerusalem)" npm run -s test:business-day
+  run "business day + lead time, date and slot (Asia/Jerusalem)" npm run -s test:business-day
   run "regression specs incl. regression.jobs (Playwright)" npx playwright test -c qa/playwright.config.js --project=mobile
   bash scripts/local-stack/down.sh >/dev/null
 else
   record "local stack up (pg17 + auth + postgrest)" FAILED
   record "qa-001 capacity race (N concurrent pg connections)" "DID NOT RUN"
-  record "blindspot-002 business day + lead time (Asia/Jerusalem)" "DID NOT RUN"
+  record "business day + lead time, date and slot (Asia/Jerusalem)" "DID NOT RUN"
   record "regression specs incl. regression.jobs (Playwright)" "DID NOT RUN"
 fi
 
@@ -42,7 +42,11 @@ if [ -n "${SMOKE_BASE_URL:-}" ]; then
 else
   record "smoke.spec.js (live url)" "DID NOT RUN (SMOKE_BASE_URL not set, nothing deployed yet)"
 fi
+record "Storage server in the local stack (photo upload E2E)" "DID NOT RUN (supabase/storage not in the local stack yet)"
 record "job-001 scheduled on Netlify" "DID NOT RUN (no Netlify site yet, infra-002)"
+record "api-010 hosted Auth mail (custom SMTP + template)" "DID NOT RUN (Yuval's Supabase + Resend accounts, infra)"
+record "job-002 real email via Resend" "DID NOT RUN (no Resend account yet, Yuval's; capture adapter used)"
+record "job-002 real web push to a device" "DID NOT RUN (stand-in push service on 127.0.0.1 only)"
 
 echo; echo "================ verify-all ================"
 fail=0

@@ -1,4 +1,4 @@
--- 20260926090000_sec_default_privileges_and_service_role_check.sql
+-- 20260925121300_sec_default_privileges_and_service_role_check.sql
 -- Orchestrator lane (0900xx). Two security fixes found in wave 1.
 --
 -- 1. Default privileges (found independently by job-001, db-005 and

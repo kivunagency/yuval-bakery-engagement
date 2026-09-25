@@ -181,6 +181,7 @@ test.describe('job-001 daily retention (netlify/functions/retention-daily.mjs)',
       expect(body.heartbeat).toBe('written_by_wrapper');
       expect(body.steps.map((s) => s.step)).toEqual([
         'anonymize_due_records', 'purge_order_attempts', 'purge_lookup_attempts', 'purge_audit_log', 'purge_push_subscriptions',
+        'purge_notification_attempts',
       ]);
       expect(body.steps.every((s) => s.ok)).toBe(true);
       expect(Object.keys(body.did_not_run)).toEqual(['storage_photo_deletion', 'storage_confirmation_pdf_deletion', 'customer_hard_delete']);
@@ -245,7 +246,12 @@ test.describe('job and capacity internals are not callable over the public API (
       const client = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
       if (who === 'authenticated') {
         const email = `customer-${Date.now()}-${Math.random().toString(36).slice(2)}@example.test`;
-        const { error } = await client.auth.signUp({ email, password: 'qa-password-123456' });
+        // Email confirmation is on in the local stack (api-010): create a
+        // confirmed user with the admin API, then sign in as it.
+        const service = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+        const { error: createError } = await service.auth.admin.createUser({ email, password: 'qa-password-123456', email_confirm: true });
+        expect(createError).toBeNull();
+        const { error } = await client.auth.signInWithPassword({ email, password: 'qa-password-123456' });
         expect(error).toBeNull();
       }
       const allowed = [];

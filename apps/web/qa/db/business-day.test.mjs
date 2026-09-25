@@ -105,7 +105,20 @@ describe('lead time is enforced by the DB, not only the UI (24 hours, Asia/Jerus
     await dayRow(earliest);
     await dayRow(rows[0].d);
     const product = await db.freshProduct(c, { oven: 1, work: 1 });
-    assert.equal((await db.createOrder(c, earliest, product, 1)).status, 'payment_pending');
+    // api-003 added the slot-level check: on the earliest date only a slot at
+    // least 24h away is accepted. A 23:59 slot is, except in the last minute
+    // of the Jerusalem day, so wait that minute out. The slot is rolled back.
+    const { rows: late } = await c.query(`SELECT to_char(now() AT TIME ZONE 'Asia/Jerusalem', 'HH24:MI') >= '23:58' AS late`);
+    if (late[0].late) await new Promise((r) => setTimeout(r, 150_000));
+    const { earliest: e2 } = await today();
+    await dayRow(e2);
+    await c.query('BEGIN');
+    try {
+      const { rows: s } = await c.query(`INSERT INTO time_slots (start_time, end_time) VALUES ('23:59', '24:00') RETURNING id`);
+      assert.equal((await db.createOrder(c, e2, product, 1, s[0].id)).status, 'payment_pending');
+    } finally {
+      await c.query('ROLLBACK');
+    }
     await assert.rejects(db.createOrder(c, rows[0].d, product, 1), /lead_time_not_met/);
   });
 

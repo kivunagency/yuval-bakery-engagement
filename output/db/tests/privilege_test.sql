@@ -30,3 +30,23 @@ SELECT 'T7b_manual_source' AS t, (fn_admin_set_day_capacity('2026-10-01',100,420
 RESET ROLE; SET ROLE anon;
 SELECT 'T8_anon_set_capacity' AS t, fn_admin_set_day_capacity('2026-10-03',1,1,false);
 RESET ROLE;
+-- 9-12 (api-007): delivery zones are written only through the audited functions.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2","role":"authenticated"}',false);
+SELECT 'T9_admin_create_zone' AS t, fn_admin_create_delivery_zone('T9 zone', 35, ARRAY['T9 city']) ->> 'name';
+SELECT 'T10_city_in_other_zone' AS t, fn_admin_create_delivery_zone('T10 zone', 35, ARRAY['T9 city']);
+INSERT INTO delivery_zones (name) VALUES ('T11 direct');
+RESET ROLE; SET ROLE anon;
+SELECT 'T12_anon_create_zone' AS t, fn_admin_create_delivery_zone('T12', 1, '{}');
+RESET ROLE;
+SELECT 'T12b_zone_audited=' || count(*) AS t FROM audit_log WHERE action = 'delivery_zone.created' AND actor_id = '00000000-0000-0000-0000-00000000000a';
+-- 13-14 (api-008): the delivery list is admin aal2 only, and each generation is audited.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2","role":"authenticated"}',false);
+SELECT 'T13_customer_delivery_list' AS t, fn_admin_delivery_list('2026-10-01');
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2","role":"authenticated"}',false);
+SELECT 'T14_admin_delivery_list=' || (fn_admin_delivery_list('2026-10-01') ->> 'pending_count') AS t;
+RESET ROLE; SET ROLE anon;
+SELECT 'T14b_anon_delivery_list' AS t, fn_admin_delivery_list('2026-10-01');
+RESET ROLE;
+SELECT 'T14c_list_audited=' || count(*) AS t FROM audit_log WHERE action = 'delivery_list.generated' AND entity_id = '2026-10-01';

@@ -39,7 +39,7 @@ Sessions may run in the cloud, where the Kivun agency agents, skills and laws un
 - **Screens arrive with their data**: first render is server-side; client fetch only for what changes after render.
 - **Capacity is enforced in the DB only** (`fn_reserve_capacity`, `fn_release_order_capacity`). Never add a second "is there room" check in app code. Before changing a function that computes money or capacity, list every caller.
 - **Admin actions** derive the actor from `auth.uid()` and require aal2. Never accept an admin id from the client.
-- **New DB functions are callable by nobody by default** (migration 20260926090000). GRANT EXECUTE explicitly to the role that needs it; granting to `anon` also means adding it to the allowlist in `apps/web/qa/regression.security.spec.js`. Inside SECURITY DEFINER, check the service role with `fn_is_service_role()`, never `current_user`.
+- **New DB functions are callable by nobody by default** (migration 20260925121300). GRANT EXECUTE explicitly to the role that needs it; granting to `anon` also means adding it to the allowlist in `apps/web/qa/regression.security.spec.js`. Inside SECURITY DEFINER, check the service role with `fn_is_service_role()`, never `current_user`.
 - **A check has three outcomes**: passed, failed, DID NOT RUN. Never report an unrun check as passed. "Done" names the artefact (the row written, the screen seen).
 - **Regression + smoke**: `qa/regression.spec.js` and `qa/smoke.spec.js` (Playwright) must exist and pass before a task is done. No "deployed" claim without a browser hit on the live URL.
 - **SYSTEM-CONTRACT**: `output/qa/SYSTEM-CONTRACT.md` + `output/qa/verify-all.sh`, updated in the same commit as behaviour changes.

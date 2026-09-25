@@ -1,0 +1,59 @@
+/* Order and payment page (client-004). Values mirror 06-mockups/mockup.html,
+   section "(c) payment", and design-tokens.md "סיכום ותשלום". */
+.main { max-inline-size: 720px; margin-inline: auto; padding: 0 var(--s4) var(--s10); display: grid; gap: var(--s4); }
+.appbar { block-size: 56px; display: flex; align-items: center; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 1; }
+.saved, .statusLine {
+  margin: 0; padding: 10px var(--s3); border-radius: 10px; font-size: 15px; font-weight: 600;
+}
+.saved { color: var(--ok); background: var(--ok-bg); }
+.statusLine { color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); }
+
+.codeCard { background: var(--surface); border-radius: var(--r-card); padding: var(--s5) var(--s4); box-shadow: var(--shadow-1); }
+.codeCard h2 { font-size: 17px; line-height: 1.4; }
+.codeRow {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  margin-block-start: var(--s3); padding: var(--s2) var(--s4) var(--s2) var(--s2);
+  border: 1.5px dashed var(--line-strong); border-radius: var(--r-control);
+}
+.code { font-family: var(--font-display); font-weight: 700; font-size: 56px; line-height: 1; letter-spacing: 1px; overflow-wrap: anywhere; }
+.copy {
+  min-block-size: 44px; min-inline-size: 44px; padding-inline: var(--s4); border-radius: 10px;
+  border: 1.5px solid var(--ink); background: var(--surface); color: var(--ink);
+  font: inherit; font-weight: 600; font-size: 15px; cursor: pointer; flex: 0 0 auto;
+}
+.amountLine { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); margin-block-start: var(--s4); }
+.big { text-align: end; }
+.big > span > span:first-child { font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 0.9; }
+.big [data-testid="vat-label"] { display: block; font-size: 13px; color: var(--ink-2); }
+.hold { margin: var(--s3) 0 0; padding: 10px var(--s3); border-radius: 10px; font-size: 14px; font-weight: 500; color: var(--warn); background: var(--warn-bg); }
+
+/* Bit and PayBox with equal weight (design-tokens.md): same style, same size. */
+.paybtns { display: grid; gap: var(--s3); margin-block-start: var(--s5); }
+.pay {
+  min-block-size: 56px; margin: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  padding-inline: var(--s4); border-radius: var(--r-control);
+  background: var(--surface); color: var(--ink); border: 1.5px solid var(--ink);
+  font-size: 17px; font-weight: 600; text-decoration: none;
+}
+a.pay:hover { background: var(--surface-2); }
+.payPlaceholder { border-style: dashed; border-color: var(--line-strong); color: var(--ink-2); flex-wrap: wrap; padding-block: var(--s2); }
+.placeholderText { font-size: 13px; font-weight: 500; background: var(--surface-2); border: 1px dashed var(--line-strong); border-radius: 6px; padding-inline: var(--s1); }
+
+.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--s3); }
+.steps li { display: grid; grid-template-columns: 28px 1fr; gap: var(--s2); font-size: 15px; line-height: 1.45; }
+.steps li i {
+  font-style: normal; inline-size: 28px; block-size: 28px; border-radius: 999px; border: 1.5px solid var(--ink);
+  display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600;
+}
+.keep { margin: 0; font-size: 14px; color: var(--ink-2); }
+
+.details { background: var(--surface); border-radius: var(--r-card); padding: var(--s4); box-shadow: var(--shadow-1); display: grid; gap: var(--s2); }
+.details dl { margin: 0; display: grid; gap: var(--s2); }
+.details dt { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.details dd { margin: 0; }
+.itemsH { font-size: 15px; margin-block-start: var(--s2); }
+.row { display: flex; justify-content: space-between; gap: var(--s3); font-size: 15px; }
+.totalRow { border-block-start: 1px solid var(--line); padding-block-start: var(--s2); }
+.legal { display: grid; gap: var(--s4); font-size: 14px; }
+.steps b { white-space: nowrap; }

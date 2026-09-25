@@ -11,6 +11,10 @@ npm run dev           # http://localhost:3000
 npm run stack:down
 ```
 
+Supabase Auth runs with email confirmation ON; its mail goes to a local SMTP
+sink (`.local-stack/mail/*.eml`, read by `qa/helpers/mail.js`) using the
+templates in `supabase/templates/`.
+
 No Docker needed: `scripts/local-stack/` fetches PostgreSQL 17 (npm package
 `@embedded-postgres/linux-x64`), Supabase Auth and PostgREST (GitHub releases)
 into a cache outside the repo. Seed data is `supabase/seed.sql` (synthetic only).
@@ -35,6 +39,8 @@ lib/server/          DB, auth, secrets. Every file starts with import 'server-on
   auth/admin.ts      getAdminSession(): verified user + aal2 (TOTP within 12h) + admins membership, or null;
                      requireAdminPage(): same, redirecting to /admin/login. Call it in EVERY admin page.
   auth/admin-login.ts  password -> TOTP enrol/verify -> aal2, rate limited in the DB, uniform errors
+  identity/          optional customer accounts (api-010): sign-up, mail confirmation, sign-in,
+                     getCustomerSession(), own profile and marketing consent, one-click unsubscribe
 lib/shared/          no I/O: types (DB enums mirrored and tested), Zod contracts, Asia/Jerusalem time
 messages/            en.json (keys, primary) and he.json (UI text)
 supabase/migrations  the migrations that ship to Supabase (moved from output/db/)
@@ -74,3 +80,40 @@ Reusable pieces for other screens: `components/compliance` (`BusinessDetails`,
 `orderNumber` on order pages), `components/price` (`PriceWithVat`, `VatLabel`),
 `lib/shared/compliance/versions.ts` (`TEXT_VERSIONS`: pass these to the order
 functions), `lib/server/compliance/site-settings.ts` (`getPublicSiteSettings`).
+
+## Notifications (job-002)
+
+Other contexts call one function per event, with the id only, after their
+transaction committed (`after()` from `next/server` is the recommended way):
+
+```ts
+import { OrderCreated, CustomCakeRequested, CustomCakeApproved, CustomCakeDeclined } from '@/lib/server/notification';
+after(() => OrderCreated({ orderId }));
+```
+
+They never throw and never touch the order; every attempt and its outcome is a
+row in `notification_attempts` (recipients as sha256 only). Content comes from
+the DB and `messages/he.json`, never from the caller.
+
+| Env (Netlify, per context; never committed) | Meaning |
+|---|---|
+| `EMAIL_PROVIDER` | `resend`, `capture` (local only, refused in prod) or `none`. Default: `capture` locally, `resend` when a key exists, else `none` |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Resend account and verified sender (Yuval's, not created yet). Without them every email is recorded as `skipped` |
+| `EMAIL_CAPTURE_DIR` | where the capture adapter writes one JSON file per email (`.local-stack/outbox`) |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | web push keys (P-256, base64url) and contact (`mailto:`). Generate once per environment: `npx web-push generate-vapid-keys`. The private key stays server-side |
+| `PUSH_ALLOW_LOCAL_ENDPOINTS` | `1` lets tests use a push endpoint on 127.0.0.1; ignored unless `APP_ENV=local` |
+
+Email spend cap (Rule 30, Resend free tier 100/day), counted in the DB per
+Asia/Jerusalem day, all in `app_settings`: `email_daily_hard_cap` (100, the
+sender refuses above it), `email_daily_alert_at` (80, one push to the admin
+when reached), `email_daily_customer_cap` (60, customer mail stops so admin
+notifications keep room), `email_per_recipient_daily_cap` (3 per customer address).
+The same 80/100 alert must also be set in Resend's own dashboard when Yuval
+creates the account (infra-003).
+## Checkout settings (api-003)
+
+| What | Where | Notes |
+|---|---|---|
+| Delivery/pickup time slots | table `time_slots` (start, end, Asia/Jerusalem) | None ship in the migration (Yuval's hours are open); `seed.sql` has synthetic ones. The first active start is copied into `app_settings.earliest_slot_time` by a trigger: do not edit that key by hand. |
+| Bit / PayBox links | `app_settings` `payment_link_bit`, `payment_link_paybox` | JSON null until set; shown only if https on the host allowlist in `lib/shared/payment/links.ts` (UNVERIFIED hosts). Read through `fn_payment_link_settings()` (service role). |
+| Order creation | `POST /api/orders` -> `fn_create_standard_order` (service role only) | The client never sends an amount; the DB prices, reserves and checks the slot lead time. |

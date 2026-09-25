@@ -57,20 +57,26 @@ function randomIp() {
   return `10.${crypto.randomInt(0, 255)}.${crypto.randomInt(0, 255)}.${crypto.randomInt(1, 254)}`;
 }
 
-/** The exact argument list fn_create_standard_order takes, pickup, guest. */
-function orderArgs(day, productId, quantity) {
+/**
+ * The exact argument list fn_create_standard_order takes, pickup, guest.
+ * slotId null = the latest active time slot (CREATE_ORDER_SQL picks it), which
+ * is the one furthest from the lead time; seed.sql creates the slots.
+ */
+function orderArgs(day, productId, quantity, slotId = null) {
   return [
-    randomIp(), null, 'QA Guest', randomPhone(), null, 'pickup', day, null, null, null, null, null,
+    randomIp(), null, 'QA Guest', randomPhone(), null, 'pickup', day, slotId, null, null, null,
     JSON.stringify([{ product_id: productId, quantity }]), crypto.randomBytes(24).toString('hex'),
     'privacy-2026-10-v1', 'terms-2026-10-v1', 'cancellation-2026-10-v1',
   ];
 }
 
 const CREATE_ORDER_SQL = `SELECT id, order_number, status, oven_minutes_cost, work_minutes_cost
-  FROM fn_create_standard_order($1,$2,$3,$4,$5,$6,$7::date,$8,$9,$10,$11,$12,$13::jsonb,$14,$15,$16,$17)`;
+  FROM fn_create_standard_order($1,$2,$3,$4,$5,$6,$7::date,
+    COALESCE($8::uuid, (SELECT id FROM time_slots WHERE is_active ORDER BY start_time DESC LIMIT 1)),
+    $9,$10,$11,$12::jsonb,$13,$14,$15,$16)`;
 
-async function createOrder(db, day, productId, quantity = 1) {
-  const { rows } = await db.query(CREATE_ORDER_SQL, orderArgs(day, productId, quantity));
+async function createOrder(db, day, productId, quantity = 1, slotId = null) {
+  const { rows } = await db.query(CREATE_ORDER_SQL, orderArgs(day, productId, quantity, slotId));
   return rows[0];
 }
 

@@ -16,6 +16,7 @@ import { WeeklyPatternForm } from '@/components/admin/capacity/WeeklyPatternForm
 export default async function AdminCapacityPage({ searchParams }: { searchParams: Promise<{ day?: string }> }) {
   await requireAdminPage();
   const t = await getTranslations('admin.capacity');
+  const tList = await getTranslations('admin.delivery_list');
   const requested = capacityDayParam.safeParse((await searchParams).day);
   const today = jerusalemDate(new Date());
   const day = requested.success ? requested.data : today;
@@ -50,6 +51,11 @@ export default async function AdminCapacityPage({ searchParams }: { searchParams
           </Link>
         </nav>
       </div>
+      <p className="admin-day-links">
+        <Link href={`/admin/delivery?day=${day}`} className="admin-inline-link" prefetch={false} data-testid="open-delivery-list">
+          {tList('open_for_day')}
+        </Link>
+      </p>
       {day !== today ? (
         <p className="admin-today-link">
           <Link href="/admin/capacity" className="admin-inline-link" prefetch={false}>

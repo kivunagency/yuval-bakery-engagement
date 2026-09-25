@@ -163,8 +163,16 @@ test.describe('api-002: GET /api/capacity (public day states)', () => {
       return { today: t, base: b };
     });
     try {
+      // Today is always too_soon. Tomorrow is too_soon while its first slot
+      // (earliest_slot_time, kept equal to the first active time slot by
+      // api-003) is less than 24h away, so the expectation depends on the clock.
+      const tomorrowTooSoon = await withDb(async (db) => (await db.query(
+        `SELECT (($1::date + (SELECT value #>> '{}' FROM app_settings WHERE key = 'earliest_slot_time')::time)
+                  AT TIME ZONE 'Asia/Jerusalem') < now() + interval '24 hours' AS s`, [plusDays(today, 1)])).rows[0].s);
       const near = await (await request.get(`/api/capacity?from=${today}&to=${plusDays(today, 1)}`)).json();
-      expect(near.days.map((d) => d.state)).toEqual(['too_soon', 'too_soon']);
+      expect(near.days[0].state).toBe('too_soon');
+      if (tomorrowTooSoon) expect(near.days[1].state).toBe('too_soon');
+      else expect(near.days[1].state).not.toBe('too_soon');
 
       const res = await request.get(`/api/capacity?from=${base}&to=${plusDays(base, 7)}`);
       expect(res.status()).toBe(200);
@@ -256,7 +264,8 @@ test.describe('api-002: GET /api/capacity (public day states)', () => {
             try {
               n += 1;
               await db.query(
-                `SELECT fn_create_standard_order($1, NULL, 'QA', $2, NULL, 'pickup', $3, NULL, NULL, NULL, NULL, NULL,
+                `SELECT fn_create_standard_order($1, NULL, 'QA', $2, NULL, 'pickup', $3,
+                   (SELECT id FROM time_slots WHERE is_active ORDER BY start_time DESC LIMIT 1), NULL, NULL, NULL,
                    $4::jsonb, $5, 'p', 't', 'c')`,
                 [`10.9.${Math.floor(n / 250)}.${n % 250}`, `+97250${String(1000000 + n).slice(-7)}`, day,
                   JSON.stringify([{ product_id: p.id, quantity: 1 }]), randomUUID()],

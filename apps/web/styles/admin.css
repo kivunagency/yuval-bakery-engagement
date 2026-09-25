@@ -289,3 +289,224 @@
   .admin-warn { background: color-mix(in srgb, var(--warn) 18%, transparent); }
   .admin-ok { background: color-mix(in srgb, var(--ok) 16%, transparent); }
 }
+
+/* ---- orders (client-009) ---- */
+.admin-orders-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; }
+.admin-orders-head .admin-page-title { margin-block: var(--s2); }
+.admin-orders-head .admin-inline-link { min-block-size: var(--tap); display: inline-flex; align-items: center; }
+.admin-filter { display: flex; flex-wrap: wrap; gap: var(--s2); margin-block: var(--s3) var(--s4); }
+.admin-filter-chip {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  min-block-size: var(--tap); padding-inline: var(--s3);
+  border: 1.5px solid var(--line-strong); border-radius: var(--r-chip);
+  background: var(--surface); color: var(--ink); text-decoration: none; font-size: 14px; font-weight: 500;
+}
+.admin-filter-chip[aria-current='page'] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-weight: 600; }
+.admin-filter-count { font-weight: 700; }
+.admin-orders-banner { display: flex; flex-direction: column; gap: var(--s1); margin-block-end: var(--s4); }
+.admin-orders-banner p, .admin-note p { margin: 0; }
+.admin-orders-banner .admin-inline-link { color: inherit; min-block-size: var(--tap); display: inline-flex; align-items: center; }
+.admin-note { margin-block-end: var(--s4); padding: var(--s4); border-radius: var(--r-card); background: var(--warn-bg); color: var(--warn); border: 1.5px dashed var(--warn); }
+.admin-note-title { font-size: 16px; font-weight: 700; margin-block: 0 var(--s2); }
+.admin-holds { margin-block-end: var(--s6); }
+.admin-holds-title { font-size: 16px; font-weight: 600; margin-block: 0 var(--s1); }
+.admin-holds-list { list-style: none; margin: var(--s3) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s3); }
+.admin-holds-day { background: var(--surface); border-radius: var(--r-card); padding: var(--s4); box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: var(--s2); }
+.admin-holds-day[data-high] { border-inline-start: 4px solid var(--warn); }
+.admin-holds-name { margin: 0; font-weight: 700; }
+.admin-holds-line { margin: 0; color: var(--ink-2); font-size: 15px; }
+.admin-release-button { inline-size: 100%; }
+.admin-order-list { display: flex; flex-direction: column; gap: var(--s3); }
+.admin-order {
+  background: var(--surface); border-radius: var(--r-card); padding: var(--s4); box-shadow: var(--shadow-1);
+  display: flex; flex-direction: column; gap: var(--s2); border: 1.5px solid transparent;
+}
+.admin-order p { margin: 0; }
+/* Terminal states look different from each other and from live orders (US-9), never by colour alone: each also has its word. */
+.admin-order[data-status='expired'] { border: 1.5px dashed var(--warn); }
+.admin-order[data-status='cancelled'] { background: var(--surface-2); box-shadow: none; border-color: var(--line); }
+.admin-order-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; }
+.admin-order-number { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink-2); display: flex; align-items: baseline; gap: var(--s2); }
+.admin-order-number-value { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 1; color: var(--ink); }
+.admin-order-status { display: inline-flex; align-items: center; min-block-size: 28px; padding-inline: var(--s3); border-radius: var(--r-chip); font-size: 13px; font-weight: 600; }
+.admin-order-status--payment_pending { background: var(--accent-soft); color: var(--accent-soft-ink); }
+.admin-order-status--paid { background: var(--ok-bg); color: var(--ok); }
+.admin-order-status--fulfilled { background: var(--surface-2); color: var(--ink); border: 1.5px solid var(--line-strong); }
+.admin-order-status--expired { background: var(--warn-bg); color: var(--warn); border: 1.5px dashed var(--warn); }
+.admin-order-status--cancelled {
+  color: var(--ink); border: 1.5px solid var(--line-strong);
+  background: repeating-linear-gradient(-45deg, var(--day-closed-bg) 0 6px, var(--surface) 6px 9px);
+}
+.admin-order-when { font-weight: 600; }
+.admin-order-sep::before { content: ' · '; font-weight: 400; color: var(--ink-2); }
+.admin-order-meta { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; color: var(--ink-2); font-size: 15px; }
+.admin-order-tag { padding-inline: var(--s2); border-radius: var(--r-chip); border: 1px solid var(--line-strong); font-size: 13px; color: var(--ink); }
+.admin-order-customer { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); }
+.admin-order-name { font-weight: 600; }
+.admin-order-items { margin: 0; padding-inline-start: var(--s5); font-size: 15px; }
+.admin-order-total { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); border-block-start: 1px solid var(--line); padding-block-start: var(--s2); }
+.admin-order-amount { font-weight: 700; font-size: 18px; }
+.admin-order-wa { inline-size: 100%; }
+.admin-order-actions { display: flex; flex-direction: column; gap: var(--s2); }
+.admin-order-actions .admin-warn p { margin: 0 0 var(--s1); }
+.admin-order-actions .admin-warn p:last-child { margin: 0; font-weight: 500; }
+.admin-confirm { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s3); border-radius: var(--r-control); background: var(--surface-2); border: 1.5px solid var(--line-strong); }
+.admin-confirm-title { font-weight: 700; font-size: 16px; }
+.admin-expected { display: flex; flex-direction: column; gap: var(--s1); }
+.admin-expected-amount { font-family: var(--font-display); font-weight: 700; font-size: 48px; line-height: 1; color: var(--ink); }
+.admin-btn-danger { background: var(--surface); color: var(--danger); border: 1.5px solid var(--danger); }
+.admin-btn-danger:hover { background: var(--danger-bg); }
+.admin-orders-day { margin-block: 0 var(--s4); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s2); }
+.admin-orders-day .admin-inline-link, .admin-holds-link { min-block-size: var(--tap); display: inline-flex; align-items: center; }
+/* Delivery zones (client-010), after design-tokens.md "אזורי משלוח" and mockup.html .zone. */
+.admin-section-title-first { margin-block-start: var(--s4); }
+.admin-zones { display: grid; gap: var(--s3); }
+.admin-zone {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-1);
+  padding: var(--s3) var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.admin-zone-h { display: flex; justify-content: space-between; align-items: center; gap: var(--s2); }
+.admin-zone-name { margin: 0; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.admin-zone-fee { display: flex; align-items: center; gap: 6px; flex: none; font-weight: 600; }
+.admin-zone-fee input {
+  inline-size: 84px;
+  min-block-size: 44px;
+  border-radius: var(--r-control);
+  border: 1.5px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: center;
+  font: inherit;
+  font-weight: 600;
+  font-size: 16px;
+}
+.admin-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.admin-chip {
+  min-block-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding-inline-start: 14px;
+  border-radius: var(--r-chip);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+.admin-chip button {
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.admin-chip button svg { inline-size: 14px; block-size: 14px; }
+.admin-chip-add {
+  padding-inline: 14px;
+  border-style: dashed;
+  border-color: var(--line-strong);
+  background: transparent;
+  font-weight: 600;
+  cursor: pointer;
+}
+.admin-zone-rule { margin: 0; font-size: 13px; color: var(--ink-2); }
+.admin-inline-form { display: flex; flex-direction: column; gap: var(--s2); }
+.admin-inline-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
+.admin-zone-links { display: flex; flex-wrap: wrap; gap: var(--s2); margin-inline-start: calc(-1 * var(--s3)); }
+.admin-confirm { display: flex; flex-direction: column; gap: var(--s2); }
+.admin-danger { border-color: var(--danger); color: var(--danger); }
+.admin-new-zone .admin-zone-fee { align-self: flex-start; }
+
+/* Delivery list (client-011): screen and print. The print sheet drops the
+   admin chrome and repeats the personal-data footer on every page (SEC-016). */
+.dl-count { margin-block: 0 var(--s3); font-weight: 600; }
+.dl-actions { display: flex; flex-direction: column; gap: var(--s2); margin-block-end: var(--s4); }
+.dl-actions .btn { inline-size: 100%; }
+.dl-stops { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s3); }
+.dl-stop {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-1);
+  padding: var(--s3) var(--s4);
+  break-inside: avoid;
+}
+.dl-stop-h { display: flex; align-items: baseline; gap: var(--s2); margin-block-end: var(--s1); }
+.dl-num {
+  flex: none;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+.dl-name { flex: 1; margin: 0; font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
+.dl-window { flex: none; font-weight: 600; }
+.dl-line { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.dl-label { color: var(--ink-2); }
+.dl-phone { display: inline-flex; align-items: center; min-block-size: var(--tap); font-weight: 600; text-underline-offset: 3px; color: var(--ink); }
+.dl-footer { margin-block: var(--s6) 0; font-size: 13px; color: var(--ink-2); }
+.admin-day-links { margin-block: 0 var(--s2); }
+
+@media print {
+  @page { margin: 12mm 12mm 22mm; }
+  :root { color-scheme: light; }
+  body, .admin-shell, .admin-main { background: #ffffff !important; color: #000000 !important; }
+  .admin-appbar, .admin-tabs, .dl-noprint { display: none !important; }
+  .admin-main { max-inline-size: none; padding: 0; }
+  .admin-daytitle { font-size: 28px; }
+  .dl-stop { box-shadow: none; border: 1px solid #999999; border-radius: 8px; background: #ffffff; color: #000000; }
+  .dl-num { background: #000000; color: #ffffff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .dl-label, .dl-footer { color: #333333; }
+  .dl-phone { text-decoration: none; color: #000000; }
+  /* Fixed = repeated at the foot of every printed page. */
+  .dl-footer { position: fixed; inset-block-end: 0; inset-inline: 0; margin: 0; padding-block: 4mm; text-align: center; border-block-start: 1px solid #999999; background: #ffffff; }
+}
+/* Custom-cake queue (client-008). */
+.admin-cc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s4); }
+.admin-cc { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-1); padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); }
+.admin-cc-head { display: flex; flex-direction: column; gap: 2px; }
+.admin-cc-head h2 { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 1; margin-block-end: var(--s1); }
+.admin-cc-who { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s3); font-weight: 600; }
+.admin-cc-meta { margin: 0; font-size: 14px; color: var(--ink-2); }
+.admin-cc-text { margin: 0; display: grid; gap: 2px; }
+.admin-cc-text dt { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.admin-cc-text dd { margin: 0 0 var(--s2); overflow-wrap: anywhere; white-space: pre-wrap; }
+.admin-cc-none { color: var(--ink-2); }
+.admin-cc-photos ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s2); }
+.admin-cc-photo { display: block; inline-size: 104px; block-size: 104px; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
+.admin-cc-photo img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; }
+.admin-cc-time { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
+.admin-cc-time legend { padding: 0; margin-block-end: var(--s2); font-size: 15px; font-weight: 600; }
+.admin-cc .admin-warn p, .admin-cc .admin-ok { margin: 0; }
+.admin-cc .admin-warn p + p { margin-block-start: var(--s1); }
+.admin-cc-decline { display: flex; flex-direction: column; gap: var(--s3); }
+.admin-cc-decline textarea {
+  min-block-size: 88px; border-radius: var(--r-control); border: 1.5px solid var(--line-strong);
+  background: var(--surface); color: var(--ink); padding: var(--s3); font: inherit; font-size: 16px; inline-size: 100%; resize: vertical;
+}
+.admin-cc-done { display: flex; flex-direction: column; gap: var(--s2); }
+.admin-cc-done p { margin: 0; }
+.admin-cc-order { font-family: var(--font-display); font-size: 32px; font-weight: 700; }
+.admin-cc-link { font-size: 14px; overflow-wrap: anywhere; color: var(--ink-2); }
+.admin-cc-wa { inline-size: 100%; }
+/* Web push on this device (client-012), inside Settings. */
+.admin-push { margin-block-start: var(--s6); display: flex; flex-direction: column; gap: var(--s3); }
+.admin-push .admin-section-title { margin-block: 0; font-size: 26px; }
+.admin-push .admin-hint { margin: 0; }
+.admin-push-status { margin: 0; font-size: 16px; }
+.admin-push-note { margin: 0; padding: var(--s3); border-radius: var(--r-control); background: var(--warn-bg); color: var(--ink); }
