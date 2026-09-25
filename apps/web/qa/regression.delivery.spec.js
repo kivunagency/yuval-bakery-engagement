@@ -271,3 +271,92 @@ test.describe('admin delivery zones screen (client-010)', () => {
     await db('DELETE FROM delivery_zones WHERE id = $1', [z.id]);
   });
 });
+
+/** A day far ahead that no other test uses (orders are keyed by day). */
+function freshDeliveryDay() {
+  return new Date(Date.now() + (400 + crypto.randomInt(0, 20000)) * 864e5).toISOString().slice(0, 10);
+}
+
+/** A test order on `day` (inserted directly: the checkout path is not what is tested here). */
+async function addDeliveryOrder(day, { status = 'paid', type = 'delivery', name = 'QA', phone = '+972500000001', email = null, customerId = null, city = 'QA city', address = 'QA street 1', window = null, notes = null } = {}) {
+  const [row] = await db(
+    `INSERT INTO orders (order_number, lookup_token_hash, lookup_token_expires_at, status, customer_id, guest_name, guest_phone, guest_email,
+       fulfillment_type, delivery_date, delivery_time_window, delivery_address, delivery_city, delivery_notes,
+       subtotal_displayed, delivery_fee_displayed, total_displayed, privacy_notice_version, terms_version, cancellation_notice_version)
+     VALUES ($1, md5(random()::text), now() + interval '30 days', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 180, 35, 215, 'p', 't', 'c')
+     RETURNING order_number`,
+    [`Q${crypto.randomBytes(4).toString('hex').toUpperCase()}`, status, customerId, customerId ? null : name, customerId ? null : phone, email,
+      type, day, window, type === 'delivery' ? address : null, type === 'delivery' ? city : null, notes],
+  );
+  return row.order_number;
+}
+
+test.describe('delivery list API (api-008)', () => {
+  test('anonymous visitor gets 401', async ({ request }) => {
+    const res = await request.get('/api/admin/delivery-list?date=2027-01-05');
+    expect(res.status()).toBe(401);
+    expect(await res.json()).toEqual({ error: 'unauthorized' });
+  });
+
+  test('paid delivery orders of that day only, courier fields only, sorted by time window, audited without PII', async ({ page }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const day = freshDeliveryDay();
+    const other = new Date(Date.parse(`${day}T12:00:00Z`) + 864e5).toISOString().slice(0, 10);
+
+    const registered = await createUser({ admin: false });
+    const regPhone = `+97252${crypto.randomInt(1000000, 9999999)}`;
+    await db('INSERT INTO customers (id, name, phone, email) VALUES ($1, $2, $3, $4)', [registered.userId, 'לקוחה רשומה', regPhone, `reg-${tag()}@example.test`]);
+
+    const numbers = [
+      await addDeliveryOrder(day, { name: 'דנה כהן', phone: '+972501112233', email: 'dana@example.test', city: 'רמת גן', address: 'הרצל 12, דירה 4', window: '16:00-18:00', notes: 'קומה 2, לדפוק חזק' }),
+      await addDeliveryOrder(day, { customerId: registered.userId, city: 'גבעתיים', address: 'כצנלסון 5', window: '10:00-12:00' }),
+      await addDeliveryOrder(day, { name: 'אבי לוי', phone: '+972541234567', city: 'חיפה', address: 'הנשיא 3' }),
+      await addDeliveryOrder(day, { status: 'payment_pending', name: 'ממתינה', phone: '+972509999999' }),
+      await addDeliveryOrder(day, { status: 'cancelled', name: 'בוטלה' }),
+      await addDeliveryOrder(day, { status: 'expired', name: 'פגה' }),
+      await addDeliveryOrder(day, { type: 'pickup', name: 'איסוף' }),
+      await addDeliveryOrder(other, { name: 'יום אחר' }),
+    ];
+
+    // Zod: a real date, nothing else.
+    for (const q of ['', '?date=2027-02-30', '?date=today', `?date=${day}&status=all`]) {
+      const r = await page.request.get(`/api/admin/delivery-list${q}`);
+      expect(r.status(), q).toBe(400);
+      expect(await r.json()).toEqual({ error: 'invalid_input' });
+    }
+
+    const res = await page.request.get(`/api/admin/delivery-list?date=${day}`);
+    expect(res.status()).toBe(200);
+    expect(res.headers()['cache-control']).toBe('no-store');
+    expect(res.headers()['referrer-policy']).toBe('no-referrer');
+    const body = await res.json();
+    expect(body).toEqual({
+      day,
+      pendingCount: 1,
+      stops: [
+        { name: 'לקוחה רשומה', phone: regPhone, address: 'כצנלסון 5', city: 'גבעתיים', timeWindow: '10:00-12:00', notes: null },
+        { name: 'דנה כהן', phone: '+972501112233', address: 'הרצל 12, דירה 4', city: 'רמת גן', timeWindow: '16:00-18:00', notes: 'קומה 2, לדפוק חזק' },
+        { name: 'אבי לוי', phone: '+972541234567', address: 'הנשיא 3', city: 'חיפה', timeWindow: null, notes: null },
+      ],
+    });
+    // Minimization (SEC-016): toEqual above already rules out extra fields; also no email, price, order number, status or other day anywhere.
+    const text = JSON.stringify(body);
+    for (const leak of ['example.test', 'total', 'fee', ...numbers, 'paid', 'ממתינה', 'יום אחר', 'איסוף']) expect(text, leak).not.toContain(leak);
+
+    // SEC-017: one audit row per generation (the 400s never reached the DB), counts only.
+    const audit = await db("SELECT actor_id, metadata FROM audit_log WHERE action = 'delivery_list.generated' AND entity_id = $1", [day]);
+    expect(audit).toEqual([{ actor_id: admin.userId, metadata: { stop_count: 3, pending_count: 1 } }]);
+    await db('DELETE FROM orders WHERE delivery_date = ANY($1::date[])', [[day, other]]);
+  });
+
+  test('through PostgREST: anon has no access; a signed-in customer is refused', async () => {
+    const env = localEnv();
+    const anon = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+    expect((await anon.rpc('fn_admin_delivery_list', { p_day: '2027-01-05' })).error?.message).toContain('permission denied');
+    const customer = await createUser({ admin: false });
+    const user = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+    await user.auth.signInWithPassword({ email: customer.email, password: customer.password });
+    expect((await user.rpc('fn_admin_delivery_list', { p_day: '2027-01-05' })).error?.message).toBe('admin_aal2_required');
+  });
+});

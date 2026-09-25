@@ -17,7 +17,14 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
+    // The delivery list carries customers' names, phones and addresses
+    // (SEC-016): no Referer ever leaves it (a later matching rule wins).
+    const noReferrer = [{ key: 'Referrer-Policy', value: 'no-referrer' }];
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      { source: '/admin/delivery', headers: noReferrer },
+      { source: '/api/admin/delivery-list', headers: noReferrer },
+    ];
   },
 };
 

@@ -49,7 +49,7 @@ expect() { # expect <label> <count> <pattern>
   local n; n=$(printf '%s\n' "$OUT" | grep -c -- "$3")
   if [ "$n" = "$2" ]; then echo "PASS $1"; else echo "FAIL $1 (expected $2 match(es) of '$3', got $n)"; fail=1; fi
 }
-expect "T1,T2,T4 non-admin or aal1 callers rejected" 3 "ERROR:  admin_aal2_required"
+expect "T1,T2,T4,T13 non-admin or aal1 callers rejected" 4 "ERROR:  admin_aal2_required"
 expect "T3 admin with aal2 sets capacity" 1 "T3_admin_aal2_set_capacity | 2026-10-01"
 expect "T5 anon cannot write capacity_day_ledger" 1 "permission denied for table capacity_day_ledger"
 expect "T6 total below reserved -> capacity_total_below_reserved" 1 "ERROR:  capacity_total_below_reserved: oven 100 work 0"
@@ -61,5 +61,8 @@ expect "T10 a city already in a zone -> delivery_city_in_other_zone" 1 "ERROR:  
 expect "T11 authenticated cannot write delivery_zones directly" 1 "permission denied for table delivery_zones"
 expect "T12 anon cannot call fn_admin_create_delivery_zone" 1 "permission denied for function fn_admin_create_delivery_zone"
 expect "T12b zone creation is audited" 1 "T12b_zone_audited=1"
+expect "T14 admin with aal2 gets the delivery list" 1 "T14_admin_delivery_list=0"
+expect "T14b anon cannot call fn_admin_delivery_list" 1 "permission denied for function fn_admin_delivery_list"
+expect "T14c each generation is audited, the refused ones are not" 1 "T14c_list_audited=1"
 [ $fail = 0 ] && echo PASSED || echo FAILED
 exit $fail

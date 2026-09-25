@@ -24,6 +24,7 @@ export const DB_ERROR_CODES = [
   'day_range_invalid',
   'day_unavailable',
   'delivery_city_in_other_zone',
+  'delivery_list_invalid_day',
   'delivery_zone_invalid',
   'delivery_zone_name_taken',
   'delivery_zone_not_found',
