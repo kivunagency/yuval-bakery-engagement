@@ -8,7 +8,10 @@ import styles from './SiteFooter.module.css';
 // on /business and in the order confirmation, not in every footer), the
 // contact block (US-0b) and links to the legal pages. Data comes from the
 // public layout, fetched on the server.
-export const FOOTER_LINKS = [{ href: '/business', key: 'business' }] as const;
+export const FOOTER_LINKS = [
+  { href: '/business', key: 'business' },
+  { href: '/privacy', key: 'privacy' },
+] as const;
 
 export function SiteFooter({ settings }: { settings: PublicSiteSettings }) {
   const t = useTranslations('footer');
