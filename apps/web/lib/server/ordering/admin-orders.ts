@@ -5,13 +5,15 @@ import { callRpc, DbError } from '@/lib/server/supabase/rpc';
 import { ORDER_STATUSES } from '@/lib/shared/types';
 import {
   adminOrderActionResult,
+  releaseUnpaidRow,
   type AdminOrderAction,
   type AdminOrderActionResult,
   type AdminOrdersApiErrorBody,
+  type ReleaseUnpaidResult,
 } from '@/lib/shared/contracts/admin-orders';
 
 // Admin order operations (Rule 27 names, ADR-001): markOrderPaid, cancelOrder,
-// markOrderFulfilled. These are the one handler behind
+// markOrderFulfilled, releaseUnpaidForDay. These are the one handler behind
 // each /api/admin/orders route, and the ones the operations registry
 // (ops-registry-001) must call too, so the UI and the registry never diverge.
 //
@@ -46,6 +48,8 @@ function errorResult(e: unknown): OrdersResult<never> {
         return { ok: false, status: 401, body: { error: 'unauthorized' } };
       case 'order_cannot_be_fulfilled_without_confirmation':
         return { ok: false, status: 409, body: { error: 'confirmation_required', status: 'paid' } };
+      case 'day_range_invalid':
+        return { ok: false, status: 400, body: { error: 'invalid_input' } };
     }
   }
   console.error('admin order action failed', e);
@@ -79,4 +83,14 @@ export function cancelOrder(client: SupabaseClient, id: string) {
 /** paid -> fulfilled. Refused by trg_orders_guard_fulfillment (409 confirmation_required) for a guest with no email until the confirmation was delivered (US-0c). */
 export function markOrderFulfilled(client: SupabaseClient, id: string) {
   return runOrderAction(client, 'mark-fulfilled', id);
+}
+
+/** SEC-006: cancel every payment_pending order of one day, each through fn_release_order_capacity. Paid orders are never touched. */
+export async function releaseUnpaidForDay(client: SupabaseClient, day: string): Promise<OrdersResult<ReleaseUnpaidResult>> {
+  try {
+    const row = await callRpc(client, 'fn_admin_release_unpaid_for_day', { p_day: day }, releaseUnpaidRow);
+    return { ok: true, value: { day: row.day, released: row.released, orderNumbers: row.order_numbers } };
+  } catch (e) {
+    return errorResult(e);
+  }
 }
