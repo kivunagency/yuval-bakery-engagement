@@ -26,6 +26,13 @@ Sessions may run in the cloud, where the Kivun agency agents, skills and laws un
 - Commit and push early. Promotion `develop` to `main` only with Ran's explicit approval.
 - Docs-only changes to specs may go to `main` (as they have until now).
 
+## Parallel sessions (several cloud sessions build tasks at once)
+- Branch from the latest `origin/develop`; before opening a PR and whenever asked, `git merge origin/develop` (never rebase or force-push a pushed branch).
+- Migrations: use only the timestamp lane your session prompt assigns (for example `20260926_03xxxx`), so parallel PRs never pick the same number.
+- Regression tests: one file per domain, `apps/web/qa/regression.<domain>.spec.js`. `qa/regression.spec.js` is the shared baseline; add to it only for cross-cutting checks.
+- `messages/*.json` and `SYSTEM-CONTRACT.md` are shared: add your keys under your own namespace, and expect to resolve small merge conflicts there.
+- Do not merge your own PR. The orchestrating session merges into `develop` after CI is green. Nobody merges into `main`.
+
 ## Rules that bind this project (short form of the Kivun laws)
 - **English-first i18n**: English keys, `en.json` primary, Hebrew in `he.json`. No Hebrew string literal in code. UI is RTL (`dir="rtl"`, logical CSS properties).
 - **Server/client separation**: `app/api/*/route.ts` with Zod contracts; DB and secrets only in `lib/server/` with `import 'server-only'`. The anon key never writes to tables: every write goes through the SECURITY DEFINER functions in the schema, called server-side.
