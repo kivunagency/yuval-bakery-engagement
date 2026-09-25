@@ -17,7 +17,18 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
+    // Order pages and their API carry a capability token in the URL: no
+    // Referer to Bit/PayBox or anyone else, no indexing (SEC-003). Listed after
+    // the catch-all so this Referrer-Policy wins.
+    const orderHeaders = [
+      { key: 'Referrer-Policy', value: 'no-referrer' },
+      { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+    ];
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      { source: '/order/:path*', headers: orderHeaders },
+      { source: '/api/orders/:path*', headers: orderHeaders },
+    ];
   },
 };
 
