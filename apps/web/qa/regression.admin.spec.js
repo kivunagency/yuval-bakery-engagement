@@ -56,7 +56,8 @@ test.describe('admin login (db-005)', () => {
       await expect(page, path).toHaveURL(/\/admin\/login$/);
     }
     const res = await request.patch('/api/admin/capacity/2027-01-05', { data: { ovenMinutesTotal: 1, workMinutesTotal: 1, isBlackout: false } });
-    expect([401, 404]).toContain(res.status()); // 404 until api-009 exists on this branch
+    expect(res.status()).toBe(401);
+    expect(await res.json()).toEqual({ error: 'unauthorized' });
   });
 
   test('same error for wrong password, unknown email, and a non-admin with the right password', async ({ page }) => {
@@ -199,5 +200,71 @@ test.describe('admin login (db-005)', () => {
     const admin = await createUser({ admin: true, withTotp: true });
     await uiLogin(page, admin);
     await expect(page.getByRole('navigation', { name: 'ניווט ניהול' })).toBeVisible();
+  });
+});
+
+test.describe('PATCH /api/admin/capacity/[date] (api-009)', () => {
+  // A day far enough ahead that no other test or the seed uses it.
+  const day = (offset) => new Date(Date.now() + offset * 864e5).toISOString().slice(0, 10);
+
+  test('admin at aal2: validates, writes through the DB, refuses totals below reserved with a clear 409', async ({ page, baseURL }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const api = page.request;
+    const headers = { origin: baseURL ?? '' };
+    const d = day(200 + Math.floor(Math.random() * 300));
+
+    // CSRF: no Origin, or a foreign one, is refused even with a valid session.
+    expect((await api.patch(`/api/admin/capacity/${d}`, { data: { ovenMinutesTotal: 10, workMinutesTotal: 10, isBlackout: false } })).status()).toBe(403);
+    expect((await api.patch(`/api/admin/capacity/${d}`, { headers: { origin: 'https://evil.example' }, data: { ovenMinutesTotal: 10, workMinutesTotal: 10, isBlackout: false } })).status()).toBe(403);
+
+    // Zod: bad date, negative, fractional, over 1440, unknown key, not JSON.
+    for (const [path, data] of [
+      [`/api/admin/capacity/2026-02-30`, { ovenMinutesTotal: 10, workMinutesTotal: 10, isBlackout: false }],
+      [`/api/admin/capacity/${d}`, { ovenMinutesTotal: -5, workMinutesTotal: 10, isBlackout: false }],
+      [`/api/admin/capacity/${d}`, { ovenMinutesTotal: 1.5, workMinutesTotal: 10, isBlackout: false }],
+      [`/api/admin/capacity/${d}`, { ovenMinutesTotal: 1441, workMinutesTotal: 10, isBlackout: false }],
+      [`/api/admin/capacity/${d}`, { ovenMinutesTotal: 10, workMinutesTotal: 10, isBlackout: false, ovenMinutesReserved: 0 }],
+    ]) {
+      const r = await api.patch(path, { headers, data });
+      expect(r.status(), JSON.stringify(data)).toBe(400);
+      expect(await r.json()).toEqual({ error: 'invalid_input' });
+    }
+    expect((await api.patch(`/api/admin/capacity/${d}`, { headers: { ...headers, 'content-type': 'application/json' }, data: 'not json' })).status()).toBe(400);
+
+    const ok = await api.patch(`/api/admin/capacity/${d}`, { headers, data: { ovenMinutesTotal: 300, workMinutesTotal: 420, isBlackout: false } });
+    expect(ok.status()).toBe(200);
+    expect(await ok.json()).toEqual({
+      day: d, ovenMinutesTotal: 300, ovenMinutesReserved: 0, ovenMinutesUnpaidReserved: 0,
+      workMinutesTotal: 420, workMinutesReserved: 0, workMinutesUnpaidReserved: 0, isBlackout: false, source: 'manual',
+    });
+    const [audit] = await db("SELECT actor_id, metadata FROM audit_log WHERE action = 'capacity.day_updated' AND entity_id = $1 ORDER BY id DESC LIMIT 1", [d]);
+    expect(audit.actor_id).toBe(admin.userId);
+    expect(audit.metadata.oven_minutes_total).toBe(300);
+
+    // Orders already hold 120 oven / 90 work minutes of that day.
+    await db('UPDATE capacity_day_ledger SET oven_minutes_reserved = 120, work_minutes_reserved = 90 WHERE day = $1', [d]);
+    const below = await api.patch(`/api/admin/capacity/${d}`, { headers, data: { ovenMinutesTotal: 100, workMinutesTotal: 420, isBlackout: false } });
+    expect(below.status()).toBe(409);
+    expect(await below.json()).toEqual({ error: 'below_reserved', reserved: { ovenMinutes: 120, workMinutes: 90 } });
+    const [row] = await db('SELECT oven_minutes_total FROM capacity_day_ledger WHERE day = $1', [d]);
+    expect(row.oven_minutes_total).toBe(300); // unchanged
+
+    // Blackout keeps the numbers and the existing orders; it only closes the day to new ones.
+    const closed = await api.patch(`/api/admin/capacity/${d}`, { headers, data: { ovenMinutesTotal: 120, workMinutesTotal: 90, isBlackout: true } });
+    expect(closed.status()).toBe(200);
+    expect((await closed.json()).isBlackout).toBe(true);
+  });
+
+  test('admin session without TOTP (aal1) gets 401', async ({ page, baseURL }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    await page.setExtraHTTPHeaders({ 'x-nf-client-connection-ip': randomIp() });
+    await page.goto('/admin/login');
+    await page.getByLabel('אימייל').fill(admin.email);
+    await page.getByLabel('סיסמה').fill(admin.password);
+    await page.getByRole('button', { name: 'כניסה', exact: true }).click();
+    await page.waitForURL('**/admin/login/verify');
+    const r = await page.request.patch(`/api/admin/capacity/${day(250)}`, { headers: { origin: baseURL ?? '' }, data: { ovenMinutesTotal: 1, workMinutesTotal: 1, isBlackout: false } });
+    expect(r.status()).toBe(401);
   });
 });
