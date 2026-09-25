@@ -27,11 +27,13 @@ run "build netlify functions (job-001 bundles)" npm run -s build:functions
 if bash scripts/local-stack/up.sh; then
   record "local stack up (pg17 + auth + postgrest)" PASSED
   run "qa-001 capacity race (N concurrent pg connections)" npm run -s test:race
+  run "blindspot-002 business day + lead time (Asia/Jerusalem)" npm run -s test:business-day
   run "regression specs incl. regression.jobs (Playwright)" npx playwright test -c qa/playwright.config.js --project=mobile
   bash scripts/local-stack/down.sh >/dev/null
 else
   record "local stack up (pg17 + auth + postgrest)" FAILED
   record "qa-001 capacity race (N concurrent pg connections)" "DID NOT RUN"
+  record "blindspot-002 business day + lead time (Asia/Jerusalem)" "DID NOT RUN"
   record "regression specs incl. regression.jobs (Playwright)" "DID NOT RUN"
 fi
 
