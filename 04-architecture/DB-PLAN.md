@@ -321,3 +321,302 @@ DID NOT RUN (explicitly, per Rule 20, not implied as passed):
   assumed done.
 
 [[agents/dba]] [[agents/rotem]] [[agents/erez]] [[agents/alex]] [[yuval-bakery]] [[ADR-002-capacity-ledger]] [[yuval-bakery/domain-map]]
+
+## 10. Fix round 2026-09-25 (coordinator review of f2477b2, then rotem's compliance-schema-review.md)
+
+Migration: `db/migrations/20260925121000_capacity_auth_and_compliance_fixes.sql`,
+applied atop the original 9 migrations, same unmerged PR (rotem's own
+coordination note: apply after the capacity fixes, same PR or the next one).
+
+### 10.1 BUG 1: the unpaid-holds cap wrongly counted paid orders
+
+**Symptom**: once paid orders reached 70% of a day's capacity, EVERY new
+order (even a tiny one, even though 30% of the day was still genuinely
+free) was rejected with `unpaid_holds_capacity_cap_exceeded`. The last 30%
+of every day could never be sold.
+
+**Root cause**: `fn_create_standard_order` compared
+`oven_minutes_reserved + new` (paid AND unpaid combined) against
+`total * unpaid_holds_capacity_pct / 100`. The 70% cap is meant to bound
+**unpaid** holds only (SEC-005's abuse-prevention purpose: a payment_pending
+order that might never be paid should not be allowed to lock up the whole
+day). A paid order is not an abuse risk; it is realized revenue.
+
+**Second bug in the same code path**: the ledger was read (`SELECT * INTO
+v_ledger`) BEFORE calling `fn_reserve_capacity`, with no lock between the
+read and the write. Two concurrent unpaid orders could both read the same
+"room available" snapshot and both pass the check, even though only one
+should fit.
+
+**Fix**: `capacity_day_ledger` gained `oven_minutes_unpaid_reserved` /
+`work_minutes_unpaid_reserved`, maintained by `fn_reserve_capacity`
+(increment), `fn_mark_order_paid` (decrement: the order stops being an
+unpaid hold), and `fn_release_order_capacity` (decrement, only if the order
+being released WAS payment_pending). The 70% check itself moved INSIDE
+`fn_reserve_capacity`'s single atomic `UPDATE ... WHERE ...`, checked
+against `*_unpaid_reserved` only, closing the race in the same fix as the
+correctness bug (one atomic statement, no read-then-write gap).
+
+**Invariant, stated so a test can assert it directly**:
+
+```
+unpaid_never_exceeds_cap: for every (day, resource), at every moment,
+  oven_minutes_unpaid_reserved <= oven_minutes_total * unpaid_holds_capacity_pct / 100
+  work_minutes_unpaid_reserved <= work_minutes_total * unpaid_holds_capacity_pct / 100
+-- and, unlike the pre-fix version, this bound is evaluated against UNPAID
+-- holds only; a day may be up to 100% reserved once orders are paid.
+```
+
+```sql
+-- Test SQL (executed, see 10.6): mark paid orders up to 80% of a 100/100
+-- day, then assert a NEW small unpaid order succeeds; then fill unpaid
+-- holds to exactly 70 and assert the next unpaid order is rejected.
+```
+
+### 10.2 BUG 2: a paid order could never be cancelled
+
+**Symptom**: `fn_cancel_order` routed through `fn_release_order_capacity`,
+which only matched `status = 'payment_pending'`. Once an order was `paid`,
+cancelling it returned `false`: the order stayed `paid` forever and its
+oven/work minutes stayed held forever, even though Yuval needs to be able
+to cancel a paid order (refund handled by her, outside the app) when a
+customer cancels after paying, or she can no longer fulfil it.
+
+**Fix**: capacity-holding statuses are now explicitly `payment_pending` AND
+`paid` (documented here as the single source of truth). `expired` only ever
+applies to `payment_pending` (the timeout is a pre-payment concept, it does
+not apply once an order is paid). `cancelled` may apply to `payment_pending`
+OR `paid`. `fulfilled` is terminal and does NOT release capacity (the bake
+already happened; the time was genuinely spent). If a future
+`in_preparation`/`ready` status is ever added to the state machine, it MUST
+be added to `fn_release_order_capacity`'s `v_allowed_from` array explicitly;
+it is not covered by assumption.
+
+**SEC-007 idempotency, re-verified under the generalized transition**:
+`fn_release_order_capacity` now takes a row lock (`SELECT ... FOR UPDATE`)
+before deciding whether the order is in an allowed source status, both to
+read the OLD status reliably (needed for the unpaid-bookkeeping decision:
+was this order's capacity counted as "unpaid" or not) and so a concurrent
+second caller (retried sweep, cancel racing expire on the SAME order) blocks
+on the lock, then sees the already-updated status and returns `false`.
+Cancelling a paid order, then cancelling it again, releases capacity exactly
+once (tested, see 10.6).
+
+### 10.3 CRITICAL: admin functions trusted a caller-supplied admin id
+
+**Found by the coordinator reading the grants directly, not by a test.**
+`fn_mark_order_paid`, `fn_mark_order_fulfilled`, `fn_cancel_order`,
+`fn_approve_custom_cake_request`, `fn_decline_custom_cake_request`, and
+`fn_admin_set_day_capacity` all took a `p_admin_id UUID` parameter, checked
+only that the id existed in `admins`, and were `GRANT`ed to `authenticated`.
+Every registered customer holds `authenticated`. Any customer who learned
+Yuval's admin UUID (visible in `audit_log.actor_id`, `privacy_requests.
+handled_by`, etc.) could call any of these AS IF they were Yuval: mark
+orders paid, cancel orders, decline custom cakes, or zero a day's capacity.
+`fn_set_marketing_consent` had the identical shape with `p_customer_id`.
+
+**Fix**: every one of these functions now takes NO actor-identifying
+parameter. The actor is always `auth.uid()` (the caller's own verified JWT
+subject, which `SECURITY DEFINER` does not change: the JWT-derived session
+GUCs are per-connection/request, not per-role), checked against
+`is_admin_aal2()` (admin-role membership AND AAL2). `fn_set_marketing_consent`
+keeps a `p_customer_id` parameter (an admin legitimately needs to record
+consent on a GUEST's behalf when Yuval processes a phone request, so
+"derive everything from auth.uid(), no parameter at all" does not fit this
+one case) but now requires `p_customer_id = auth.uid() OR is_admin_aal2() OR
+current_user = 'service_role'`, checked inside the function before any write.
+
+**A second, related bug found only by actually testing this as a
+non-superuser role** (not in any review; found while writing the RED/GREEN
+test below): the blanket `REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public
+FROM PUBLIC/anon/authenticated` in the original functions migration ran
+AFTER `is_admin()`/`has_aal2()`/`is_admin_aal2()` were created, and nothing
+ever re-granted them. Every RLS policy that calls `is_admin_aal2()` (most of
+them) would raise `permission denied for function is_admin_aal2` for a REAL
+`anon`/`authenticated` caller, not only an attacker. Running every earlier
+test as the `postgres` superuser never surfaced this, because superuser
+bypasses function-execute checks entirely. Fixed by granting `EXECUTE` on
+all three helper functions to `anon, authenticated`.
+
+### 10.4 rotem's compliance-schema-review.md: B1-B5
+
+Full detail lives in that document; summarized here as the schema-level
+contract each fix now provides.
+
+- **B1 (retention/deletion were not executable)**: `orders`' two identity/
+  address CHECK constraints gained a `pii_purged_at IS NOT NULL OR ...`
+  escape hatch (previously, anonymizing ANY order with a delivery address,
+  or ANY guest order, violated a CHECK and rolled the whole deletion back).
+  `fn_anonymize_order` / `fn_anonymize_custom_cake_request` are the one
+  canonical definition (Rule 19) of "scrub PII off X", called both by
+  `fn_anonymize_customer` (registered path) and directly by
+  `fn_run_retention_sweep` for GUEST orders/requests, which have no
+  `customer_id` and were previously unreachable by any deletion path at all.
+  `retention_until` is now populated by trigger on the transition into a
+  terminal state (`fulfilled` gets `guest_pii_months`, `expired`/`cancelled`/
+  `declined` get the new, shorter `unconsummated_order_pii_days`, since an
+  order that never became a real transaction has a weaker purpose-limitation
+  case for 24-month retention). `custom_cake_photos` gets a two-step purge
+  (`fn_photos_due_for_purge` lists candidates, `fn_mark_photos_purged`
+  deletes the DB rows only after the caller confirms Storage deletion,
+  Rule 20).
+- **B2 (registered-customer deletion always failed if they had ever touched
+  consent)**: reproduced directly (see 10.6) before fixing. The FK from
+  `consent_events.customer_id` to `customers(id) ON DELETE SET NULL` made
+  Postgres run an `UPDATE` on every referencing row when a customer was
+  deleted, and the append-only trigger rejected that `UPDATE` outright. Fix:
+  no FK at all (an evidence reference, exactly what the compliance spec
+  asked for: "an identifier + email stays as evidence" -- the FK's `SET
+  NULL` would have destroyed the identifier anyway even without the trigger
+  conflict). `fn_hard_delete_customer` is now the one correct order of
+  operations: anonymize first, delete `auth.users` second (the reverse order
+  would delete the customer row while their orders still carry live PII with
+  nothing left to anonymize through).
+- **B3 (consent evidence was forgeable)**: `fn_set_marketing_consent` now
+  checks ownership/role as above, requires `admin_on_request` source to
+  actually come from an admin, rejects `unsubscribe_link` as a source
+  entirely (that path is `fn_unsubscribe_by_token`, `service_role` only, the
+  unauthenticated `/unsubscribe` route), and requires a `granted` action's
+  version to exactly match `app_settings.active_marketing_consent_version`
+  (no consenting to a notice version that was never shown). `customers` lost
+  its blanket `GRANT UPDATE` in favor of a column-level grant excluding the
+  marketing/consent-evidence columns.
+- **B4 (phone/IP retained with no purge; audit_log carried a raw IP)**:
+  `fn_purge_old_order_attempts` (new) and `fn_purge_old_lookup_attempts`
+  (existing, now also raises rather than silently deleting zero rows when
+  its retention setting is missing) both exist. `fn_create_standard_order`
+  no longer writes the raw checkout IP into `audit_log` (which is
+  permanently undeletable by app-role UPDATE/DELETE); the IP already lives
+  in `order_attempt_log`, which now has a retention/purge path.
+  `audit_log`'s own trigger now allows `DELETE` only under an explicit
+  `app.retention_purge` flag set solely by the new `fn_purge_old_audit_log`,
+  so a real 7-year purge is possible without opening the table to any app
+  role.
+- **B5 (the US-0c confirmation gate was itself unguarded, and the link
+  could never be revoked)**: `fn_record_order_confirmation_delivered` now
+  requires `is_admin_aal2() OR current_user = 'service_role'` (previously
+  ANY authenticated customer could call it and open `trg_orders_guard_
+  fulfillment`'s gate on someone else's order) and writes at most once
+  (`WHERE confirmation_delivered_at IS NULL`), so the stored hash stays
+  proof of what was actually sent. `orders` gained
+  `confirmation_link_revoked_at` / `confirmation_pdf_purged_at`;
+  `fn_anonymize_order` sets the former, `fn_mark_confirmation_pdf_purged`
+  (service_role, called only after Storage deletion is confirmed) sets the
+  latter. The route serving the confirmation link/PDF MUST check both are
+  NULL (and `pii_purged_at IS NULL`) before serving anything -- an
+  application-layer contract this column pair exists to support.
+
+Deferred, with reasons, at the end of the migration file: N2 (inactivity
+notice flow), N3/N4 (two more retention purges pending legal-confirmed
+periods; their `app_settings` keys ARE seeded), N5 (hashing IP/phone in the
+rate-limit tables), N8/N9 (delivery_list_links rename + Phase 2 serving
+function, pending maya/erez's MVP-vs-Phase-2 call on US-7 vs SEC-016), N11
+(app_settings floor/ceiling trigger).
+
+### 10.5 New invariants, stated for the test suite
+
+```
+capacity_never_negative (ADR-002, unchanged):
+  reserved <= total, for both resources, at every moment, under any concurrency.
+
+unpaid_never_exceeds_cap (new, section 10.1):
+  unpaid_reserved <= total * unpaid_holds_capacity_pct / 100,
+  for both resources, at every moment. Distinct from capacity_never_negative:
+  reserved (paid + unpaid) may legitimately reach 100% of total; only the
+  UNPAID share is capped.
+
+release_exactly_once (SEC-007, generalized in section 10.2):
+  for any order, across its entire lifetime, fn_release_order_capacity's
+  guarded transition (payment_pending|paid -> expired|cancelled) succeeds
+  at most once. A second call, from any source, at any time, returns false
+  and changes nothing.
+
+admin_actions_require_the_caller_to_be_admin (new, section 10.3):
+  every admin-only function derives its actor from auth.uid(), never a
+  parameter, and raises before any read or write if is_admin_aal2() is false.
+```
+
+### 10.6 What was executed for this round (Rule 20)
+
+All against throwaway `postgres:17` containers (destroyed after each run),
+same auth-schema stub as section 9. Three containers were used across this
+round (`yuval_bakery_dbtest2` for the RED-then-GREEN sequence against an
+already-seeded database, `yuval_bakery_dbtest3` for a from-scratch full
+10-migration run plus the real concurrency test); all destroyed, nothing
+persisted anywhere.
+
+**RED, executed against the pre-fix schema (all 9 original migrations, no
+fix migration applied), confirmed failing exactly as the coordinator/rotem
+described, before any fix was written:**
+1. BUG 1: 8 orders marked paid on a 100/100 day (reaching 80/80 paid) raised
+   `unpaid_holds_capacity_cap_exceeded` on the 8th order itself (paid orders
+   alone exceeded the mis-scoped 70% check), rather than on a subsequent
+   unpaid order as originally scripted -- an even starker confirmation of
+   the bug (legitimate PAID business could not even complete past ~70%).
+2. BUG 2: paid an order, called `fn_cancel_order`, got `false`; capacity
+   stayed at 10/10 reserved (unreleased) after the "successful" cancel
+   attempt.
+3. B2: created a customer, granted marketing consent, `DELETE FROM
+   customers` failed with `append_only_table: UPDATE on consent_events is
+   not permitted`.
+4. B1a: created a customer with one DELIVERY order, `fn_anonymize_customer`
+   failed with `new row for relation "orders" violates check constraint
+   "orders_check1"`.
+
+**GREEN, executed against the fix migration applied on top:**
+5. BUG 1a: with 80/100 minutes PAID (verified via a clean, isolated setup --
+   8 separate order+pay calls, each in its own exception-scoped block so a
+   later failure could not roll back earlier successes, the mistake in the
+   RED run above), a new small UNPAID order SUCCEEDED (previously
+   impossible). Ledger: `reserved=90, unpaid=10`.
+6. BUG 1b: on a fresh 100/100 day, 7 unpaid orders of 10 minutes each
+   brought unpaid holds to exactly 70/100 (the cap); an 8th unpaid order was
+   correctly rejected with `unpaid_holds_capacity_cap_exceeded`.
+7. BUG 2a/2b: paid an order, cancelled it (`true`, capacity returned to
+   before-order level), cancelled it again (`false`, ledger byte-identical
+   to after the first cancel). SEC-007 idempotency holds under the
+   generalized payment_pending-or-paid release path.
+8. Privilege escalation: as `SET ROLE authenticated` with a real (non-admin)
+   customer's JWT claims, calling `fn_mark_order_paid`, `fn_cancel_order`,
+   `fn_admin_set_day_capacity`, and `fn_decline_custom_cake_request` against
+   a REAL order id (obtained out of band, not from a failed lookup) all
+   raised `admin_aal2_required`; `fn_set_marketing_consent` targeting a
+   DIFFERENT customer raised `consent_not_own`. The real admin, same
+   session shape, same order id, succeeded (`fn_mark_order_paid` returned
+   `true`, order status became `paid`).
+9. B2 green: a customer with a consent event was hard-deleted via
+   `fn_hard_delete_customer`; `auth.users` row gone; the `consent_events`
+   evidence row SURVIVED (as required).
+10. B1a green: a customer with a DELIVERY order (address + city) was
+    anonymized successfully; PII columns null, `total_displayed` (financial/
+    accounting data) retained.
+11. Full-suite regression: all 10 migration files (the original 9 plus the
+    fix migration) plus `indexes.sql` applied cleanly, zero errors, on a
+    completely FRESH container from scratch (not just incrementally on the
+    already-patched session), proving the final artifact is self-consistent
+    end to end.
+12. **Real concurrent race** (the item explicitly marked DID NOT RUN in
+    section 9, now executed): pre-reserved 65/100 minutes as PAID (two
+    separate paid orders, each within the 35% single-order cap), leaving
+    exactly 35 minutes of physical room -- exactly one order's worth. Two
+    genuinely separate OS processes (`docker exec ... psql` launched via
+    bash `&`, not sequential calls in one session) each attempted a 35-minute
+    order for the SAME day at the same time. Result: exactly one succeeded
+    (`capacity_reservation_failed` for the other), and the ledger read back
+    afterward was `reserved=100, total=100`, never exceeding total. This is
+    the actual concurrent-session version of ADR-002's own acceptance test,
+    not the sequential-call simulation section 9 relied on.
+
+**DID NOT RUN / inconclusive by my own error, reported rather than hidden**:
+a follow-up batch of 5 more concurrent-race rounds used a day total (35/100)
+smaller than the single-order cap could accommodate for the product used (35
+minutes needs `total >= 35/0.35 = 100`), so both racers in every round were
+rejected by the single-order cap before the concurrency mechanism was ever
+exercised. This is a test-setup arithmetic error on my part, not a finding
+about the schema; the one correctly-set-up race in item 12 above is the
+valid evidence for this invariant.
+
+**Still DID NOT RUN, same reasons as section 9**: the real Supabase local
+stack; Storage bucket policies.
+
+[[agents/dba]] [[agents/rotem]] [[agents/erez]] [[yuval-bakery]] [[compliance-schema-review]]

@@ -1,0 +1,22 @@
+-- Independent check (dispatcher, 2026-09-25): admin functions reject a
+-- non-admin caller and an admin without aal2, and accept an admin with aal2.
+\set ON_ERROR_STOP 0
+INSERT INTO auth.users VALUES ('00000000-0000-0000-0000-00000000000a','admin@test'),('00000000-0000-0000-0000-00000000000c','cust@test');
+INSERT INTO admins (id, display_name) VALUES ('00000000-0000-0000-0000-00000000000a','Test Admin');
+SET ROLE authenticated;
+-- 1. customer with aal2 tries to set capacity: must fail
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2","role":"authenticated"}',false);
+SELECT 'T1_customer_set_capacity' AS t, fn_admin_set_day_capacity('2026-10-01',300,420,false);
+-- 2. admin without aal2: must fail
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal1","role":"authenticated"}',false);
+SELECT 'T2_admin_aal1_set_capacity' AS t, fn_admin_set_day_capacity('2026-10-01',300,420,false);
+-- 3. admin with aal2: must succeed
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2","role":"authenticated"}',false);
+SELECT 'T3_admin_aal2_set_capacity' AS t, (fn_admin_set_day_capacity('2026-10-01',300,420,false)).day;
+-- 4. customer tries mark paid on any id: must fail with admin_aal2_required
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2","role":"authenticated"}',false);
+SELECT 'T4_customer_mark_paid' AS t, fn_mark_order_paid(gen_random_uuid());
+-- 5. anon direct write to ledger: must fail
+RESET ROLE; SET ROLE anon;
+UPDATE capacity_day_ledger SET oven_minutes_total = 0;
+RESET ROLE;
