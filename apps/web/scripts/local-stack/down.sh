@@ -2,7 +2,7 @@
 # Stop the local stack started by up.sh and delete its data.
 APP="$(cd "$(dirname "$0")/../.." && pwd)"
 STATE="$APP/.local-stack"
-for s in gateway rest auth; do
+for s in gateway rest auth smtp; do
   [ -f "$STATE/$s.pid" ] && kill "$(cat "$STATE/$s.pid")" 2>/dev/null
   rm -f "$STATE/$s.pid"
 done

@@ -11,6 +11,10 @@ npm run dev           # http://localhost:3000
 npm run stack:down
 ```
 
+Supabase Auth runs with email confirmation ON; its mail goes to a local SMTP
+sink (`.local-stack/mail/*.eml`, read by `qa/helpers/mail.js`) using the
+templates in `supabase/templates/`.
+
 No Docker needed: `scripts/local-stack/` fetches PostgreSQL 17 (npm package
 `@embedded-postgres/linux-x64`), Supabase Auth and PostgREST (GitHub releases)
 into a cache outside the repo. Seed data is `supabase/seed.sql` (synthetic only).
@@ -35,6 +39,8 @@ lib/server/          DB, auth, secrets. Every file starts with import 'server-on
   auth/admin.ts      getAdminSession(): verified user + aal2 (TOTP within 12h) + admins membership, or null;
                      requireAdminPage(): same, redirecting to /admin/login. Call it in EVERY admin page.
   auth/admin-login.ts  password -> TOTP enrol/verify -> aal2, rate limited in the DB, uniform errors
+  identity/          optional customer accounts (api-010): sign-up, mail confirmation, sign-in,
+                     getCustomerSession(), own profile and marketing consent, one-click unsubscribe
 lib/shared/          no I/O: types (DB enums mirrored and tested), Zod contracts, Asia/Jerusalem time
 messages/            en.json (keys, primary) and he.json (UI text)
 supabase/migrations  the migrations that ship to Supabase (moved from output/db/)
