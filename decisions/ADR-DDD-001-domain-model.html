@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADR-DDD-001: Domain model and bounded contexts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #FAFAF9;
+      --surface: #FFFFFF;
+      --text-primary: #1C1917;
+      --text-secondary: #57534E;
+      --text-muted: #A8A29E;
+      --border: #E7E5E4;
+      --accent: #16A34A;
+      --accent-hover: #15803D;
+      --accent-soft: #DCFCE7;
+      --warn: #F59E0B;
+      --warn-soft: #FEF3C7;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,0.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); color: var(--text-primary); font-family: 'Rubik', sans-serif; line-height: 1.6; }
+    body { padding: 0; min-height: 100vh; }
+    .topbar {
+      position: sticky; top: 0; z-index: 100; background: rgba(250,250,249,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { font-family: 'Heebo', sans-serif; font-weight: 800; font-size: 18px; }
+    .brand-mark { display: inline-block; width: 24px; height: 24px; background: var(--accent); border-radius: 6px; margin-left: 10px; vertical-align: middle; }
+    .meta-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill { padding: 4px 12px; background: var(--accent-soft); color: var(--accent-hover); border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .pill.warn { background: var(--warn-soft); color: #92400E; }
+    .pill.muted { background: var(--border); color: var(--text-secondary); }
+    .container { max-width: 960px; margin: 0 auto; padding: 32px; }
+    .doc-header { padding: 48px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    .doc-header h1 { font-family: 'Heebo', sans-serif; font-size: 48px; font-weight: 800; line-height: 1.1; margin-bottom: 12px; letter-spacing: -0.5px; }
+    .doc-header .subtitle { font-size: 20px; color: var(--text-secondary); margin-bottom: 20px; }
+    .doc-header .meta { display: flex; gap: 16px; font-size: 14px; color: var(--text-muted); }
+    nav.toc {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px;
+      margin-bottom: 32px; box-shadow: var(--shadow-sm);
+    }
+    nav.toc h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px; }
+    nav.toc ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+    nav.toc a {
+      display: inline-block; padding: 6px 14px; background: var(--bg); color: var(--text-primary);
+      text-decoration: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+      border: 1px solid var(--border); transition: all .15s ease;
+    }
+    nav.toc a:hover { background: var(--accent-soft); color: var(--accent-hover); border-color: var(--accent); }
+    section.block {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px;
+      margin-bottom: 24px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px;
+    }
+    section.block h2 {
+      font-family: 'Heebo', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    section.block h2 .num {
+      display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+      background: var(--accent); color: white; border-radius: 8px; font-size: 16px; font-weight: 700;
+    }
+    section.block h3 { font-family: 'Heebo', sans-serif; font-size: 20px; font-weight: 600; margin: 24px 0 12px; }
+    section.block p { margin-bottom: 12px; color: var(--text-primary); }
+    /* Logical, not physical: in RTL the list marker sits inline-start (right).
+       margin-left:24px put the indent on the far side and pushed ordered-list
+       numbers outside the card's content box. The renderer strips the "1. "
+       prefix from list text, so the marker is the only numbering it has left,
+       and it has to stay inside the column. (No literal tag names in this
+       comment: they confuse tag-balance checks run over the rendered file.) */
+    section.block ul, section.block ol { margin: 12px 0; padding-inline-start: 24px; }
+    section.block li { margin-bottom: 6px; }
+    section.block code {
+      background: #F5F5F4; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      direction: ltr; display: inline-block;
+    }
+    /* PRINTCLIP-01: overflow that scrolls on screen is DROPPED in print. */
+    section.block pre {
+      background: #1C1917; color: #E7E5E4; padding: 16px; border-radius: var(--radius-sm);
+      white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: 13px; margin: 12px 0; direction: ltr;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 12px 16px; text-align: right; border-bottom: 1px solid var(--border); }
+    th { background: var(--bg); font-weight: 600; font-size: 14px; color: var(--text-secondary); }
+    .callout { padding: 16px 20px; border-radius: var(--radius-sm); margin: 16px 0; border-right: 4px solid var(--accent); background: var(--accent-soft); }
+    .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+    .cta-row {
+      display: flex; gap: 12px; flex-wrap: wrap; padding: 24px; background: var(--accent);
+      border-radius: var(--radius); margin: 32px 0; color: white; align-items: center; justify-content: space-between;
+    }
+    .cta-row .text { font-size: 18px; font-weight: 600; }
+    .btn {
+      padding: 12px 24px; background: white; color: var(--accent); text-decoration: none;
+      border-radius: var(--radius-sm); font-weight: 600; transition: all .15s ease; display: inline-block;
+    }
+    .btn:hover { background: var(--bg); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn.secondary { background: transparent; color: white; border: 1px solid white; }
+    .btn.secondary:hover { background: white; color: var(--accent); }
+    footer { padding: 48px 32px; text-align: center; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); margin-top: 48px; }
+    /* PRINTCLIP-01, second surface: a wide table that scrolls on screen drops its
+     overflowing columns in print. Let it lay out normally and wrap inside its cells. */
+    section.block table { display: table; table-layout: fixed; width: 100%; max-width: 100%; }
+    section.block th, section.block td { overflow-wrap: anywhere; word-break: break-word; }
+    /* Long code blocks WRAP rather than scroll: see PRINTCLIP-01 above. This rule
+       comes later in the cascade than the one above and was re-asserting
+       `white-space: pre`, which is what actually reached the PDF. */
+    section.block pre { white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+    @media print {
+      .topbar, nav.toc, .cta-row { display: none; }
+      /* NOTE: html-to-pdf.js renders with emulateMedia({media:"screen"}) to keep
+         the infographic look, so THIS BLOCK DOES NOT APPLY to our PDFs. Any fix
+         that has to affect the PDF belongs in the screen rules above, not here.
+         Kept for a human printing the .html directly from a browser. */
+      section.block { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+      body { background: white; }
+    }
+    /* Tablet: landscape phones, small tablets */
+    @media (max-width: 720px) {
+      .topbar { padding: 12px 16px; flex-direction: column; align-items: flex-start; gap: 8px; }
+      .container { padding: 20px 16px; }
+      .doc-header { padding: 24px 0 20px; margin-bottom: 20px; }
+      .doc-header h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.3px; }
+      .doc-header .subtitle { font-size: 16px; }
+      .doc-header .meta { flex-wrap: wrap; gap: 8px; font-size: 12px; }
+      section.block { padding: 20px 16px; margin-bottom: 16px; }
+      section.block h2 { font-size: 22px; gap: 8px; }
+      section.block h2 .num { width: 28px; height: 28px; font-size: 13px; }
+      section.block h3 { font-size: 17px; margin: 16px 0 8px; }
+      nav.toc { padding: 14px 16px; }
+      nav.toc ul { gap: 6px; }
+      nav.toc a { padding: 8px 12px; font-size: 13px; min-height: 38px; }
+      .cta-row { flex-direction: column; align-items: stretch; padding: 18px 16px; gap: 10px; }
+      .cta-row .text { font-size: 16px; text-align: center; }
+      .cta-row .btn, .cta-row a.btn { display: block; text-align: center; min-height: 44px; padding: 12px 18px; }
+      th, td { padding: 8px 10px; font-size: 13px; }
+    }
+    /* Phone: portrait phones */
+    @media (max-width: 480px) {
+      .doc-header h1 { font-size: 26px; }
+      .doc-header .subtitle { font-size: 15px; }
+      section.block h2 { font-size: 20px; }
+      section.block h2 .num { width: 26px; height: 26px; font-size: 12px; }
+      section.block { padding: 18px 14px; border-radius: 10px; }
+      nav.toc a { font-size: 12px; padding: 8px 10px; }
+      .pill { font-size: 11px; padding: 3px 9px; }
+      footer { padding: 32px 16px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark"></span>Kivun</div>
+    <div class="meta-pills">
+      <span class="pill">החלטת ארכיטקטורה (ADR)</span>
+      <span class="pill muted">yuval-bakery</span>
+      <span class="pill muted">2026-09-25</span>
+    </div>
+  </header>
+  <main class="container">
+    <div class="doc-header">
+      <h1>ADR-DDD-001: Domain model and bounded contexts</h1>
+      <p class="subtitle">החלטת ארכיטקטורה (ADR)</p>
+      <div class="meta">
+        <span>נוצר על ידי: אלכס</span>
+        <span>•</span>
+        <span>2026-09-25</span>
+      </div>
+    </div>
+
+    <nav class="toc">
+      <h3>תוכן עניינים</h3>
+      <ul><li><a href="#sec-1">1. Context</a></li>
+<li><a href="#sec-2">2. Decision</a></li>
+<li><a href="#sec-3">3. Alternatives considered</a></li>
+<li><a href="#sec-4">4. Consequences</a></li></ul>
+    </nav>
+
+    <section class="block" id="sec-1"><h2><span class="num">1</span>Context</h2>
+<p>PRD-01 (approved 2026-09-25) defines a resource-capacity ordering system with</p>
+<p>a hard correctness requirement (no oversold oven/work minutes, enforced at</p>
+<p>the DB level), a secondary write path that creates orders from a different</p>
+<p>flow (custom cakes), and several supporting concerns (catalog, delivery</p>
+<p>pricing, identity, notifications) that Yuval must be able to manage without a</p>
+<p>developer. Full detail: <code>domain-map.md</code>.</p>
+</section><section class="block" id="sec-2"><h2><span class="num">2</span>Decision</h2>
+<p>Eight bounded contexts, one Next.js monolith, one Postgres database. No</p>
+<p>service split; the boundary is <code>lib/server/{context}/</code> folders plus the rule</p>
+<p>that only the owning context's module ever writes its own tables directly.</p>
+<p>Capacity is the core, invariant-bearing context; Ordering and CustomCake are</p>
+<p>both Conformists to it and must call its <code>reserve()</code>/<code>release()</code> functions</p>
+<p>rather than reimplementing "is there room" (Rule 19: one shared definition of</p>
+<p>a business quantity, never two).</p>
+<p>The one deliberately-named cross-context write is <code>CustomCakeRequest.approve()</code></p>
+<p>creating an <code>Order</code>: it happens inside a single DB transaction, not as an</p>
+<p>async event, specifically so it can never race a standard-product checkout</p>
+<p>for the same day's capacity. This is called out because it is the one place</p>
+<p>in the system where "which context owns this write" could plausibly be</p>
+<p>gotten wrong, and it is the highest-consequence place to get it wrong (real</p>
+<p>money, real oven).</p>
+</section><section class="block" id="sec-3"><h2><span class="num">3</span>Alternatives considered</h2>
+<ol>
+<li><strong>No DDD structure, flat <code>lib/</code> folder.</strong> Rejected: PRD-01 already names</li>
+</ol>
+<p>   eight distinct concerns with different lifecycles (loyalty is Phase 2,</p>
+<p>   capacity is correctness-critical, delivery has zero external</p>
+<p>   dependencies) and a flat folder would let a checkout handler reach</p>
+<p>   directly into the capacity table, which is exactly the bypass Rule 19</p>
+<p>   exists to prevent.</p>
+<ol>
+<li><strong>Microservices per context.</strong> Rejected: single kitchen, single admin,</li>
+</ol>
+<p>   single small team, no independent scaling need, and a service boundary</p>
+<p>   would turn the one transaction that must stay atomic (CustomCake approve</p>
+<p>   + Capacity reserve + Order create) into a distributed transaction for no</p>
+<p>   benefit. Wrong shape for this project's size.</p>
+</section><section class="block" id="sec-4"><h2><span class="num">4</span>Consequences</h2>
+<ul>
+<li>jordan/dana build inside <code>lib/server/{domain}/</code>, never reach across into</li>
+</ul>
+<p>  another domain's folder to write its tables.</p>
+<ul>
+<li>dba names tables per context (e.g., <code>capacity_day_ledger</code>, not a generic</li>
+</ul>
+<p>  <code>ledger</code>), so a table name alone tells you its owning context.</p>
+<ul>
+<li>amit-integration checks cross-context boundary violations as part of Rule</li>
+</ul>
+<p>  2 review.</p>
+<ul>
+<li>If Kivun takes a second capacity-scheduling client, this map is the</li>
+</ul>
+<p>  reusable shape to start from (per engagement.md's Rule 16 note on</p>
+<p>  extending rather than forking domain knowledge).</p></section>
+
+    <div class="cta-row">
+      <div class="text">מאושר</div>
+      <div>
+        <span class="btn">מאושר</span>
+        
+      </div>
+    </div>
+  </main>
+  <footer>
+    Kivun · 2026
+  </footer>
+</body>
+</html>

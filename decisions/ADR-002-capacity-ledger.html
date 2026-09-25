@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADR-002: Capacity ledger</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #FAFAF9;
+      --surface: #FFFFFF;
+      --text-primary: #1C1917;
+      --text-secondary: #57534E;
+      --text-muted: #A8A29E;
+      --border: #E7E5E4;
+      --accent: #16A34A;
+      --accent-hover: #15803D;
+      --accent-soft: #DCFCE7;
+      --warn: #F59E0B;
+      --warn-soft: #FEF3C7;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,0.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); color: var(--text-primary); font-family: 'Rubik', sans-serif; line-height: 1.6; }
+    body { padding: 0; min-height: 100vh; }
+    .topbar {
+      position: sticky; top: 0; z-index: 100; background: rgba(250,250,249,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { font-family: 'Heebo', sans-serif; font-weight: 800; font-size: 18px; }
+    .brand-mark { display: inline-block; width: 24px; height: 24px; background: var(--accent); border-radius: 6px; margin-left: 10px; vertical-align: middle; }
+    .meta-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill { padding: 4px 12px; background: var(--accent-soft); color: var(--accent-hover); border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .pill.warn { background: var(--warn-soft); color: #92400E; }
+    .pill.muted { background: var(--border); color: var(--text-secondary); }
+    .container { max-width: 960px; margin: 0 auto; padding: 32px; }
+    .doc-header { padding: 48px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    .doc-header h1 { font-family: 'Heebo', sans-serif; font-size: 48px; font-weight: 800; line-height: 1.1; margin-bottom: 12px; letter-spacing: -0.5px; }
+    .doc-header .subtitle { font-size: 20px; color: var(--text-secondary); margin-bottom: 20px; }
+    .doc-header .meta { display: flex; gap: 16px; font-size: 14px; color: var(--text-muted); }
+    nav.toc {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px;
+      margin-bottom: 32px; box-shadow: var(--shadow-sm);
+    }
+    nav.toc h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px; }
+    nav.toc ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+    nav.toc a {
+      display: inline-block; padding: 6px 14px; background: var(--bg); color: var(--text-primary);
+      text-decoration: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+      border: 1px solid var(--border); transition: all .15s ease;
+    }
+    nav.toc a:hover { background: var(--accent-soft); color: var(--accent-hover); border-color: var(--accent); }
+    section.block {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px;
+      margin-bottom: 24px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px;
+    }
+    section.block h2 {
+      font-family: 'Heebo', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    section.block h2 .num {
+      display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+      background: var(--accent); color: white; border-radius: 8px; font-size: 16px; font-weight: 700;
+    }
+    section.block h3 { font-family: 'Heebo', sans-serif; font-size: 20px; font-weight: 600; margin: 24px 0 12px; }
+    section.block p { margin-bottom: 12px; color: var(--text-primary); }
+    /* Logical, not physical: in RTL the list marker sits inline-start (right).
+       margin-left:24px put the indent on the far side and pushed ordered-list
+       numbers outside the card's content box. The renderer strips the "1. "
+       prefix from list text, so the marker is the only numbering it has left,
+       and it has to stay inside the column. (No literal tag names in this
+       comment: they confuse tag-balance checks run over the rendered file.) */
+    section.block ul, section.block ol { margin: 12px 0; padding-inline-start: 24px; }
+    section.block li { margin-bottom: 6px; }
+    section.block code {
+      background: #F5F5F4; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      direction: ltr; display: inline-block;
+    }
+    /* PRINTCLIP-01: overflow that scrolls on screen is DROPPED in print. */
+    section.block pre {
+      background: #1C1917; color: #E7E5E4; padding: 16px; border-radius: var(--radius-sm);
+      white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: 13px; margin: 12px 0; direction: ltr;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 12px 16px; text-align: right; border-bottom: 1px solid var(--border); }
+    th { background: var(--bg); font-weight: 600; font-size: 14px; color: var(--text-secondary); }
+    .callout { padding: 16px 20px; border-radius: var(--radius-sm); margin: 16px 0; border-right: 4px solid var(--accent); background: var(--accent-soft); }
+    .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+    .cta-row {
+      display: flex; gap: 12px; flex-wrap: wrap; padding: 24px; background: var(--accent);
+      border-radius: var(--radius); margin: 32px 0; color: white; align-items: center; justify-content: space-between;
+    }
+    .cta-row .text { font-size: 18px; font-weight: 600; }
+    .btn {
+      padding: 12px 24px; background: white; color: var(--accent); text-decoration: none;
+      border-radius: var(--radius-sm); font-weight: 600; transition: all .15s ease; display: inline-block;
+    }
+    .btn:hover { background: var(--bg); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn.secondary { background: transparent; color: white; border: 1px solid white; }
+    .btn.secondary:hover { background: white; color: var(--accent); }
+    footer { padding: 48px 32px; text-align: center; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); margin-top: 48px; }
+    /* PRINTCLIP-01, second surface: a wide table that scrolls on screen drops its
+     overflowing columns in print. Let it lay out normally and wrap inside its cells. */
+    section.block table { display: table; table-layout: fixed; width: 100%; max-width: 100%; }
+    section.block th, section.block td { overflow-wrap: anywhere; word-break: break-word; }
+    /* Long code blocks WRAP rather than scroll: see PRINTCLIP-01 above. This rule
+       comes later in the cascade than the one above and was re-asserting
+       `white-space: pre`, which is what actually reached the PDF. */
+    section.block pre { white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+    @media print {
+      .topbar, nav.toc, .cta-row { display: none; }
+      /* NOTE: html-to-pdf.js renders with emulateMedia({media:"screen"}) to keep
+         the infographic look, so THIS BLOCK DOES NOT APPLY to our PDFs. Any fix
+         that has to affect the PDF belongs in the screen rules above, not here.
+         Kept for a human printing the .html directly from a browser. */
+      section.block { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+      body { background: white; }
+    }
+    /* Tablet: landscape phones, small tablets */
+    @media (max-width: 720px) {
+      .topbar { padding: 12px 16px; flex-direction: column; align-items: flex-start; gap: 8px; }
+      .container { padding: 20px 16px; }
+      .doc-header { padding: 24px 0 20px; margin-bottom: 20px; }
+      .doc-header h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.3px; }
+      .doc-header .subtitle { font-size: 16px; }
+      .doc-header .meta { flex-wrap: wrap; gap: 8px; font-size: 12px; }
+      section.block { padding: 20px 16px; margin-bottom: 16px; }
+      section.block h2 { font-size: 22px; gap: 8px; }
+      section.block h2 .num { width: 28px; height: 28px; font-size: 13px; }
+      section.block h3 { font-size: 17px; margin: 16px 0 8px; }
+      nav.toc { padding: 14px 16px; }
+      nav.toc ul { gap: 6px; }
+      nav.toc a { padding: 8px 12px; font-size: 13px; min-height: 38px; }
+      .cta-row { flex-direction: column; align-items: stretch; padding: 18px 16px; gap: 10px; }
+      .cta-row .text { font-size: 16px; text-align: center; }
+      .cta-row .btn, .cta-row a.btn { display: block; text-align: center; min-height: 44px; padding: 12px 18px; }
+      th, td { padding: 8px 10px; font-size: 13px; }
+    }
+    /* Phone: portrait phones */
+    @media (max-width: 480px) {
+      .doc-header h1 { font-size: 26px; }
+      .doc-header .subtitle { font-size: 15px; }
+      section.block h2 { font-size: 20px; }
+      section.block h2 .num { width: 26px; height: 26px; font-size: 12px; }
+      section.block { padding: 18px 14px; border-radius: 10px; }
+      nav.toc a { font-size: 12px; padding: 8px 10px; }
+      .pill { font-size: 11px; padding: 3px 9px; }
+      footer { padding: 32px 16px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark"></span>Kivun</div>
+    <div class="meta-pills">
+      <span class="pill">החלטת ארכיטקטורה (ADR)</span>
+      <span class="pill muted">yuval-bakery</span>
+      <span class="pill muted">2026-09-25</span>
+    </div>
+  </header>
+  <main class="container">
+    <div class="doc-header">
+      <h1>ADR-002: Capacity ledger</h1>
+      <p class="subtitle">החלטת ארכיטקטורה (ADR)</p>
+      <div class="meta">
+        <span>נוצר על ידי: אלכס</span>
+        <span>•</span>
+        <span>2026-09-25</span>
+      </div>
+    </div>
+
+    <nav class="toc">
+      <h3>תוכן עניינים</h3>
+      <ul><li><a href="#sec-1">1. The invariant (name it, Rule 17)</a></li>
+<li><a href="#sec-2">2. Mechanism</a></li>
+<li><a href="#sec-3">3. Release (expiry or cancellation)</a></li>
+<li><a href="#sec-4">4. Custom-cake approval (the cross-context write, see domain-map.md)</a></li>
+<li><a href="#sec-5">5. Scope note</a></li></ul>
+    </nav>
+
+    <section class="block" id="sec-1"><h2><span class="num">1</span>The invariant (name it, Rule 17)</h2>
+<p><strong><code>capacity_never_negative</code></strong>: for every <code>(day, resource)</code> pair (resource is</p>
+<p><code>oven_minutes</code> or <code>work_minutes</code>), <code>reserved &lt;= total</code>, at every moment,</p>
+<p>under any concurrency. amit asserts this directly in tests, not just via</p>
+<p>route-level checks: the assertion is "run N concurrent reservation attempts</p>
+<p>for the last remaining slot, verify exactly the number that fit succeed and</p>
+<p>the rest fail cleanly, verify <code>reserved</code> never exceeds <code>total</code> at any read</p>
+<p>during the race."</p>
+</section><section class="block" id="sec-2"><h2><span class="num">2</span>Mechanism</h2>
+<p>One table, <code>capacity_day_ledger</code>, one row per calendar day:</p>
+<pre><code>day date primary key
+oven_minutes_total int not null
+oven_minutes_reserved int not null default 0
+work_minutes_total int not null
+work_minutes_reserved int not null default 0
+is_blackout boolean not null default false
+check (oven_minutes_reserved &gt;= 0 and oven_minutes_reserved &lt;= oven_minutes_total)
+check (work_minutes_reserved &gt;= 0 and work_minutes_reserved &lt;= work_minutes_total)</code></pre>
+<p>Reservation is a single statement inside the caller's transaction:</p>
+<pre><code>UPDATE capacity_day_ledger
+SET oven_minutes_reserved = oven_minutes_reserved + :oven_cost,
+    work_minutes_reserved = work_minutes_reserved + :work_cost
+WHERE day = :day
+  AND oven_minutes_reserved + :oven_cost &lt;= oven_minutes_total
+  AND work_minutes_reserved + :work_cost &lt;= work_minutes_total
+  AND is_blackout = false
+RETURNING day;</code></pre>
+<p>If this returns zero rows, the reservation failed (insufficient capacity or</p>
+<p>blackout day) and the caller rolls back the whole order-creation</p>
+<p>transaction, never partially. The <code>CHECK</code> constraints are the second,</p>
+<p>independent line of defense (belt-and-suspenders): even a caller that</p>
+<p>bypasses the conditional <code>WHERE</code> (a bug, not a race) cannot write a negative</p>
+<p>or over-total row, the transaction aborts instead. This satisfies the</p>
+<p>2026-04-20 learned rule on Storage/RLS-adjacent DB correctness in spirit:</p>
+<p>never trust a single layer for a money/capacity invariant.</p>
+<p>No <code>SELECT ... FOR UPDATE</code> + separate <code>UPDATE</code> round trip is used</p>
+<p>deliberately: a single conditional <code>UPDATE...WHERE...RETURNING</code> is</p>
+<p>atomic in Postgres without an explicit row lock statement, and is one</p>
+<p>fewer round trip under the two-customers-racing-for-the-last-slot scenario</p>
+<p>that is this project's actual production risk.</p>
+</section><section class="block" id="sec-3"><h2><span class="num">3</span>Release (expiry or cancellation)</h2>
+<p>Symmetric decrement, also conditional, also floor-checked by the same</p>
+<p><code>CHECK</code> constraints:</p>
+<pre><code>UPDATE capacity_day_ledger
+SET oven_minutes_reserved = GREATEST(0, oven_minutes_reserved - :oven_cost),
+    work_minutes_reserved = GREATEST(0, work_minutes_reserved - :work_cost)
+WHERE day = :day;</code></pre>
+<p><code>GREATEST(0, ...)</code> guards against a double-release (e.g., a retried sweep)</p>
+<p>ever taking <code>reserved</code> negative, which the <code>CHECK constraint</code> would also</p>
+<p>catch, so this is belt-and-suspenders again rather than the only guard.</p>
+</section><section class="block" id="sec-4"><h2><span class="num">4</span>Custom-cake approval (the cross-context write, see domain-map.md)</h2>
+<p><code>approve()</code> runs <code>INSERT INTO orders (...)</code> and the reservation <code>UPDATE</code></p>
+<p>above in the SAME transaction. If the reservation fails (capacity vanished</p>
+<p>between when Yuval opened the review screen and when she clicked approve,</p>
+<p>because a standard order took the last slot in the meantime), the whole</p>
+<p>approve transaction rolls back and the admin UI shows "capacity changed,</p>
+<p>re-check before approving" rather than silently overbooking (PRD US-2 AC:</p>
+<p>"never a silent overbook").</p>
+</section><section class="block" id="sec-5"><h2><span class="num">5</span>Scope note</h2>
+<p>This is deliberately a single-table ledger, not a per-order-line</p>
+<p>reservations table with a SUM query, because the SUM-query pattern is</p>
+<p>exactly the race PRD-01 calls out ("two customers checking out for the last</p>
+<p>slot on the same day must never both succeed") — a read-then-write of a</p>
+<p>derived total has a race window a running total column with a <code>CHECK</code></p>
+<p>constraint does not.</p></section>
+
+    <div class="cta-row">
+      <div class="text">מאושר</div>
+      <div>
+        <span class="btn">מאושר</span>
+        
+      </div>
+    </div>
+  </main>
+  <footer>
+    Kivun · 2026
+  </footer>
+</body>
+</html>

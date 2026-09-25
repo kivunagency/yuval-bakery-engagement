@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADR-001: Stack decision</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #FAFAF9;
+      --surface: #FFFFFF;
+      --text-primary: #1C1917;
+      --text-secondary: #57534E;
+      --text-muted: #A8A29E;
+      --border: #E7E5E4;
+      --accent: #16A34A;
+      --accent-hover: #15803D;
+      --accent-soft: #DCFCE7;
+      --warn: #F59E0B;
+      --warn-soft: #FEF3C7;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,0.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); color: var(--text-primary); font-family: 'Rubik', sans-serif; line-height: 1.6; }
+    body { padding: 0; min-height: 100vh; }
+    .topbar {
+      position: sticky; top: 0; z-index: 100; background: rgba(250,250,249,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand { font-family: 'Heebo', sans-serif; font-weight: 800; font-size: 18px; }
+    .brand-mark { display: inline-block; width: 24px; height: 24px; background: var(--accent); border-radius: 6px; margin-left: 10px; vertical-align: middle; }
+    .meta-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill { padding: 4px 12px; background: var(--accent-soft); color: var(--accent-hover); border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .pill.warn { background: var(--warn-soft); color: #92400E; }
+    .pill.muted { background: var(--border); color: var(--text-secondary); }
+    .container { max-width: 960px; margin: 0 auto; padding: 32px; }
+    .doc-header { padding: 48px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    .doc-header h1 { font-family: 'Heebo', sans-serif; font-size: 48px; font-weight: 800; line-height: 1.1; margin-bottom: 12px; letter-spacing: -0.5px; }
+    .doc-header .subtitle { font-size: 20px; color: var(--text-secondary); margin-bottom: 20px; }
+    .doc-header .meta { display: flex; gap: 16px; font-size: 14px; color: var(--text-muted); }
+    nav.toc {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px;
+      margin-bottom: 32px; box-shadow: var(--shadow-sm);
+    }
+    nav.toc h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px; }
+    nav.toc ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+    nav.toc a {
+      display: inline-block; padding: 6px 14px; background: var(--bg); color: var(--text-primary);
+      text-decoration: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+      border: 1px solid var(--border); transition: all .15s ease;
+    }
+    nav.toc a:hover { background: var(--accent-soft); color: var(--accent-hover); border-color: var(--accent); }
+    section.block {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px;
+      margin-bottom: 24px; box-shadow: var(--shadow-sm); scroll-margin-top: 80px;
+    }
+    section.block h2 {
+      font-family: 'Heebo', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    section.block h2 .num {
+      display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+      background: var(--accent); color: white; border-radius: 8px; font-size: 16px; font-weight: 700;
+    }
+    section.block h3 { font-family: 'Heebo', sans-serif; font-size: 20px; font-weight: 600; margin: 24px 0 12px; }
+    section.block p { margin-bottom: 12px; color: var(--text-primary); }
+    /* Logical, not physical: in RTL the list marker sits inline-start (right).
+       margin-left:24px put the indent on the far side and pushed ordered-list
+       numbers outside the card's content box. The renderer strips the "1. "
+       prefix from list text, so the marker is the only numbering it has left,
+       and it has to stay inside the column. (No literal tag names in this
+       comment: they confuse tag-balance checks run over the rendered file.) */
+    section.block ul, section.block ol { margin: 12px 0; padding-inline-start: 24px; }
+    section.block li { margin-bottom: 6px; }
+    section.block code {
+      background: #F5F5F4; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      direction: ltr; display: inline-block;
+    }
+    /* PRINTCLIP-01: overflow that scrolls on screen is DROPPED in print. */
+    section.block pre {
+      background: #1C1917; color: #E7E5E4; padding: 16px; border-radius: var(--radius-sm);
+      white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: 13px; margin: 12px 0; direction: ltr;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { padding: 12px 16px; text-align: right; border-bottom: 1px solid var(--border); }
+    th { background: var(--bg); font-weight: 600; font-size: 14px; color: var(--text-secondary); }
+    .callout { padding: 16px 20px; border-radius: var(--radius-sm); margin: 16px 0; border-right: 4px solid var(--accent); background: var(--accent-soft); }
+    .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+    .cta-row {
+      display: flex; gap: 12px; flex-wrap: wrap; padding: 24px; background: var(--accent);
+      border-radius: var(--radius); margin: 32px 0; color: white; align-items: center; justify-content: space-between;
+    }
+    .cta-row .text { font-size: 18px; font-weight: 600; }
+    .btn {
+      padding: 12px 24px; background: white; color: var(--accent); text-decoration: none;
+      border-radius: var(--radius-sm); font-weight: 600; transition: all .15s ease; display: inline-block;
+    }
+    .btn:hover { background: var(--bg); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn.secondary { background: transparent; color: white; border: 1px solid white; }
+    .btn.secondary:hover { background: white; color: var(--accent); }
+    footer { padding: 48px 32px; text-align: center; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); margin-top: 48px; }
+    /* PRINTCLIP-01, second surface: a wide table that scrolls on screen drops its
+     overflowing columns in print. Let it lay out normally and wrap inside its cells. */
+    section.block table { display: table; table-layout: fixed; width: 100%; max-width: 100%; }
+    section.block th, section.block td { overflow-wrap: anywhere; word-break: break-word; }
+    /* Long code blocks WRAP rather than scroll: see PRINTCLIP-01 above. This rule
+       comes later in the cascade than the one above and was re-asserting
+       `white-space: pre`, which is what actually reached the PDF. */
+    section.block pre { white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+    @media print {
+      .topbar, nav.toc, .cta-row { display: none; }
+      /* NOTE: html-to-pdf.js renders with emulateMedia({media:"screen"}) to keep
+         the infographic look, so THIS BLOCK DOES NOT APPLY to our PDFs. Any fix
+         that has to affect the PDF belongs in the screen rules above, not here.
+         Kept for a human printing the .html directly from a browser. */
+      section.block { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+      body { background: white; }
+    }
+    /* Tablet: landscape phones, small tablets */
+    @media (max-width: 720px) {
+      .topbar { padding: 12px 16px; flex-direction: column; align-items: flex-start; gap: 8px; }
+      .container { padding: 20px 16px; }
+      .doc-header { padding: 24px 0 20px; margin-bottom: 20px; }
+      .doc-header h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.3px; }
+      .doc-header .subtitle { font-size: 16px; }
+      .doc-header .meta { flex-wrap: wrap; gap: 8px; font-size: 12px; }
+      section.block { padding: 20px 16px; margin-bottom: 16px; }
+      section.block h2 { font-size: 22px; gap: 8px; }
+      section.block h2 .num { width: 28px; height: 28px; font-size: 13px; }
+      section.block h3 { font-size: 17px; margin: 16px 0 8px; }
+      nav.toc { padding: 14px 16px; }
+      nav.toc ul { gap: 6px; }
+      nav.toc a { padding: 8px 12px; font-size: 13px; min-height: 38px; }
+      .cta-row { flex-direction: column; align-items: stretch; padding: 18px 16px; gap: 10px; }
+      .cta-row .text { font-size: 16px; text-align: center; }
+      .cta-row .btn, .cta-row a.btn { display: block; text-align: center; min-height: 44px; padding: 12px 18px; }
+      th, td { padding: 8px 10px; font-size: 13px; }
+    }
+    /* Phone: portrait phones */
+    @media (max-width: 480px) {
+      .doc-header h1 { font-size: 26px; }
+      .doc-header .subtitle { font-size: 15px; }
+      section.block h2 { font-size: 20px; }
+      section.block h2 .num { width: 26px; height: 26px; font-size: 12px; }
+      section.block { padding: 18px 14px; border-radius: 10px; }
+      nav.toc a { font-size: 12px; padding: 8px 10px; }
+      .pill { font-size: 11px; padding: 3px 9px; }
+      footer { padding: 32px 16px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark"></span>Kivun</div>
+    <div class="meta-pills">
+      <span class="pill">החלטת ארכיטקטורה (ADR)</span>
+      <span class="pill muted">yuval-bakery</span>
+      <span class="pill muted">2026-09-25</span>
+    </div>
+  </header>
+  <main class="container">
+    <div class="doc-header">
+      <h1>ADR-001: Stack decision</h1>
+      <p class="subtitle">החלטת ארכיטקטורה (ADR)</p>
+      <div class="meta">
+        <span>נוצר על ידי: אלכס</span>
+        <span>•</span>
+        <span>2026-09-25</span>
+      </div>
+    </div>
+
+    <nav class="toc">
+      <h3>תוכן עניינים</h3>
+      <ul><li><a href="#sec-1">1. Decision rule applied (CLAUDE.md "כללי החלטה")</a></li>
+<li><a href="#sec-2">2. Framework: Next.js 15 App Router</a></li>
+<li><a href="#sec-3">3. Hosting: Netlify (free tier), not Vercel, not Cloudflare Pages</a></li>
+<li><a href="#sec-4">4. Database + Auth + Storage: Supabase (free tier at BUILD/DEV, decision</a></li>
+<li><a href="#sec-5">5. Email: Resend (free tier)</a></li>
+<li><a href="#sec-6">6. Web push</a></li>
+<li><a href="#sec-7">7. Payment-pending expiry job: Netlify Scheduled Function</a></li>
+<li><a href="#sec-8">8. Rule 30 — spend caps and alerts (day one)</a></li>
+<li><a href="#sec-9">9. Rule 27 — operations registry: GO</a></li></ul>
+    </nav>
+
+    <section class="block" id="sec-1"><h2><span class="num">1</span>Decision rule applied (CLAUDE.md "כללי החלטה")</h2>
+<ol>
+<li>Platforms include native? No, PWA only. Rule out Expo.</li>
+<li>Self-host / sovereignty requirement? No.</li>
+<li>Sustained realtime/WebSockets? No, web push is fire-and-forget, not a</li>
+</ol>
+<p>   persistent connection.</p>
+<ol>
+<li>Backend-heavy (queues/workers/ML) bigger than frontend? No, this is a</li>
+</ol>
+<p>   CRUD + one transactional invariant, not a worker-heavy system.</p>
+<ol>
+<li>Default applies: <strong>Next.js 15 App Router.</strong></li>
+</ol>
+</section><section class="block" id="sec-2"><h2><span class="num">2</span>Framework: Next.js 15 App Router</h2>
+<p><strong>Alternative considered: Hono/Express + React-Vite.</strong> Pros: no</p>
+<p>server/client boundary discipline needed, full control of the scheduled</p>
+<p>job's runtime. Cost: two deployables instead of one, no built-in SSR</p>
+<p>story, loses next-intl RTL tooling used agency-wide, and this project has</p>
+<p>no self-host or realtime requirement to justify the extra ops surface for a</p>
+<p>single-kitchen app with no dedicated ops person post-launch. Rejected.</p>
+<p><strong>Steelman of Next.js for this project</strong>: the admin is the single highest-</p>
+<p>risk surface (Yuval sets prices, approves custom cakes, marks orders paid)</p>
+<p>and Next.js Server Actions + Route Handlers give one place (<code>lib/server/</code>,</p>
+<p><code>import 'server-only'</code>) to keep every write path server-only with zero</p>
+<p>separate backend process to deploy or monitor, which matters more than usual</p>
+<p>here because there is no ops team after LAUNCH, only Yuval and an on-call</p>
+<p>Kivun path. Rule 2 (server/client/API separation) is mandatory anyway given</p>
+<p>auth + DB writes, so the "structure discipline" cost is paid regardless of</p>
+<p>framework. Next.js wins on operational simplicity for a one-operator</p>
+<p>business, not on technical necessity.</p>
+</section><section class="block" id="sec-3"><h2><span class="num">3</span>Hosting: Netlify (free tier), not Vercel, not Cloudflare Pages</h2>
+<p>Vercel Hobby explicitly forbids commercial use (verified earlier today,</p>
+<p>vercel.com/docs/limits/fair-use-guidelines) and this is a commercial bakery,</p>
+<p>so Hobby is out; Vercel Pro is $20/month.</p>
+<p><strong>Verified today (WebSearch, 2026-09-25):</strong></p>
+<ul>
+<li>Netlify free tier: commercial use explicitly allowed (Netlify Support</li>
+</ul>
+<p>  Forums + netlify.com blog "Introducing Netlify's Free plan": "you can</p>
+<p>  deploy commercial projects... on the Free plan"). Limits: 100GB</p>
+<p>  bandwidth/mo, 300 build minutes/mo, 125,000 function invocations/mo, 1M</p>
+<p>  edge function invocations/mo. <a href="https://flexprice.io/blog/complete-guide-to-netlify-pricing-and-plans">Netlify pricing guide</a>, <a href="https://www.netlify.com/blog/introducing-netlify-free-plan/">Netlify free plan blog post</a></p>
+<ul>
+<li>Cloudflare Pages free tier: commercial use allowed, unlimited static</li>
+</ul>
+<p>  bandwidth, but Pages Functions (needed for SSR/API routes in Next.js) are</p>
+<p>  billed against the Workers free plan: 100,000 requests/day, 10ms CPU per</p>
+<p>  request, 50 subrequests per invocation. Running Next.js App Router on</p>
+<p>  Cloudflare Pages requires <code>@cloudflare/next-on-pages</code>, an added adapter</p>
+<p>  layer, and the 10ms CPU ceiling is tight for a server-rendered catalog</p>
+<p>  page hitting Postgres. <a href="https://developers.cloudflare.com/pages/functions/pricing/">Cloudflare Pages pricing docs</a></p>
+<p><strong>Decision: Netlify free tier.</strong> It supports Next.js App Router natively</p>
+<p>(no adapter layer), the function-invocation ceiling (125k/month, ~4,100/day)</p>
+<p>is far above a single-kitchen bakery's realistic traffic, and commercial use</p>
+<p>is unambiguous in Netlify's own terms rather than inferred from a CPU-time</p>
+<p>ceiling. Reassess only if traffic or build-minute usage approaches the free</p>
+<p>cap (Rule 30 alert, see Section "Spend cap").</p>
+</section><section class="block" id="sec-4"><h2><span class="num">4</span>Database + Auth + Storage: Supabase (free tier at BUILD/DEV, decision</h2>
+<p>below for PROD)</p>
+<p>Supabase Postgres gives row-level transactional locking (`SELECT ... FOR</p>
+<p>UPDATE`) needed for the capacity invariant (ADR-002), Supabase Auth covers</p>
+<p>both admin MFA (TOTP) and optional customer registration with one system</p>
+<p>instead of two, and Supabase Storage covers both the public catalog-photo</p>
+<p>bucket and the private custom-cake inspiration-photo bucket with the same</p>
+<p>RLS model used for the rest of the data. No second vendor needed for three</p>
+<p>different concerns (DB, auth, storage) is the reason this wins over</p>
+<p>composing separate best-of-breed services (e.g., Postgres elsewhere +</p>
+<p>Clerk/Auth.js + S3) for a project with no dedicated ops person.</p>
+<p><strong>7-day pause risk (verified today, Supabase docs "Project Pausing"):</strong></p>
+<p>free-tier projects pause after 7 days with no database activity; paid</p>
+<p>projects (Pro, $25/mo) are exempt. **Mitigation chosen: the payment-pending</p>
+<p>expiry sweep (US-9, runs every 15 minutes via a Netlify Scheduled Function)</p>
+<p>writes to the database on every run whether or not it finds an expired</p>
+<p>order, which is real, if light, database activity far more often than the</p>
+<p>7-day threshold.** This means the sweep job that MVP already needs for</p>
+<p>correctness also solves the pause risk, at no extra cost or complexity,</p>
+<p>rather than standing up a separate keep-alive ping. If Supabase's own</p>
+<p>pause-detection logic requires <em>user</em> query volume rather than any write</p>
+<p>(unverified in today's search, sources disagreed), the fallback is a second,</p>
+<p>independent GitHub Actions cron hitting a trivial <code>SELECT 1</code> health-check</p>
+<p>route, which costs nothing extra either.</p>
+<p>**2-project free-org cap (agency memory: "Free-tier 2-project cap trap"</p>
+<p>bit us on Make.com invoice automation before): Rule 6 needs DEV + PROD, i.e.</p>
+<p>2 Supabase projects.** Ran's existing Kivun Supabase org already holds</p>
+<p>projects, so DEV+PROD for this engagement may not fit under Ran's org's free</p>
+<p>allotment. **Decision needing Ran/Yuval: create a NEW, separate Supabase</p>
+<p>account (and Netlify account) under Yuval's own email/ownership**, not</p>
+<p>inside Kivun's existing org. This also correctly places billing and account</p>
+<p>ownership with the business that will run this system after the engagement</p>
+<p>ends (there is no Kivun contract here, per engagement.md), and sidesteps the</p>
+<p>project-cap collision entirely. **Flagged as an open decision for Ran to</p>
+<p>confirm with Yuval before provisioning.**</p>
+</section><section class="block" id="sec-5"><h2><span class="num">5</span>Email: Resend (free tier)</h2>
+<p><strong>Verified today (WebSearch):</strong> Resend free tier = 3,000 emails/month, capped</p>
+<p>at 100/day. <a href="https://resend.com/pricing">Resend pricing</a>, <a href="https://automationatlas.io/answers/resend-free-tier-explained-2026/">Resend free tier explainer</a></p>
+<p>A single-kitchen bakery's order-confirmation + admin-notification email</p>
+<p>volume is expected to be far under 100/day; reassess if Phase 2 loyalty</p>
+<p>email blasts approach the cap (Rule 30 alert threshold: 80/day sustained).</p>
+</section><section class="block" id="sec-6"><h2><span class="num">6</span>Web push</h2>
+<p>Standard Web Push API with VAPID keys, no vendor (no Firebase Cloud</p>
+<p>Messaging needed for a same-origin PWA). $0, no metered dependency, no Rule</p>
+<p>30 cap needed for this piece specifically.</p>
+</section><section class="block" id="sec-7"><h2><span class="num">7</span>Payment-pending expiry job: Netlify Scheduled Function</h2>
+<p>Runs every 15 minutes, executes one idempotent SQL statement per expiry</p>
+<p>class (standard 4h, custom-cake 24h):</p>
+<p>`UPDATE orders SET status='expired' WHERE status='payment_pending' AND</p>
+<p>expires_at < now()`. This is naturally safe to re-run (a restart or a</p>
+<p>double-fire updates zero rows the second time), so no separate</p>
+<p><code>cron_executions</code> dedup table is required the way it would be for an</p>
+<p>INSERT-based pg_cron job (per the 2026-04-20 learned rule on pg_cron +</p>
+<p>Edge Functions oversell risk) — the WHERE-clause conditional UPDATE is</p>
+<p>idempotent by construction, not by an added dedup layer. Same job also</p>
+<p>releases the capacity hold (ADR-002) inside the same transaction as the</p>
+<p>status flip, so a crash mid-sweep cannot release capacity without also</p>
+<p>marking the order expired, or vice versa.</p>
+</section><section class="block" id="sec-8"><h2><span class="num">8</span>Rule 30 — spend caps and alerts (day one)</h2>
+<p>Every metered account gets a hard cap + an alert to a human, in the unit</p>
+<p>the provider bills in, configured the day the account is created:</p>
+<ul>
+<li>Netlify: cap at free tier (300 build min/mo, 125k function</li>
+</ul>
+<p>  invocations/mo); alert at 80% via Netlify's own usage notifications.</p>
+<ul>
+<li>Supabase (once Pro, if ever needed): cap = stay on free unless Rule 30</li>
+</ul>
+<p>  approval for Pro is explicitly taken; alert on approaching the 500MB</p>
+<p>  free DB size or 1GB free storage.</p>
+<ul>
+<li>Resend: alert at 80/day sustained (before the 100/day hard cap bites).</li>
+<li>Task included in tasks.json (<code>infra-spend-caps</code>).</li>
+</ul>
+</section><section class="block" id="sec-9"><h2><span class="num">9</span>Rule 27 — operations registry: GO</h2>
+<p>Decision: <strong>GO</strong>, scoped to the five business-critical write operations,</p>
+<p>landed at the same time as the data-model pass (before API routes are</p>
+<p>written), per the rule's own timing requirement:</p>
+<p><code>markOrderPaid</code>, <code>approveCustomCakeRequest</code>, <code>declineCustomCakeRequest</code>,</p>
+<p><code>generateDeliveryList</code>, <code>updateDayCapacity</code>. These are exactly the</p>
+<p>operations with real financial/operational consequence and the ones an</p>
+<p>agent or future automation (e.g., Phase 2 automated WhatsApp, a future</p>
+<p>accounting sync) would need to call safely with RBAC. Read-only catalog</p>
+<p>browsing and checkout's own multi-step form are NOT wrapped in the registry</p>
+<p>in MVP: the registry is for named business operations with consequence, not</p>
+<p>every mutation, and a checkout's own route handler stays the natural place</p>
+<p>for that flow. Reassess scope at Phase 2 when Loyalty adds more named</p>
+<p>operations (e.g., <code>sendLoyaltyBenefit</code>).</p></section>
+
+    <div class="cta-row">
+      <div class="text">מאושר</div>
+      <div>
+        <span class="btn">מאושר</span>
+        
+      </div>
+    </div>
+  </main>
+  <footer>
+    Kivun · 2026
+  </footer>
+</body>
+</html>

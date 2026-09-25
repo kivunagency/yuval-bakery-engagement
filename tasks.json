@@ -1,0 +1,719 @@
+[
+  {
+    "task_id": "infra-001",
+    "title": "הקמת חשבונות Netlify + Supabase על שם יובל",
+    "description": "יצירת חשבון Netlify וחשבון Supabase חדשים תחת בעלות יובל (לא ארגון Kivun הקיים), כדי למנוע התנגשות במגבלת 2 פרויקטים ולמקם את הבעלות אצל מי שירוץ את המערכת אחרי הפרויקט.",
+    "story_points": 1,
+    "owner": "backend",
+    "layer": "infra",
+    "domain": "core",
+    "i18n_keys": [],
+    "reuse_check": "checked _shared-modules.md (empty, seeded 2026-09-25), no infra exists yet for this client, greenfield provisioning"
+  },
+  {
+    "task_id": "infra-002",
+    "title": "פרישת DEV ו-PROD ב-Netlify לפי כלל 6",
+    "description": "יצירת שני אתרי Netlify (develop -> yuval-bakery-dev, main -> yuval-bakery), חיבור לענפי git תואמים, ומשתני סביבה נפרדים לכל אחד.",
+    "story_points": 2,
+    "owner": "backend",
+    "layer": "infra",
+    "domain": "core",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "infra-003",
+    "title": "תקרת הוצאה והתראה לכל חשבון מדוד (כלל 30)",
+    "description": "הגדרת תקרה קשיחה + התראה לאדם עבור Netlify (300 דק' בנייה / 125K קריאות פונקציה בחודש), Supabase (גודל DB/אחסון) ו-Resend (80/100 מיילים ליום), ביחידת החיוב של כל ספק, ביום הקמת כל חשבון.",
+    "story_points": 2,
+    "owner": "backend",
+    "layer": "infra",
+    "domain": "core",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "infra-004",
+    "title": "רישום ADR למעקב תשתית ואישור ران",
+    "description": "עדכון engagement.md בסעיף Environments עם כתובות ה-URL בפועל לאחר הקמה, וסימון ADR-001 כמאושר בפועל (לא רק בתכנון).",
+    "story_points": 1,
+    "owner": "backend",
+    "layer": "infra",
+    "domain": "core",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "db-001",
+    "title": "סכמת בסיס: לקוחות, הזמנות, מוצרים",
+    "description": "יצירת מיגרציית Postgres ראשונה: טבלאות products, customers, orders, order_items עם מפתחות זרים ואינדקסים בסיסיים, תחת דומיין Catalog/Ordering/Identity.",
+    "story_points": 3,
+    "owner": "backend",
+    "layer": "db",
+    "domain": "catalog",
+    "i18n_keys": [],
+    "reuse_check": "checked _shared-modules.md (not found), no schema exists yet, first migration for this client"
+  },
+  {
+    "task_id": "db-002",
+    "title": "טבלת capacity_day_ledger עם CHECK אטומי",
+    "description": "יצירת טבלת קיבולת יומית (דקות תנור/עבודה, סה'כ ושמור) עם אילוצי CHECK המונעים ערך שלילי או חריגה מהסה'כ, לפי ADR-002. RLS צריך להשוות מפתח day כ-DATE, לא כטקסט.",
+    "story_points": 3,
+    "owner": "backend",
+    "layer": "db",
+    "domain": "capacity",
+    "i18n_keys": [],
+    "reuse_check": "checked _shared-modules.md (not found), searched codebase (none exists), new canonical capacity module - add row to _shared-modules.md when built: 'remaining day capacity' owned by lib/server/capacity/reserve.ts"
+  },
+  {
+    "task_id": "db-003",
+    "title": "טבלת custom_cake_requests + מעברי מצב",
+    "description": "יצירת טבלת בקשות עוגה בהתאמה אישית עם שדות pending_review/approved/declined, קישור להזמנה שנוצרת באישור, ותמונת השראה (מפתח לאחסון).",
+    "story_points": 2,
+    "owner": "backend",
+    "layer": "db",
+    "domain": "custom-cake",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "db-004",
+    "title": "טבלת delivery_zones ועיר-לאזור",
+    "description": "יצירת טבלת אזורי משלוח (שם, תעריף קבוע) וטבלת ערים המקושרות לכל היותר לאזור אחד.",
+    "story_points": 2,
+    "owner": "backend",
+    "layer": "db",
+    "domain": "delivery",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "db-005",
+    "title": "עמודות זהות: MFA, opt-in שיווקי, תאריכים",
+    "description": "הוספת שדות marketing_opt_in (ברירת מחדל false, נפרד מהרשמה), תאריך יום הולדת/יום נישואין אופציונליים עם מטרה מוצהרת, והפעלת MFA לחשבון האדמין ב-Supabase Auth.",
+    "story_points": 2,
+    "owner": "backend",
+    "layer": "db",
+    "domain": "identity",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "db-006",
+    "title": "RLS על כל הטבלאות הציבוריות והפרטיות",
+    "description": "מדיניות Row Level Security: לקוח רואה רק את הזמנותיו, אדמין רואה הכל, תמונות השראה פרטיות עד קידום מפורש לקטלוג הציבורי.",
+    "story_points": 3,
+    "owner": "backend",
+    "layer": "db",
+    "domain": "identity",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "api-001",
+    "title": "endpoint קטלוג ציבורי (GET)",
+    "description": "GET /api/catalog מחזיר מוצרים זמינים עם תמונות, מחיר כולל מע'מ, רכיבים ואלרגנים. Zod schema לתגובה.",
+    "story_points": 2,
+    "owner": "backend",
+    "layer": "api",
+    "domain": "catalog",
+    "i18n_keys": [],
+    "reuse_check": "checked _shared-modules.md (not found), searched codebase for existing catalog route (none), first implementation"
+  },
+  {
+    "task_id": "api-002",
+    "title": "endpoint בדיקת קיבולת זמינה ליום",
+    "description": "GET /api/capacity?date= מחזיר דקות תנור/עבודה שנותרו, וסטטוס blackout, לשימוש במסך בחירת תאריך.",
+    "story_points": 2,
+    "owner": "backend",
+    "layer": "api",
+    "domain": "capacity",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "api-003",
+    "title": "endpoint יצירת הזמנה (checkout)",
+    "description": "POST /api/orders: מוודא ליד טיים 24 שעות, קורא ל-lib/server/capacity/reserve.ts בתוך אותה טרנזקציה, יוצר מספר הזמנה ייחודי, מחזיר קישור תשלום Bit/PayBox.",
+    "story_points": 5,
+    "owner": "backend",
+    "layer": "api",
+    "domain": "ordering",
+    "i18n_keys": [],
+    "shared_by": ["lib/server/capacity/reserve.ts"],
+    "reuse_check": "checked _shared-modules.md: capacity reserve/release module will be canonical, extend it here rather than reimplementing 'is there room' logic (Rule 19)"
+  },
+  {
+    "task_id": "api-004",
+    "title": "endpoint סימון הזמנה כ'שולם' (אדמין)",
+    "description": "POST /api/admin/orders/{id}/mark-paid, פעולה ידנית בלבד ליובל, חלק ממרשם הפעולות (Rule 27) כ-markOrderPaid עם RBAC ו-audit.",
+    "story_points": 3,
+    "owner": "backend",
+    "layer": "api",
+    "domain": "ordering",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "api-005",
+    "title": "endpoint בקשת עוגה בהתאמה אישית",
+    "description": "POST /api/custom-cake-requests: קולט טקסט חריטה, קובץ תמונה, תאריך רצוי; לא נוגע בקיבולת, נכנס למצב pending_review.",
+    "story_points": 3,
+    "owner": "backend",
+    "layer": "api",
+    "domain": "custom-cake",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "api-006",
+    "title": "endpoint אישור/דחיית עוגה בהתאמה אישית",
+    "description": "POST /api/admin/custom-cake-requests/{id}/approve ו-/decline: אישור קובע מחיר+עלות זמן, מבצע reserve בטרנזקציה אחת עם יצירת הזמנה (ADR-002), נחשף במרשם הפעולות כ-approveCustomCakeRequest/declineCustomCakeRequest.",
+    "story_points": 5,
+    "owner": "backend",
+    "layer": "api",
+    "domain": "custom-cake",
+    "i18n_keys": [],
+    "shared_by": ["lib/server/capacity/reserve.ts"],
+    "reuse_check": "extend lib/server/capacity/reserve.ts (canonical, see db-002) inside the same transaction, do not create a second capacity-check implementation"
+  },
+  {
+    "task_id": "api-007",
+    "title": "endpoint אזורי משלוח (CRUD אדמין)",
+    "description": "GET/POST/PATCH /api/admin/delivery-zones לניהול אזורים, ותעריפים; GET /api/delivery-zones ציבורי להצגת רשימת ערים בצ'קאאוט.",
+    "story_points": 3,
+    "owner": "backend",
+    "layer": "api",
+    "domain": "delivery",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "api-008",
+    "title": "endpoint רשימת משלוחים יומית",
+    "description": "GET /api/admin/delivery-list?date= מחזיר שם, כתובת, טלפון, חלון זמן להזמנות משלוח באותו יום; חלק ממרשם הפעולות כ-generateDeliveryList.",
+    "story_points": 2,
+    "owner": "backend",
+    "layer": "api",
+    "domain": "delivery",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "api-009",
+    "title": "endpoint עדכון קיבולת יומית (אדמין)",
+    "description": "PATCH /api/admin/capacity/{date} לעדכון דקות תנור/עבודה או סימון יום חסום; חלק ממרשם הפעולות כ-updateDayCapacity.",
+    "story_points": 2,
+    "owner": "backend",
+    "layer": "api",
+    "domain": "capacity",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "api-010",
+    "title": "endpoint הרשמת לקוח אופציונלית",
+    "description": "POST /api/customers עם name/phone/email אופציונלי, ו-checkbox נפרד ולא מסומן מראש ל-marketing_opt_in (s.30A).",
+    "story_points": 2,
+    "owner": "backend",
+    "layer": "api",
+    "domain": "identity",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "job-001",
+    "title": "Scheduled Function לפקיעת הזמנות ושחרור קיבולת",
+    "description": "Netlify Scheduled Function כל 15 דקות: UPDATE אידמפוטנטי להזמנות payment_pending שפג תוקפן (4 שעות רגיל / 24 שעות עוגה מאושרת), משחרר קיבולת באותה טרנזקציה. אותו job גם משמש כפעילות DB המונעת השהיית Supabase (ADR-001).",
+    "story_points": 5,
+    "owner": "backend",
+    "layer": "server",
+    "domain": "ordering",
+    "i18n_keys": [],
+    "shared_by": ["lib/server/capacity/reserve.ts (release path)"],
+    "reuse_check": "extend the canonical capacity release() function (db-002 owner), do not write a second release path"
+  },
+  {
+    "task_id": "job-002",
+    "title": "שירות שליחת התראות (push + email)",
+    "description": "lib/server/notification: מאזין לאירועי OrderCreated, CustomCakeApproved, CustomCakeDeclined ושולח web push (VAPID) ומייל (Resend) ליובל וללקוח לפי הרלוונטי.",
+    "story_points": 5,
+    "owner": "backend",
+    "layer": "server",
+    "domain": "notification",
+    "i18n_keys": [
+      "notification.new_order.subject",
+      "notification.new_order.body",
+      "notification.custom_cake_approved.subject",
+      "notification.custom_cake_approved.body",
+      "notification.custom_cake_declined.subject"
+    ],
+    "reuse_check": "checked _shared-modules.md (not found), searched codebase (none), first notification module - add row to _shared-modules.md: 'send order/custom-cake notification' owned by lib/server/notification"
+  },
+  {
+    "task_id": "client-001",
+    "title": "מסך קטלוג (SSR, שרת שולף נתונים)",
+    "description": "app/(public)/catalog/page.tsx כ-server component: שולף מוצרים בשרת ומעביר כ-props, פריים ראשון תקין ללא fetch בצד לקוח (כלל 31). מדידת COLD load מדווחת ל-amit.",
+    "story_points": 3,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "catalog",
+    "i18n_keys": [
+      "catalog.title",
+      "catalog.out_of_stock",
+      "catalog.allergens_label",
+      "catalog.ingredients_label",
+      "catalog.price_incl_vat"
+    ]
+  },
+  {
+    "task_id": "client-002",
+    "title": "מסך בקשת עוגה בהתאמה אישית",
+    "description": "טופס לקוח: טקסט חריטה, העלאת תמונת השראה, תאריך רצוי, הערות. קליינט קומפוננטה עם קריאה ל-/api/custom-cake-requests.",
+    "story_points": 3,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "custom-cake",
+    "i18n_keys": [
+      "custom_cake.form.inscription",
+      "custom_cake.form.upload_photo",
+      "custom_cake.form.date",
+      "custom_cake.form.notes",
+      "custom_cake.form.submit",
+      "custom_cake.submitted_confirmation"
+    ]
+  },
+  {
+    "task_id": "client-003",
+    "title": "מסך צ'קאאוט: אורח ורשום, תאריך ומשלוח",
+    "description": "בחירת משלוח/איסוף, תאריך זמין (שרת שולף קיבולת ב-SSR ראשוני, סינון תאריך בצד לקוח לאחר בחירה), עיר לאזור משלוח, מחיר סופי כולל מע'מ לפני תשלום.",
+    "story_points": 5,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "ordering",
+    "i18n_keys": [
+      "checkout.delivery_or_pickup",
+      "checkout.select_date",
+      "checkout.select_city",
+      "checkout.delivery_fee",
+      "checkout.total_incl_vat",
+      "checkout.city_not_covered",
+      "checkout.guest_fields.name",
+      "checkout.guest_fields.phone",
+      "checkout.guest_fields.address",
+      "checkout.cancellation_exemption_notice"
+    ]
+  },
+  {
+    "task_id": "client-004",
+    "title": "מסך אישור תשלום עם קישור Bit/PayBox",
+    "description": "מציג מספר הזמנה, קישור תשלום, הנחיה לציון מספר ההזמנה בהערת התשלום; server component שולף את פרטי ההזמנה בשרת.",
+    "story_points": 2,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "ordering",
+    "i18n_keys": [
+      "payment.order_number",
+      "payment.instructions",
+      "payment.bit_link",
+      "payment.paybox_link"
+    ]
+  },
+  {
+    "task_id": "client-005",
+    "title": "מסך הרשמה אופציונלית ללקוח",
+    "description": "טופס הרשמה נפרד מהצ'קאאוט, עם checkbox נפרד ולא מסומן מראש להסכמה לדיוור שיווקי (s.30A), ושדות תאריך יום הולדת/נישואין אופציונליים עם הסבר מטרה.",
+    "story_points": 2,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "identity",
+    "i18n_keys": [
+      "registration.title",
+      "registration.marketing_optin_label",
+      "registration.birthday_optional",
+      "registration.anniversary_optional",
+      "registration.purpose_note"
+    ]
+  },
+  {
+    "task_id": "client-006",
+    "title": "מסך אדמין: ניהול מוצרים (CRUD)",
+    "description": "מסך אדמין לניהול קטלוג: שם, תמונות, מחיר, רכיבים, אלרגנים, דקות תנור/עבודה ליחידה/אצווה, זמינות. server component לטעינה ראשונית.",
+    "story_points": 5,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "catalog",
+    "i18n_keys": [
+      "admin.products.title",
+      "admin.products.add",
+      "admin.products.oven_minutes",
+      "admin.products.work_minutes",
+      "admin.products.availability_toggle"
+    ]
+  },
+  {
+    "task_id": "client-007",
+    "title": "מסך אדמין: קיבולת יומית ויומי חסימה",
+    "description": "מסך להגדרת דקות תנור/עבודה יומיות, דפוס שבועי קבוע הניתן לדריסה, וכפתור סימון יום חסום (מאפס את שני המשאבים).",
+    "story_points": 3,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "capacity",
+    "i18n_keys": [
+      "admin.capacity.title",
+      "admin.capacity.oven_minutes",
+      "admin.capacity.work_minutes",
+      "admin.capacity.blackout_toggle",
+      "admin.capacity.weekly_pattern"
+    ]
+  },
+  {
+    "task_id": "client-008",
+    "title": "מסך אדמין: תור בקשות עוגה בהתאמה אישית",
+    "description": "רשימת בקשות pending_review עם תמונת השראה, טופס אישור (מחיר+עלות זמן) עם אזהרת קיבולת בזמן אמת לפני שליחה, וטופס דחייה עם סיבה אופציונלית.",
+    "story_points": 5,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "custom-cake",
+    "i18n_keys": [
+      "admin.custom_cake.queue_title",
+      "admin.custom_cake.set_price",
+      "admin.custom_cake.set_time_cost",
+      "admin.custom_cake.capacity_warning",
+      "admin.custom_cake.approve",
+      "admin.custom_cake.decline",
+      "admin.custom_cake.decline_reason"
+    ]
+  },
+  {
+    "task_id": "client-009",
+    "title": "מסך אדמין: הזמנות וסימון תשלום",
+    "description": "רשימת הזמנות לפי סטטוס, פעולת 'סמן כשולם' ידנית, וכפתור שליחת הודעת WhatsApp מוכנה מראש (wa.me) לכל הזמנה.",
+    "story_points": 5,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "ordering",
+    "i18n_keys": [
+      "admin.orders.title",
+      "admin.orders.mark_paid",
+      "admin.orders.status.payment_pending",
+      "admin.orders.status.paid",
+      "admin.orders.status.fulfilled",
+      "admin.orders.status.expired",
+      "admin.orders.status.cancelled",
+      "admin.orders.whatsapp_message_button"
+    ]
+  },
+  {
+    "task_id": "client-010",
+    "title": "מסך אדמין: הגדרות אזורי משלוח",
+    "description": "מסך ליצירת/עריכת אזורי משלוח, שיוך ערים לאזור, ותעריף קבוע לכל אזור.",
+    "story_points": 3,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "delivery",
+    "i18n_keys": [
+      "admin.delivery_zones.title",
+      "admin.delivery_zones.add_zone",
+      "admin.delivery_zones.city_list",
+      "admin.delivery_zones.fee"
+    ]
+  },
+  {
+    "task_id": "client-011",
+    "title": "מסך אדמין: רשימת משלוחים יומית להדפסה/שיתוף",
+    "description": "תצוגה מודפסת/שיתופית (PDF או תצוגת הדפסה) של הזמנות המשלוח ליום נבחר, לשליחה לדוד באמצעות WhatsApp.",
+    "story_points": 3,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "delivery",
+    "i18n_keys": [
+      "admin.delivery_list.title",
+      "admin.delivery_list.print",
+      "admin.delivery_list.share"
+    ]
+  },
+  {
+    "task_id": "client-012",
+    "title": "רישום Web Push (הרשאה + VAPID) לאדמין",
+    "description": "הרשמת מנוי push בצד לקוח עבור יובל, שמירת subscription בשרת, טיפול בסירוב הרשאה בהתאם.",
+    "story_points": 3,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "notification",
+    "i18n_keys": [
+      "push.permission_prompt",
+      "push.enabled_confirmation"
+    ]
+  },
+  {
+    "task_id": "shared-001",
+    "title": "טיפוסי TypeScript משותפים לדומיינים",
+    "description": "lib/shared/types: Order, Product, DayCapacity, CustomCakeRequest, DeliveryZone וכו', ללא I/O, בשימוש שרת ולקוח.",
+    "story_points": 2,
+    "owner": "backend",
+    "layer": "shared",
+    "domain": "core",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "shared-002",
+    "title": "Zod schemas לחוזה ה-API",
+    "description": "סכמות Zod עבור כל endpoint (בקשה+תגובה), משותפות לוולידציית שרת וטיפוסי לקוח, חלק משכבת ה-API (כלל 2).",
+    "story_points": 3,
+    "owner": "backend",
+    "layer": "api",
+    "domain": "core",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "compliance-001",
+    "title": "הודעת פרטיות בנקודת האיסוף (ס.11)",
+    "description": "טקסט הודעת פרטיות בצ'קאאוט ובהרשמה, כולל ציון הדוד כמקבל מידע במשלוחים, מטרות איסוף, ותקופת שמירה (בכפוף לאישור רואה חשבון).",
+    "story_points": 3,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "compliance",
+    "i18n_keys": [
+      "privacy.notice.title",
+      "privacy.notice.collected_data",
+      "privacy.notice.purpose",
+      "privacy.notice.recipients_uncle",
+      "privacy.notice.retention"
+    ]
+  },
+  {
+    "task_id": "compliance-002",
+    "title": "פרטי עסק וחריגת ביטול (ס.14C וקנייני צרכן)",
+    "description": "הצגת שם העסק, מספר עוסק, פרטי קשר לפני תשלום, והודעה מפורשת על חריגת זכות ביטול למוצרי מזון פסידים/בהתאמה אישית.",
+    "story_points": 2,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "compliance",
+    "i18n_keys": [
+      "business.details.name",
+      "business.details.registration_number",
+      "business.details.contact",
+      "checkout.cancellation_exemption_notice"
+    ]
+  },
+  {
+    "task_id": "compliance-003",
+    "title": "עמוד הצהרת נגישות (כלל 33)",
+    "description": "עמוד נגישות עצמאי עם פרטי קשר לפניות נגישות (בהתאם למעמד יובל כעוסק יחיד; לא לדרוש רכז נגישות רשמי אלא אם חלה חובה), טקסט חלופי לתמונות, ניגודיות AA, ניווט מקלדת.",
+    "story_points": 3,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "compliance",
+    "i18n_keys": [
+      "accessibility.statement.title",
+      "accessibility.statement.contact"
+    ]
+  },
+  {
+    "task_id": "compliance-004",
+    "title": "עמודי תנאי שימוש ומדיניות ביטולים",
+    "description": "עמוד /terms ועמוד מדיניות ביטולים/החזרות בהתאם לחריגת מוצרי מזון, נדרשים כחלק מ-18 סעיפי כלל 33.",
+    "story_points": 2,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "compliance",
+    "i18n_keys": [
+      "terms.title",
+      "returns_policy.title"
+    ]
+  },
+  {
+    "task_id": "compliance-005",
+    "title": "בדיקת IS 5568 והחלת המדדים האוטומטיים",
+    "description": "הרצת shared/scripts/check-public-site.mjs על סביבת DEV לפני PROD, טיפול בכל NEEDS-HUMAN בנפרד מ-PASS/FAIL.",
+    "story_points": 2,
+    "owner": "qa",
+    "layer": "qa",
+    "domain": "compliance",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "qa-001",
+    "title": "בדיקת מירוץ קיבולת (concurrent oversell)",
+    "description": "בדיקה אוטומטית: N בקשות מקבילות לסלוט אחרון, אימות שרק המספר המתאים מצליח והשאר נכשלים בנקיון, ואימות שהאינווריאנט capacity_never_negative לא הופר באף רגע (כלל 17).",
+    "story_points": 5,
+    "owner": "qa",
+    "layer": "qa",
+    "domain": "capacity",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "qa-002",
+    "title": "regression.spec.js לפי כלל 7",
+    "description": "כיסוי כל הנתיבים הציבוריים והאדמין בבדיקת רגרסיה שרצה לפני כל 'הושלם'; חסימת amit/deploy-engineer ללא קיומו.",
+    "story_points": 3,
+    "owner": "qa",
+    "layer": "qa",
+    "domain": "core",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "qa-003",
+    "title": "smoke.spec.js על כתובת ה-URL החיה (כלל 5)",
+    "description": "Playwright hit אמיתי מול DEV/PROD, גילוי כתובת אמיתית ולא הנחה, לפני כל טענת 'עלה לאוויר'.",
+    "story_points": 2,
+    "owner": "qa",
+    "layer": "qa",
+    "domain": "core",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "qa-004",
+    "title": "SYSTEM-CONTRACT.md ו-verify-all.sh (כלל 18)",
+    "description": "כתיבת output/qa/SYSTEM-CONTRACT.md (מה 'עובד' אומר, שכבות ונקודות עיוורות, מצבי אמת-אך-מדאיגים) ו-verify-all.sh עם פלט אחד; שדרוג בכל שינוי התנהגות באותו commit.",
+    "story_points": 3,
+    "owner": "qa",
+    "layer": "qa",
+    "domain": "core",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "qa-005",
+    "title": "משתמש QA מנוהל לפי כלל 22",
+    "description": "יצירת .qa.env (gitignored) + .qa.env.example, מצביע בזיכרון הפרויקט לשם המשתמש ולנתיב הקובץ (לא לסיסמה).",
+    "story_points": 1,
+    "owner": "qa",
+    "layer": "qa",
+    "domain": "core",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "qa-006",
+    "title": "בדיקת ARIA/מקלדת/זום 200% למסכי לקוח ואדמין",
+    "description": "מעבר ידני עם מקלדת וקורא מסך על כל המסכים הציבוריים, לא רק אוטומציית Lighthouse (שמכסה כשליש מ-WCAG בלבד).",
+    "story_points": 3,
+    "owner": "qa",
+    "layer": "qa",
+    "domain": "compliance",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "ops-registry-001",
+    "title": "מרשם פעולות עסקיות (כלל 27) - 5 פעולות ליבה",
+    "description": "שכפול תבנית agent-ops-registry, חשיפת markOrderPaid, approveCustomCakeRequest, declineCustomCakeRequest, generateDeliveryList, updateDayCapacity דרך MCP Streamable HTTP עם RBAC+Zod+audit, לפי החלטת GO ב-ADR-001.",
+    "story_points": 5,
+    "owner": "backend",
+    "layer": "server",
+    "domain": "core",
+    "i18n_keys": [],
+    "reuse_check": "checked _shared-modules.md (not found); copies ~/.claude/shared/templates/agent-ops-registry/ per Rule 27, first instance for this client"
+  },
+  {
+    "task_id": "docs-001",
+    "title": "מדריך הפעלה קצר בעברית ליובל (כלל 4)",
+    "description": "מדריך מקוצר (לא סדרת HyperFrames מלאה, לפי engagement.md סעיף 7): איך להוסיף מוצר, להגדיר קיבולת יומית, לסמן הזמנה כשולמה; הקלטת מסך קצרה.",
+    "story_points": 2,
+    "owner": "frontend",
+    "layer": "qa",
+    "domain": "core",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "phase2-001",
+    "title": "מודל כרטיסיית הנחה (punch card)",
+    "description": "טבלת punch_cards, מנוע צבירה אוטומטי בעת מעבר הזמנה ל-paid, מסך אדמין להגדרה ומעקב.",
+    "story_points": 5,
+    "owner": "backend",
+    "layer": "server",
+    "domain": "loyalty",
+    "i18n_keys": [
+      "loyalty.punch_card.title",
+      "loyalty.punch_card.progress"
+    ],
+    "phase": 2
+  },
+  {
+    "task_id": "phase2-002",
+    "title": "שליחת הטבות יום הולדת/יום נישואין",
+    "description": "מסך אדמין לתור שליחה ידנית (לא אוטומציה מלאה), מסונן ל-marketing_opt_in=true בלבד, לפי ס.30A.",
+    "story_points": 5,
+    "owner": "backend",
+    "layer": "server",
+    "domain": "loyalty",
+    "i18n_keys": [
+      "loyalty.birthday_benefit.queue",
+      "loyalty.birthday_benefit.send"
+    ],
+    "phase": 2
+  },
+  {
+    "task_id": "phase2-003",
+    "title": "מנוע פרומושנים עם כלל stacking",
+    "description": "יצירת פרומושן עם דגל stackable (ברירת מחדל: לא), החלה בצ'קאאוט על כרטיסיית הנחה או פרומושן אחד לפי הכלל.",
+    "story_points": 5,
+    "owner": "backend",
+    "layer": "server",
+    "domain": "loyalty",
+    "i18n_keys": [
+      "admin.promotions.title",
+      "admin.promotions.stackable_toggle"
+    ],
+    "phase": 2
+  },
+  {
+    "task_id": "phase2-004",
+    "title": "WhatsApp Cloud API אוטומטי",
+    "description": "החלפת click-to-send בשליחה אוטומטית להתראות עסקה, כפוף לבחירת ספק ועלות מדודה (כלל 30).",
+    "story_points": 8,
+    "owner": "backend",
+    "layer": "server",
+    "domain": "notification",
+    "i18n_keys": [],
+    "phase": 2
+  },
+  {
+    "task_id": "phase2-005",
+    "title": "תצוגת 'המשלוחים שלי היום' לדוד",
+    "description": "מסך קריאה-בלבד ללא התחברות מלאה (קישור מאובטח לפי תאריך) אם רשימה מודפסת/משותפת מתגלה כלא מספיקה בפועל.",
+    "story_points": 3,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "delivery",
+    "i18n_keys": [
+      "uncle_view.title"
+    ],
+    "phase": 2
+  },
+  {
+    "task_id": "blindspot-001",
+    "title": "נקודה עיוורת: Web Push לא נתמך ב-iOS ישן",
+    "description": "Web Push לאפליקציית PWA נתמך רק מ-iOS 16.4 ומעלה ורק לאחר 'הוספה למסך הבית'; אם קהל הלקוחות של יובל כולל מכשירים ישנים או משתמשים שלא הוסיפו את האתר, ה-fallback היחיד הוא מייל. פתרון זול: לשאול את יובל אילו מכשירים נפוצים אצל לקוחותיה, ולוודא שה-AC של US-10 לא תלוי ב-push כערוץ יחיד (כבר כך ב-PRD, לאמת בפועל).",
+    "story_points": 1,
+    "owner": "frontend",
+    "layer": "client",
+    "domain": "notification",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "blindspot-002",
+    "title": "נקודה עיוורת: אזור זמן וגבול יום לקיבולת וליד-טיים",
+    "description": "PRD לא מציין באיזה אזור זמן נמדדות 24 השעות מינימום וגבולות היום של capacity_day_ledger (חצות לפי איזה TZ, קיץ/חורף). הנחה זולה: Asia/Jerusalem בכל מקום בשרת ובבסיס הנתונים, לתעד כהנחה מפורשת ב-ADR-002 ולאמת מול יובל לפני PROD.",
+    "story_points": 1,
+    "owner": "backend",
+    "layer": "server",
+    "domain": "capacity",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "blindspot-003",
+    "title": "נקודה עיוורת: עלות אחסון תמונות השראה גדלה ללא הגבלה",
+    "description": "תמונות השראה לעוגות מותאמות אישית מצטברות ב-Storage ללא מדיניות מחיקה מוגדרת; ב-Supabase free tier (1GB) זה עלול לחרוג בשקט. פתרון זול: מדיניות שמירה/מחיקה מוגדרת (כמו נתוני לקוח, סעיף 10 ב-PRD) ותקרת כלל 30 על Storage מוגדרת מפורשות (כבר ב-ADR-001, לוודא שמישהו קורא את ההתראה).",
+    "story_points": 1,
+    "owner": "backend",
+    "layer": "infra",
+    "domain": "custom-cake",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "blindspot-004",
+    "title": "נקודה עיוורת: מי מחזיק את החשבונות אחרי סיום המעורבות",
+    "description": "אין חוזה Kivun-יובל (משפחתי, ללא תשלום); ADR-001 ממליץ שהחשבונות (Netlify, Supabase, Resend) יירשמו על שם יובל, אבל אין החלטה מתועדת מי מחזיק סיסמאות/גישת אדמין לאחר ה-LAUNCH ומי אחראי על תקרות כלל 30 בפועל (יובל אינה טכנית). לשאול את ראן/יובל במפורש לפני הקמת חשבונות (infra-001).",
+    "story_points": 1,
+    "owner": "backend",
+    "layer": "infra",
+    "domain": "core",
+    "i18n_keys": []
+  },
+  {
+    "task_id": "blindspot-005",
+    "title": "נקודה עיוורת: אין אימות אוטומטי לתשלום Bit/PayBox",
+    "description": "המערכת מסתמכת לחלוטין על סימון ידני של יובל; אם היא לא נכנסת לאדמין ליום-יומיים, לקוחות ששילמו רואים הזמנה כ'ממתינה לתשלום' עד שהיא תסמן, ואם עברו 4 שעות היא עלולה לפקוע ולשחרר קיבולת אף שכבר שולם. פתרון זול ל-MVP: AC מפורש שפקיעה אינה מבטלת הזמנה סופית (המסמך כן תומך במצב expired כנפרד מ-cancelled), אך צריך הנחיה תפעולית ליובל לבדוק הזמנות שפגו לפני שהיא נותנת אותן ללקוח אחר.",
+    "story_points": 2,
+    "owner": "qa",
+    "layer": "qa",
+    "domain": "ordering",
+    "i18n_keys": []
+  }
+]
