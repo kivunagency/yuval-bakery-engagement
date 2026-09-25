@@ -20,6 +20,8 @@ never reported as passed.
 | No em/en-dash in app code and QA docs | `scripts/check-dashes.py` | verify-all | PASSED (docs outside apps/ have 63 older hits, not in scope of the check yet) |
 | Every DB error code is known to the app | `lib/server/supabase/rpc.ts` | `tests/db-error-codes.test.ts` | PASSED |
 | Shared enums mirror DB CHECK constraints | `lib/shared/types` | `tests/shared-types.test.ts` | PASSED |
+| Public catalog (api-001) returns published, non-deleted products only; a paused product is listed with `isAvailable=false`; no time cost (oven/work minutes) leaves the server | RLS `products_select_published` (read as anon) + explicit column list in `lib/server/catalog/get-catalog.ts` + Zod `catalogResponse` | `qa/regression.catalog.spec.js` "api-001" | PASSED |
+| A catalog photo URL is built in one place from `product_photos.storage_path` (never stored as a URL); an unsafe path yields no URL (placeholder) | `lib/server/catalog/photo-url.ts` | `tests/catalog-photo-url.test.ts`, regression.catalog "photo URL" | PASSED (URL shape). Real image served by Storage: DID NOT RUN (no Storage in the local stack) |
 
 ## 2. Layers and what proves each one
 
@@ -31,7 +33,7 @@ never reported as passed.
 | Next.js server (routes, SSR, CSP) | `next build` + regression spec against `next start` | Netlify runtime (DID NOT RUN until infra-002) |
 | Rendering (RTL, fonts, 44px, 390px) | regression spec, screenshot in `apps/web/test-results/screens/` looked at by a person or agent | Screen reader, 200% zoom (qa-006) |
 | Live deployment | `qa/smoke.spec.js` with `SMOKE_BASE_URL` | DID NOT RUN: nothing is deployed |
-| Storage (photo buckets) | none | DID NOT RUN: no Storage in the local stack yet; bucket policies not written (DB-PLAN.md 9) |
+| Storage (photo buckets) | none. The catalog builds `product-photos` public URLs (unit + regression test the URL shape only) | DID NOT RUN: no Storage in the local stack yet; bucket `product-photos` and its policies not created (DB-PLAN.md 9). A real photo has never been served. |
 
 ## 3. True but worrying
 
@@ -42,3 +44,4 @@ never reported as passed.
 ## 4. Change log
 
 - 2026-09-25 scaffold: app skeleton, local stack, migration `20260925121200_function_search_path_extensions.sql` (guest checkout failed on Supabase-shaped DB with `function digest(text, unknown) does not exist`; RED reproduced through PostgREST, GREEN after the fix), indexes moved to `20260925121100_indexes.sql`.
+- 2026-09-26 api-001: `GET /api/catalog` (public catalog, Zod contract `lib/shared/contracts/catalog.ts`), migration `20260926010000_catalog_may_contain.sql` adds `products.allergens_may_contain` (design shows "contains" and "may contain" chips; the schema had only one list). The admin product editor must write this column.
