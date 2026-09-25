@@ -56,5 +56,10 @@ expect "T6 total below reserved -> capacity_total_below_reserved" 1 "ERROR:  cap
 expect "T7 minutes outside 0..1440 -> capacity_invalid_minutes" 1 "ERROR:  capacity_invalid_minutes"
 expect "T7b a hand-set day is source=manual" 1 "T7b_manual_source | manual"
 expect "T8 anon cannot call fn_admin_set_day_capacity" 1 "permission denied for function fn_admin_set_day_capacity"
+expect "T9 admin with aal2 creates a delivery zone" 1 "T9_admin_create_zone | T9 zone"
+expect "T10 a city already in a zone -> delivery_city_in_other_zone" 1 "ERROR:  delivery_city_in_other_zone: T9 city"
+expect "T11 authenticated cannot write delivery_zones directly" 1 "permission denied for table delivery_zones"
+expect "T12 anon cannot call fn_admin_create_delivery_zone" 1 "permission denied for function fn_admin_create_delivery_zone"
+expect "T12b zone creation is audited" 1 "T12b_zone_audited=1"
 [ $fail = 0 ] && echo PASSED || echo FAILED
 exit $fail
