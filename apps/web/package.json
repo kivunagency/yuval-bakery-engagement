@@ -13,6 +13,7 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:race": "node --test --test-concurrency=1 --test-reporter=spec \"qa/db/*.test.mjs\"",
     "test:e2e": "playwright test -c qa/playwright.config.js",
     "stack:up": "bash scripts/local-stack/up.sh",
     "stack:down": "bash scripts/local-stack/down.sh",

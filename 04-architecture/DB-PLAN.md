@@ -653,3 +653,18 @@ in schema `extensions` as on hosted Supabase (`apps/web/scripts/local-stack/`).
 
 Still DID NOT RUN: hosted Supabase itself (accounts not created yet),
 Storage buckets and their policies.
+
+## 12. Automated concurrency tests (qa-001, 2026-09-26)
+
+Closes the "true concurrent-session race testing" item of sections 9 and 10.6:
+`apps/web/qa/db/capacity-race.test.mjs` (`npm run test:race`, its own line in
+verify-all and CI). Each racer is its own Postgres connection, all released by
+one barrier, each in its own transaction; a sampler connection asserts every
+ledger read during the race. Covered: last-slot race (24 racers, 3 fit),
+mixed sizes, unpaid cap race (7 of 24), 35% single-order cap (including 24
+racers at exactly the cap), cancel racing expire, 5 concurrent sweeps,
+mark-paid racing expire, 24 concurrent cancels of one paid order. After every
+race the ledger must equal the cost of the orders that hold it. The 10.6 setup
+mistake is guarded in code (`assertRaceable` fails the test if an order cannot
+fit the day's single-order cap). Checked to fail on purpose against a
+read-then-write reservation and against a release without the row lock.
