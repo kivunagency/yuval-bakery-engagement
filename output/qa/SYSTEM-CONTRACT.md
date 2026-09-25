@@ -34,6 +34,8 @@ never reported as passed.
 | Accessibility statement (Rule 33 items 9-10) has an update date, claims no full conformance, states the IS 5568 exemption as UNVERIFIED, names no coordinator, and gives the owner's contact | `app/(public)/accessibility`, `ACCESSIBILITY_STATEMENT_UPDATED` in `lib/shared/compliance/versions.ts` | `qa/regression.compliance.spec.js` "accessibility statement" (incl. keyboard reaching the footer with a solid focus ring) | PASSED |
 | `/terms` and `/returns` exist, show their versions (`TEXT_VERSIONS.terms` / `.cancellation`); `/returns` renders the same `CancellationExemptionNotice` as checkout (one wording, one version), keeps defect rights, never says "no refunds in any case"; clauses the spec does not settle stay visible placeholders | `app/(public)/terms`, `app/(public)/returns` | `qa/regression.compliance.spec.js` "terms and cancellation policy" | PASSED |
 | Every public page (route group `app/(public)`) has the site footer: business name, contact block, legal links, all links >= 44px | `app/(public)/layout.tsx` + `components/site-footer` | `qa/regression.compliance.spec.js` + baseline helper `qa/helpers/baseline.js` | PASSED |
+| Public catalog (api-001) returns published, non-deleted products only; a paused product is listed with `isAvailable=false`; no time cost (oven/work minutes) leaves the server | RLS `products_select_published` (read as anon) + explicit column list in `lib/server/catalog/get-catalog.ts` + Zod `catalogResponse` | `qa/regression.catalog.spec.js` "api-001" | PASSED |
+| A catalog photo URL is built in one place from `product_photos.storage_path` (never stored as a URL); an unsafe path yields no URL (placeholder) | `lib/server/catalog/photo-url.ts` | `tests/catalog-photo-url.test.ts`, regression.catalog "photo URL" | PASSED (URL shape). Real image served by Storage: DID NOT RUN (no Storage in the local stack) |
 
 ## 2. Layers and what proves each one
 
@@ -46,7 +48,7 @@ never reported as passed.
 | Rendering (RTL, fonts, 44px, 390px) | regression spec, screenshot in `apps/web/test-results/screens/` looked at by a person or agent | Screen reader, 200% zoom (qa-006) |
 | Live deployment | `qa/smoke.spec.js` with `SMOKE_BASE_URL` | DID NOT RUN: nothing is deployed |
 | Scheduled functions (job-001) | built bundles `netlify/functions/*.mjs` invoked in plain Node against the local stack (`regression.jobs.spec.js`); Netlify's own bundler (zip-it-and-ship-it) detected both schedules and the bundle loaded, checked once by hand on 2026-09-25 | DID NOT RUN: Netlify actually firing them on schedule (no site yet, infra-002); the 45-minute staleness alert that reads `cron_heartbeats` (OPS-005) is not built |
-| Storage (photo buckets) | none | DID NOT RUN: no Storage in the local stack yet; bucket policies not written (DB-PLAN.md 9) |
+| Storage (photo buckets) | none. The catalog builds `product-photos` public URLs (unit + regression test the URL shape only) | DID NOT RUN: no Storage in the local stack yet; bucket `product-photos` and its policies not created (DB-PLAN.md 9). A real photo has never been served. |
 
 ## 3. True but worrying
 
@@ -78,3 +80,4 @@ never reported as passed.
 - 2026-09-26 compliance-001: `/privacy` (full notice + cookies section), reusable `PrivacyNoticeAtCollection` (checkout / registration / custom_cake) and `NotesFieldHint`, footer link. Vitest now uses the automatic JSX runtime so components render in unit tests.
 - 2026-09-26 compliance-003: `/accessibility` statement, footer link.
 - 2026-09-26 compliance-004: `/terms`, `/returns`, footer links; `CancellationExemptionNotice` gains `title`/`showPolicyLink` props and links to `/returns`; its Hebrew addresses the reader in plural like the other pages.
+- 2026-09-26 api-001: `GET /api/catalog` (public catalog, Zod contract `lib/shared/contracts/catalog.ts`), migration `20260926010000_catalog_may_contain.sql` adds `products.allergens_may_contain` (design shows "contains" and "may contain" chips; the schema had only one list). The admin product editor must write this column.
