@@ -9,6 +9,7 @@ import type { z } from 'zod';
 export const DB_ERROR_CODES = [
   'admin_aal2_required',
   'admin_on_request_requires_admin',
+  'admin_required',
   'append_only_table',
   'capacity_changed_recheck_before_approving',
   'capacity_reservation_failed',
