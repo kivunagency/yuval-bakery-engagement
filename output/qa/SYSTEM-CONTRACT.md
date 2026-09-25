@@ -60,6 +60,7 @@ never reported as passed.
 | The window rolls forward every day | a daily service_role call of `fn_materialize_capacity_from_pattern()` | DID NOT RUN: no scheduler exists yet (job-001 owns the Netlify Scheduled Function). Until then the pattern is applied only when Yuval saves it, so days beyond 60 days from that save stay closed | DID NOT RUN |
 | Delivery zones (api-007, US-6) are written only by an admin at aal2, same-Origin, through `fn_admin_create_delivery_zone` / `fn_admin_update_delivery_zone` / `fn_admin_delete_delivery_zone` as the admin's own JWT; anon and authenticated have no INSERT/UPDATE/DELETE on `delivery_zones` / `delivery_zone_cities`; every change is in `audit_log` with its previous values (SEC-017) | migration `20260926070000_delivery_zones_admin.sql`, routes `app/api/admin/delivery-zones/**`, handlers in `lib/server/delivery/admin-zones.ts`, Zod `lib/shared/contracts/delivery-zones.ts` (name 1..40, fee whole shekels 0..1000, city 1..60 after trim + whitespace collapse, at most 100 cities, strict keys) | `run.sh` T9-T12b, `qa/regression.delivery.spec.js` "admin delivery zones API", `tests/delivery-zones-contract.test.ts` | PASSED |
 | A city belongs to at most one zone (US-6): the answer is a 409 `city_in_other_zone` naming the city and the zone that has it, never a raw unique violation; zone names are unique ignoring case and outer spaces (409 `name_taken`) | `UNIQUE(city)` on `delivery_zone_cities` (unchanged) + a check first inside the functions; unique index `delivery_zones_name_unique` | `run.sh` T10, `regression.delivery.spec.js` (create and move-in both refused, nothing half-written) | PASSED |
+| Admin delivery zones screen `/admin/settings` (client-010) arrives with its data (zones read server-side as the admin's JWT, no API call on load); one card per zone: name, 84x44 fee field with the shekel sign outside it (inline-end, the left in RTL), 44px city chips with 44x44 remove buttons, a dashed "+ עיר" chip, the rule "a city is in one zone only" on the card; a city already in another zone is refused in words naming the city and that zone; user-typed names inside sentences are isolated (FSI..PDI) | `components/admin/delivery/DeliveryZonesEditor.tsx`, `styles/admin.css` (`.admin-zone*`, `.admin-chip*`) | `regression.delivery.spec.js` "admin delivery zones screen" (sizes, positions, texts, DB after each action, keyboard on the switch, light + dark screenshots `admin-delivery-zones*.png`) | PASSED |
 
 ## 2. Layers and what proves each one
 
@@ -104,6 +105,8 @@ never reported as passed.
 - Deleting a zone leaves `orders.delivery_zone_id` pointing at nothing (no FK, cross-context by design). Orders keep their own fee snapshot (`delivery_fee_displayed`), so no money changes; a screen that shows an order's zone name must tolerate a missing zone.
 
 ## 4. Change log
+
+- 2026-09-26 client-010: delivery zones screen replaces the Settings placeholder (`/admin/settings`). No schema change.
 
 - 2026-09-26 api-007 (admin part): `GET/POST /api/admin/delivery-zones`, `PATCH/DELETE /api/admin/delivery-zones/[id]`. Migration `20260926070000_delivery_zones_admin.sql`: three audited aal2 functions, direct table writes revoked, unique zone names. The public read (`GET /api/delivery-zones`) is session E's, not in this change.
 

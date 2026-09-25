@@ -4,12 +4,16 @@
 // as the admin's own aal2 JWT -> SECURITY DEFINER functions -> audit_log.
 const { test, expect } = require('@playwright/test');
 const crypto = require('node:crypto');
+const { join } = require('node:path');
 const { createClient } = require('@supabase/supabase-js');
 const { createUser, db, uiLogin } = require('./helpers/admin-ui');
 const { localEnv } = require('./helpers/env');
+const { SCREENS } = require('./helpers/baseline');
 
 /** A short random tag so parallel or repeated runs never share a zone name or a city. */
 const tag = () => crypto.randomUUID().slice(0, 6);
+/** FSI..PDI: the screen isolates user-typed names inside a sentence. */
+const iso = (s) => `\u2068${s}\u2069`;
 
 test.describe('admin delivery zones API (api-007)', () => {
   test('anonymous visitor gets 401 on every verb', async ({ request }) => {
@@ -122,5 +126,148 @@ test.describe('admin delivery zones API (api-007)', () => {
     expect((await user.rpc('fn_admin_create_delivery_zone', { p_name: 'x', p_fee: 1, p_cities: [] })).error?.message).toBe('admin_aal2_required');
     expect((await user.from('delivery_zones').insert({ name: `QA user ${tag()}` })).error?.message).toContain('permission denied');
     expect((await user.from('delivery_zone_cities').delete().neq('city', '')).error?.message).toContain('permission denied');
+  });
+});
+
+/** Baseline every admin screen shares (same checks as regression.admin.spec.js), plus a screenshot. */
+async function adminBaseline(page, name, errors) {
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'he');
+  await page.evaluate(() => document.fonts.ready);
+  expect(await page.evaluate(() => document.fonts.check('400 16px "IBM Plex Sans Hebrew"'))).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  const small = await page.evaluate(() =>
+    [...document.querySelectorAll('a, button, input, select, textarea, [role="button"], [role="switch"]')]
+      .filter((el) => {
+        const r = el.getBoundingClientRect();
+        const visible = r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden' && el.getAttribute('type') !== 'hidden';
+        return visible && (r.width < 44 || r.height < 44);
+      })
+      .map((el) => el.outerHTML.slice(0, 80)),
+  );
+  expect(small).toEqual([]);
+  await page.screenshot({ path: join(SCREENS, `admin-${name}.png`), fullPage: true });
+  expect(errors).toEqual([]);
+}
+
+function collectErrors(page) {
+  const errors = [];
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  page.on('pageerror', (e) => errors.push(e.message));
+  return errors;
+}
+
+test.describe('admin delivery zones screen (client-010)', () => {
+  test('cards arrive with their data; fee 84px with the shekel sign outside; 44px chips; clear one-zone error; add, remove, fee, off, new, delete', async ({ page, baseURL }) => {
+    const errors = collectErrors(page);
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const t = tag();
+    const headers = { origin: baseURL ?? '' };
+    const center = await (await page.request.post('/api/admin/delivery-zones', { headers, data: { name: `QA מרכז ${t}`, fee: 35, cities: [`רמת גן ${t}`, `גבעתיים ${t}`] } })).json();
+    const north = await (await page.request.post('/api/admin/delivery-zones', { headers, data: { name: `QA צפון ${t}`, fee: 45, cities: [`חיפה ${t}`] } })).json();
+
+    // First frame is server-rendered: no call to the zones API on load.
+    const apiCalls = [];
+    page.on('request', (r) => r.url().includes('/api/admin/delivery-zones') && apiCalls.push(r.url()));
+    await page.goto('/admin/settings');
+    await expect(page.getByRole('heading', { level: 2, name: 'אזורי משלוח' })).toBeVisible();
+    const card = page.locator(`[data-testid="zone-card"][data-zone="QA מרכז ${t}"]`);
+    await expect(card.getByRole('heading', { level: 3 })).toHaveText(`QA מרכז ${t}`);
+    await expect(card.getByRole('listitem').filter({ hasText: `רמת גן ${t}` })).toBeVisible();
+    await expect(card.getByText('עיר יכולה להיות רק באזור אחד.')).toBeVisible();
+    expect(apiCalls).toEqual([]);
+
+    // Fee field: 84px wide, 44px high, the shekel sign outside it, on its inline-end side (the left in RTL).
+    const fee = card.getByRole('textbox', { name: `דמי משלוח לQA מרכז ${t} בשקלים` });
+    await expect(fee).toHaveValue('35');
+    const feeBox = await fee.boundingBox();
+    expect([Math.round(feeBox?.width ?? 0), Math.round(feeBox?.height ?? 0)]).toEqual([84, 44]);
+    const shekelBox = await card.locator('.admin-zone-fee > span').first().boundingBox();
+    expect((shekelBox?.x ?? 0) + (shekelBox?.width ?? 0)).toBeLessThanOrEqual(feeBox?.x ?? 0);
+    // Chips: 44px high, remove button 44x44, "+ עיר" dashed.
+    const remove = card.getByRole('button', { name: `הסרת רמת גן ${t}` });
+    const rb = await remove.boundingBox();
+    expect([Math.round(rb?.width ?? 0), Math.round(rb?.height ?? 0)]).toEqual([44, 44]);
+    const addCity = card.getByRole('button', { name: '+ עיר' });
+    expect(await addCity.evaluate((el) => getComputedStyle(el).borderStyle)).toBe('dashed');
+    await adminBaseline(page, 'delivery-zones', errors);
+
+    // A city already in another zone: said in words, naming both, nothing saved.
+    await addCity.click();
+    await card.getByLabel('שם העיר').fill(`  חיפה   ${t} `);
+    await card.getByRole('button', { name: 'הוספה', exact: true }).click();
+    await expect(card.getByTestId('zone-message')).toHaveText(`${iso(`חיפה ${t}`)} כבר נמצאת באזור ${iso(`QA צפון ${t}`)}. עיר יכולה להיות רק באזור אחד.`);
+    await expect(card.getByTestId('zone-message')).toHaveAttribute('role', 'alert');
+    await page.screenshot({ path: join(SCREENS, 'admin-delivery-zones-city-taken.png'), fullPage: true });
+    expect((await db('SELECT zone_id FROM delivery_zone_cities WHERE city = $1', [`חיפה ${t}`]))[0].zone_id).toBe(north.id);
+
+    // Add a free city.
+    await card.getByLabel('שם העיר').fill(`בני ברק ${t}`);
+    await card.getByRole('button', { name: 'הוספה', exact: true }).click();
+    await expect(card.getByTestId('zone-message')).toHaveText(`${iso(`בני ברק ${t}`)} נוספה.`);
+    await expect(card.getByRole('button', { name: `הסרת בני ברק ${t}` })).toBeVisible();
+
+    // Remove a city.
+    await card.getByRole('button', { name: `הסרת גבעתיים ${t}` }).click();
+    await expect(card.getByTestId('zone-message')).toHaveText(`${iso(`גבעתיים ${t}`)} הוסרה.`);
+    expect((await db('SELECT city FROM delivery_zone_cities WHERE zone_id = $1 ORDER BY city', [center.id])).map((r) => r.city)).toEqual([`בני ברק ${t}`, `רמת גן ${t}`].sort());
+
+    // Fee: invalid is stopped in the form; a whole number is saved on Enter.
+    await fee.fill('35.5');
+    await fee.press('Enter');
+    await expect(card.getByTestId('zone-message')).toHaveText('דמי משלוח: מספר שלם של שקלים, מ־0 עד 1000.');
+    await fee.fill('50');
+    await fee.press('Enter');
+    await expect(card.getByTestId('zone-message')).toHaveText('נשמר.');
+    expect((await db('SELECT fee_displayed FROM delivery_zones WHERE id = $1', [center.id]))[0].fee_displayed).toBe('50.00');
+
+    // Turn the zone off (switch, keyboard).
+    const sw = card.getByRole('switch', { name: 'משלוח לאזור הזה פעיל' });
+    await expect(sw).toHaveAttribute('aria-checked', 'true');
+    await sw.focus();
+    await page.keyboard.press('Space');
+    await expect(sw).toHaveAttribute('aria-checked', 'false');
+    await expect(card.getByText('האזור כבוי: לקוחות מהערים האלה לא יכולים להזמין משלוח.')).toBeVisible();
+    expect((await db('SELECT is_active FROM delivery_zones WHERE id = $1', [center.id]))[0].is_active).toBe(false);
+
+    // New zone through the form; a taken name is refused in words.
+    await page.getByRole('button', { name: 'הוספת אזור' }).click();
+    await page.getByLabel('שם האזור').fill(`QA צפון ${t}`);
+    await page.getByLabel('דמי משלוח בשקלים').fill('30');
+    await page.getByRole('button', { name: 'יצירת האזור' }).click();
+    await expect(page.getByTestId('new-zone-message')).toHaveText('כבר יש אזור בשם הזה.');
+    await page.getByLabel('שם האזור').fill(`QA דרום ${t}`);
+    await page.getByRole('button', { name: 'יצירת האזור' }).click();
+    const south = page.locator(`[data-testid="zone-card"][data-zone="QA דרום ${t}"]`);
+    await expect(south.getByRole('textbox', { name: `דמי משלוח לQA דרום ${t} בשקלים` })).toHaveValue('30');
+
+    // Delete asks first, then removes the card.
+    await south.getByRole('button', { name: 'מחיקת האזור' }).click();
+    await expect(south.getByText(`למחוק את האזור ${iso(`QA דרום ${t}`)}? הזמנות קיימות שומרות את דמי המשלוח שלהן.`)).toBeVisible();
+    await south.getByRole('button', { name: 'מחיקה', exact: true }).click();
+    await expect(south).toHaveCount(0);
+    expect(await db('SELECT 1 FROM delivery_zones WHERE name = $1', [`QA דרום ${t}`])).toHaveLength(0);
+
+    // Reload: the server shows what was saved.
+    await page.reload();
+    await expect(page.locator(`[data-testid="zone-card"][data-zone="QA מרכז ${t}"]`).getByRole('textbox', { name: `דמי משלוח לQA מרכז ${t} בשקלים` })).toHaveValue('50');
+    // The two 409s above (city taken, name taken) are logged by the browser itself; nothing else may be.
+    expect(errors.filter((e) => !e.includes('status of 409'))).toEqual([]);
+    expect(errors).toHaveLength(2);
+    await db('DELETE FROM delivery_zones WHERE id = ANY($1)', [[center.id, north.id]]);
+  });
+
+  test('dark mode renders the zone cards', async ({ page, baseURL }) => {
+    const errors = collectErrors(page);
+    await page.emulateMedia({ colorScheme: 'dark' });
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const t = tag();
+    const z = await (await page.request.post('/api/admin/delivery-zones', { headers: { origin: baseURL ?? '' }, data: { name: `QA כהה ${t}`, fee: 40, cities: [`עיר ${t}`] } })).json();
+    await page.goto('/admin/settings');
+    await expect(page.locator(`[data-testid="zone-card"][data-zone="QA כהה ${t}"]`)).toBeVisible();
+    await adminBaseline(page, 'delivery-zones-dark', errors);
+    await db('DELETE FROM delivery_zones WHERE id = $1', [z.id]);
   });
 });

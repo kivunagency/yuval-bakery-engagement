@@ -289,3 +289,72 @@
   .admin-warn { background: color-mix(in srgb, var(--warn) 18%, transparent); }
   .admin-ok { background: color-mix(in srgb, var(--ok) 16%, transparent); }
 }
+
+/* Delivery zones (client-010), after design-tokens.md "אזורי משלוח" and mockup.html .zone. */
+.admin-section-title-first { margin-block-start: var(--s4); }
+.admin-zones { display: grid; gap: var(--s3); }
+.admin-zone {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-1);
+  padding: var(--s3) var(--s4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.admin-zone-h { display: flex; justify-content: space-between; align-items: center; gap: var(--s2); }
+.admin-zone-name { margin: 0; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.admin-zone-fee { display: flex; align-items: center; gap: 6px; flex: none; font-weight: 600; }
+.admin-zone-fee input {
+  inline-size: 84px;
+  min-block-size: 44px;
+  border-radius: var(--r-control);
+  border: 1.5px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: center;
+  font: inherit;
+  font-weight: 600;
+  font-size: 16px;
+}
+.admin-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.admin-chip {
+  min-block-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding-inline-start: 14px;
+  border-radius: var(--r-chip);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+.admin-chip button {
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.admin-chip button svg { inline-size: 14px; block-size: 14px; }
+.admin-chip-add {
+  padding-inline: 14px;
+  border-style: dashed;
+  border-color: var(--line-strong);
+  background: transparent;
+  font-weight: 600;
+  cursor: pointer;
+}
+.admin-zone-rule { margin: 0; font-size: 13px; color: var(--ink-2); }
+.admin-inline-form { display: flex; flex-direction: column; gap: var(--s2); }
+.admin-inline-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
+.admin-zone-links { display: flex; flex-wrap: wrap; gap: var(--s2); margin-inline-start: calc(-1 * var(--s3)); }
+.admin-confirm { display: flex; flex-direction: column; gap: var(--s2); }
+.admin-danger { border-color: var(--danger); color: var(--danger); }
+.admin-new-zone .admin-zone-fee { align-self: flex-start; }
