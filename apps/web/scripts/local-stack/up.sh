@@ -1,7 +1,8 @@
 #!/bin/bash
 # Local Supabase-shaped stack for dev and tests, no Docker needed:
-#   PostgreSQL 17 (pg17.sh) + Supabase Auth (GoTrue) + PostgREST + a small
-#   gateway on :54321 that serves /auth/v1 and /rest/v1 like the hosted API.
+#   PostgreSQL 17 (pg17.sh) + Supabase Auth (GoTrue) + PostgREST + Supabase
+#   Storage (storage.sh) + a small gateway on :54321 that serves /auth/v1,
+#   /rest/v1 and /storage/v1 like the hosted API.
 # Writes apps/web/.env.local (gitignored) with a per-run JWT secret and
 # locally minted anon/service keys. Nothing here touches DEV or PROD.
 # Usage: npm run stack:up   (then npm run dev)   ; npm run stack:down
@@ -10,7 +11,7 @@ APP="$(cd "$(dirname "$0")/../.." && pwd)"
 STATE="$APP/.local-stack"
 AUTH_VERSION="${AUTH_VERSION:-v2.180.0}"
 POSTGREST_VERSION="${POSTGREST_VERSION:-v12.2.3}"
-PG_PORT=54322; REST_PORT=54330; AUTH_PORT=54340; GW_PORT=54321; SMTP_PORT=54325
+PG_PORT=54322; REST_PORT=54330; AUTH_PORT=54340; GW_PORT=54321; SMTP_PORT=54325; STORAGE_PORT=54350
 SITE_URL="${SITE_URL:-http://localhost:3000}"
 
 # shellcheck source=/dev/null
@@ -30,6 +31,9 @@ if [ ! -x "$BIN_CACHE/postgrest-$POSTGREST_VERSION" ]; then
   curl -fsSL "https://github.com/PostgREST/postgrest/releases/download/$POSTGREST_VERSION/postgrest-$POSTGREST_VERSION-linux-static-x64.tar.xz" \
     | tar xJ -C "$BIN_CACHE" && mv "$BIN_CACHE/postgrest" "$BIN_CACHE/postgrest-$POSTGREST_VERSION"
 fi
+# shellcheck source=/dev/null
+. "$APP/scripts/local-stack/storage.sh"
+storage_install "$BIN_CACHE" || exit 1
 
 # ---- postgres + supabase roles/schemas ------------------------------------
 pg17_start "$STATE/pgdata" "$PG_PORT"
@@ -50,7 +54,7 @@ MAIL_DIR="$STATE/mail" SMTP_PORT=$SMTP_PORT \
   nohup node "$APP/scripts/local-stack/smtp-sink.mjs" >"$STATE/smtp.log" 2>&1 & echo $! > "$STATE/smtp.pid"
 
 # ---- gateway (also serves supabase/templates/ for Auth's mail templates) ---
-GW_PORT=$GW_PORT AUTH_PORT=$AUTH_PORT REST_PORT=$REST_PORT TEMPLATES_DIR="$APP/supabase/templates" \
+GW_PORT=$GW_PORT AUTH_PORT=$AUTH_PORT REST_PORT=$REST_PORT STORAGE_PORT=$STORAGE_PORT TEMPLATES_DIR="$APP/supabase/templates" \
   nohup node "$APP/scripts/local-stack/gateway.mjs" >"$STATE/gateway.log" 2>&1 & echo $! > "$STATE/gateway.pid"
 
 # ---- auth (runs its own migrations into schema auth) ----------------------
@@ -77,6 +81,17 @@ export GOTRUE_LOG_LEVEL=warn
 "$AUTH_DIR/auth" migrate >"$STATE/auth-migrate.log" 2>&1 || { cat "$STATE/auth-migrate.log"; exit 1; }
 nohup "$AUTH_DIR/auth" serve >"$STATE/auth.log" 2>&1 & echo $! > "$STATE/auth.pid"
 
+# ---- storage (runs its own migrations into schema storage, like hosted) ----
+storage_start "$STORAGE_PORT" "$PG_PORT" "$JWT_SECRET" "$ANON_KEY" "$SERVICE_KEY" "$STATE/storage-files" "$STATE/storage.log" "$STATE/storage.pid"
+for i in $(seq 1 120); do
+  [ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$STORAGE_PORT/status" || true)" = 200 ] \
+    && [ "$($PSQL -Atc "select to_regclass('storage.buckets') is not null")" = t ] && break
+  sleep 0.5
+  [ "$i" = 120 ] && { echo "storage did not start"; tail -30 "$STATE/storage.log"; exit 1; }
+done
+# The server we just started must be the one answering (not a leftover on the port).
+kill -0 "$(cat "$STATE/storage.pid")" 2>/dev/null || { echo "storage exited (port $STORAGE_PORT taken by another process?)"; tail -30 "$STATE/storage.log"; exit 1; }
+
 # ---- app migrations (same files that ship to Supabase) --------------------
 for f in "$APP"/supabase/migrations/*.sql; do
   $PSQL -f "$f" >/dev/null || { echo "MIGRATION FAILED: $f"; exit 1; }
@@ -94,9 +109,10 @@ PGRST_DB_CHANNEL_ENABLED=true PGRST_LOG_LEVEL=warn \
 for i in $(seq 1 60); do
   a=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$GW_PORT/auth/v1/health" || true)
   r=$(curl -s -o /dev/null -w '%{http_code}' -H "apikey: $ANON_KEY" "http://127.0.0.1:$GW_PORT/rest/v1/" || true)
-  [ "$a" = 200 ] && [ "$r" = 200 ] && break
+  st=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$GW_PORT/storage/v1/status" || true)
+  [ "$a" = 200 ] && [ "$r" = 200 ] && [ "$st" = 200 ] && break
   sleep 0.5
-  [ "$i" = 60 ] && { echo "stack did not become healthy (auth=$a rest=$r)"; tail -20 "$STATE"/*.log; exit 1; }
+  [ "$i" = 60 ] && { echo "stack did not become healthy (auth=$a rest=$r storage=$st)"; tail -20 "$STATE"/*.log; exit 1; }
 done
 
 # job-002: web push test keys (VAPID, P-256), minted per run like the JWT

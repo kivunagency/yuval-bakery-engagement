@@ -17,7 +17,9 @@ templates in `supabase/templates/`.
 
 No Docker needed: `scripts/local-stack/` fetches PostgreSQL 17 (npm package
 `@embedded-postgres/linux-x64`), Supabase Auth and PostgREST (GitHub releases)
-into a cache outside the repo. Seed data is `supabase/seed.sql` (synthetic only).
+and Supabase Storage (built from `supabase/storage` with Node 24 from npm, file
+backend) into a cache outside the repo. The first run builds Storage (about a
+minute); later runs start in seconds. Seed data is `supabase/seed.sql` (synthetic only).
 
 ## Checks
 
