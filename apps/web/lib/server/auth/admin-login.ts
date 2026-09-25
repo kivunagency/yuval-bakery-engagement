@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { createUserClient } from '@/lib/server/supabase/server';
 import { serviceClient } from '@/lib/server/supabase/service';
 import { callRpc } from '@/lib/server/supabase/rpc';
+import { clientIpFrom } from '@/lib/server/http/client-ip';
 import { getAdminSession } from '@/lib/server/auth/admin';
 import { adminLoginInput, adminTotpInput } from '@/lib/shared/contracts/admin-auth';
 
@@ -22,13 +23,7 @@ export type AdminAuthResult = { ok: true; next: AdminLoginStep } | { ok: false; 
 
 /** Client IP for rate limiting. Netlify sets x-nf-client-connection-ip itself. */
 export async function clientIp(): Promise<string> {
-  const h = await headers();
-  return (
-    h.get('x-nf-client-connection-ip') ??
-    h.get('x-real-ip') ??
-    h.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    'unknown'
-  ).slice(0, 64);
+  return clientIpFrom(await headers());
 }
 
 /** Where the signed-in user (if any) stands in the admin login flow. */

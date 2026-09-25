@@ -43,6 +43,13 @@ INSERT INTO products (id, name, description, price_displayed, cost_basis, oven_m
    'קמח, שוקולד, ביצים, סוכר, חמאה', ARRAY['gluten', 'dairy', 'eggs'], true, 'עוגת שוקולד פרוסה על מגש הגשה', true, true)
 ON CONFLICT (id) DO NOTHING;
 
+-- Time slots (api-003). Synthetic, from the mockup; Yuval's real hours are
+-- open (PRD 10.1). The first start becomes app_settings.earliest_slot_time
+-- (trg_time_slots_sync_earliest).
+INSERT INTO time_slots (start_time, end_time) VALUES
+  ('10:00', '12:00'), ('12:00', '14:00'), ('14:00', '16:00'), ('16:00', '18:00')
+ON CONFLICT (start_time, end_time) DO NOTHING;
+
 -- Capacity days are Jerusalem dates (fn_business_date, blindspot-002), never
 -- CURRENT_DATE, which is the UTC date on Supabase.
 -- Capacity: today and tomorrow, generous pools for local testing of the

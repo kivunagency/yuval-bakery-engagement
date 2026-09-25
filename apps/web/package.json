@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:race": "node --test --test-concurrency=1 --test-reporter=spec qa/db/capacity-race.test.mjs",
-    "test:business-day": "node --test --test-reporter=spec qa/db/business-day.test.mjs",
+    "test:business-day": "node --test --test-reporter=spec qa/db/business-day.test.mjs qa/db/slot-lead-time.test.mjs",
     "test:e2e": "playwright test -c qa/playwright.config.js",
     "stack:up": "bash scripts/local-stack/up.sh",
     "stack:down": "bash scripts/local-stack/down.sh",
