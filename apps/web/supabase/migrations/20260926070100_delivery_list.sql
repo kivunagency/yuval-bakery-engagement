@@ -57,7 +57,7 @@ BEGIN
 END;
 $$;
 
--- Sorts before 20260926090000, so revoke explicitly (see 20260926070000).
+-- Explicit revoke kept as a second line of defence (see 20260926070000).
 REVOKE EXECUTE ON FUNCTION fn_admin_delivery_list(DATE) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION fn_admin_delivery_list(DATE) TO authenticated;
 

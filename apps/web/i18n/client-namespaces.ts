@@ -1,13 +1,20 @@
 import type { AbstractIntlMessages } from 'next-intl';
 
-// Top-level message namespaces each client scope may receive. A client
-// component that calls useTranslations('<ns>') must have <ns> listed for every
-// scope it renders in (tests/client-namespaces.test.ts checks this).
-const PUBLIC = ['errors', 'catalog', 'day_state', 'business', 'returns_policy', 'privacy', 'contact', 'footer', 'custom_cake', 'registration', 'account', 'checkout', 'payment'] as const;
+// Top-level message namespaces each client scope may receive. Only what the
+// client components of that part of the site use: a public page never ships
+// the admin's strings, and the catalog never ships checkout or account text.
+// A route whose client components need more wraps itself in
+// <ScopedIntlProvider scope="..."> (see app/(public)/*/layout.tsx).
+// tests/client-namespaces.test.ts checks components against these lists.
+const CORE = ['errors', 'catalog', 'day_state', 'business', 'returns_policy', 'privacy', 'contact', 'footer'] as const;
 
 export const CLIENT_SCOPES = {
-  public: PUBLIC,
-  admin: [...PUBLIC, 'admin', 'push'],
+  public: CORE,
+  checkout: [...CORE, 'checkout'],
+  order: [...CORE, 'payment'],
+  custom_cake: [...CORE, 'custom_cake'],
+  account: [...CORE, 'registration', 'account'],
+  admin: [...CORE, 'admin', 'push'],
 } as const;
 
 export type ClientScope = keyof typeof CLIENT_SCOPES;

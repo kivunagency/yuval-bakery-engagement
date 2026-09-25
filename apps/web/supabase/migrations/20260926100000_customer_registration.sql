@@ -22,13 +22,13 @@
 -- 5. fn_set_marketing_consent: a customer acting on their own row may use the
 --    sources 'registration' and 'profile' only (they could previously write
 --    'account_deletion', which is evidence of a different event), and a
---    deleted account cannot grant. Body otherwise unchanged from 20260926090000.
+--    deleted account cannot grant. Body otherwise unchanged from 20260925121300.
 --
 -- The account page reads the customer's own orders through the existing RLS
 -- policy orders_select_own_registered (customer_id = auth.uid()). Guest
 -- orders are never linked to an account by phone or email (SEC-003).
 --
--- New functions are callable by nobody until granted (20260926090000).
+-- New functions are callable by nobody until granted (20260925121300).
 
 BEGIN;
 

@@ -11,6 +11,10 @@ module.exports = defineConfig({
   testDir: '.',
   outputDir: '../test-results',
   fullyParallel: false,
+  // One worker: every spec shares one local database (admins, capacity days,
+  // notification recipients). Parallel files raced on that shared state
+  // (wave-2 integration: a new admin appeared between a send and its retry).
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: 0,
   reporter: [['list']],

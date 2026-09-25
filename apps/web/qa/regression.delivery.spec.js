@@ -376,8 +376,8 @@ test.describe('delivery list screen (client-011)', () => {
       await addDeliveryOrder(day, { name: 'דנה כהן', phone: '+972501112233', email: `dana-${tag()}@example.test`, city: 'רמת גן', address: 'הרצל 12, דירה 4', window: '16:00-18:00', notes: 'קומה 2, לדפוק חזק' }),
       await addDeliveryOrder(day, { name: 'Avi Levi', phone: '+972541234567', city: 'גבעתיים', address: 'כצנלסון 5', window: '10:00-12:00' }),
       await addDeliveryOrder(day, { name: 'נועה', phone: '+972521234567', city: 'חיפה', address: 'הנשיא 3' }),
-      await addDeliveryOrder(day, { status: 'payment_pending', name: 'ממתינה לתשלום', phone: '+972509999999' }),
-      await addDeliveryOrder(day, { status: 'payment_pending', name: 'עוד ממתינה', phone: '+972509999998' }),
+      await addDeliveryOrder(day, { status: 'payment_pending', name: 'QAPENDINGNAMEONE', phone: '+972509999999' }),
+      await addDeliveryOrder(day, { status: 'payment_pending', name: 'QAPENDINGNAMETWO', phone: '+972509999998' }),
     ];
 
     const apiCalls = [];
@@ -405,9 +405,14 @@ test.describe('delivery list screen (client-011)', () => {
     await expect(phone).toHaveAttribute('href', 'tel:+972501112233');
     expect(await phone.evaluate((el) => [getComputedStyle(el).direction, getComputedStyle(el).unicodeBidi])).toEqual(['ltr', 'isolate']);
 
-    // Minimization: nothing else about the orders reaches the page.
+    // Minimization: nothing else about the orders reaches the page, including
+    // the serialized props in its scripts. Markers are unique strings, not
+    // words that UI labels may also contain (wave-2 integration: the admin
+    // scope's translations include "ממתינה" and "₪").
     const html = await page.content();
-    for (const leak of ['example.test', 'ממתינה', ...numbers, '₪']) expect(html, leak).not.toContain(leak);
+    for (const leak of ['example.test', 'QAPENDINGNAME', '509999999', '509999998', ...numbers]) expect(html, leak).not.toContain(leak);
+    // No amounts on the sheet itself.
+    expect(await page.locator('main').innerText()).not.toContain('₪');
     await expect(page.getByTestId('delivery-footer')).toHaveText('מידע אישי של לקוחות. למחוק או לגרוס בסוף יום המשלוחים.');
     await expect(page.getByTestId('delivery-share')).toContainText('הודעות נעלמות');
     expect(apiCalls).toEqual([]);

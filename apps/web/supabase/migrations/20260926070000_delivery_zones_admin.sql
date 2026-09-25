@@ -212,9 +212,9 @@ BEGIN
 END;
 $$;
 
--- This file sorts before 20260926090000 (default privileges), so on a fresh
--- database these functions are created while the old defaults still grant
--- EXECUTE to PUBLIC/anon/authenticated. Revoke explicitly, then grant only
+-- Written when the default-privileges fix sorted after this lane. It now runs
+-- first (20260925121300), so the REVOKE below is a no-op kept as a second
+-- line of defence. Grant only
 -- `authenticated`: the admin API calls them with the admin's own JWT, and each
 -- function checks aal2 itself.
 REVOKE EXECUTE ON FUNCTION fn_admin_create_delivery_zone(TEXT, NUMERIC, TEXT[]) FROM PUBLIC, anon, authenticated;

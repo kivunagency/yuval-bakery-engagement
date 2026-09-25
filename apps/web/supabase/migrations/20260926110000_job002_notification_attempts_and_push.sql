@@ -19,7 +19,7 @@
 --    retires an endpoint the push service reports gone (404/410).
 --
 -- Every function here is callable by nobody unless granted below (default
--- privileges, 20260926090000). None is granted to anon.
+-- privileges, 20260925121300). None is granted to anon.
 
 BEGIN;
 

@@ -137,7 +137,7 @@ END;
 $$;
 COMMENT ON FUNCTION fn_attach_custom_cake_photo IS 'api-005 SEC-010. Records the private path of a photo the server re-encoded. service_role only. At most custom_cake_photos_max per request, only while pending_review and within custom_cake_upload_window_minutes of submission.';
 
--- Callable by nobody by default (20260926090000); only the server's service key.
+-- Callable by nobody by default (20260925121300); only the server's service key.
 REVOKE EXECUTE ON FUNCTION fn_submit_custom_cake_request(TEXT, TEXT, TEXT, TEXT, BOOLEAN, TEXT, TEXT, DATE, BOOLEAN, TEXT) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION fn_attach_custom_cake_photo(UUID, TEXT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION fn_submit_custom_cake_request(TEXT, TEXT, TEXT, TEXT, BOOLEAN, TEXT, TEXT, DATE, BOOLEAN, TEXT) TO service_role;
