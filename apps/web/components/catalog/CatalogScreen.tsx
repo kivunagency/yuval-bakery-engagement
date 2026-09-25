@@ -78,7 +78,7 @@ export function CatalogScreen({ businessName, catalog, availability, initialDay 
         <h1 className={styles.brand} data-testid="business-name">
           {businessName}
         </h1>
-        <Link href="/checkout" className={styles.cartBtn} aria-label={t('cart_label', { count })} data-testid="cart-button">
+        <Link href="/checkout" prefetch={false} className={styles.cartBtn} aria-label={t('cart_label', { count })} data-testid="cart-button">
           <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
             <path d="M216,64H176a48,48,0,0,0-96,0H40A16,16,0,0,0,24,80V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64ZM128,32a32,32,0,0,1,32,32H96A32,32,0,0,1,128,32Zm88,168H40V80H80V96a8,8,0,0,0,16,0V80h64V96a8,8,0,0,0,16,0V80h40Z" />
           </svg>
@@ -122,7 +122,7 @@ export function CatalogScreen({ businessName, catalog, availability, initialDay 
             <div className={styles.custom}>
               <h3>{t('custom_cake.title')}</h3>
               <p>{t('custom_cake.body')}</p>
-              <Link href="/custom-cake">{t('custom_cake.cta')}</Link>
+              <Link href="/custom-cake" prefetch={false}>{t('custom_cake.cta')}</Link>
             </div>
             {products.slice(customAt).map((p) => (
               <ProductCard key={p.id} product={p} wide={false} blocked={blockedReason(p)} inCart={qty(p.id)} onAdd={add} />
