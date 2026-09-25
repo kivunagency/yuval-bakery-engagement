@@ -1,0 +1,12 @@
+.page { display: grid; gap: var(--s5); }
+.page p { margin: 0; }
+.page ul { margin: 0; padding-inline-start: var(--s5); display: grid; gap: var(--s1); }
+.draft {
+  padding: var(--s3) var(--s4);
+  background: var(--surface-2); color: var(--ink-2);
+  border: 1px dashed var(--line-strong); border-radius: var(--r-control);
+  font-size: 14px;
+}
+.version { font-size: 13px; color: var(--ink-2); }
+.section { display: grid; gap: var(--s2); }
+.section a { display: inline-flex; align-items: center; min-block-size: var(--tap); text-underline-offset: 3px; }

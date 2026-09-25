@@ -5,7 +5,40 @@
   },
   "business": {
     "details": {
-      "name": "[Business name]"
+      "name": "[Business name]",
+      "owner_name": "[Owner name]",
+      "registration_number": "[Osek type and number]",
+      "address": "[Business address]",
+      "phone": "[Business phone]",
+      "email": "[Business email]",
+      "contact": "Business and contact details"
+    },
+    "labels": {
+      "name": "Business name",
+      "owner_name": "Owner",
+      "registration": "Business registration",
+      "address": "Address",
+      "phone": "Phone",
+      "email": "Email"
+    },
+    "status": {
+      "exempt": "Osek patur (exempt dealer) no.",
+      "licensed": "Osek murshe (licensed dealer) no."
+    },
+    "price": {
+      "final_price": "final price",
+      "incl_vat": "incl. VAT"
+    },
+    "all_details_link": "All business details",
+    "legal_draft_notice": "Draft text, pending legal review. Details in square brackets are not set yet.",
+    "version_label": "Text version:",
+    "page": {
+      "title": "Business details",
+      "ordering_title": "Ordering, prices and delivery",
+      "ordering_body": "Orders are placed on this site at least 24 hours before the delivery or pickup time. Before payment you see the products, the date and time, and the final total.",
+      "prices_body": "The prices shown are final prices. The delivery fee depends on the delivery city and is shown before payment.",
+      "delivery_body": "Deliveries are made by the business's courier to the cities offered at checkout. You can also pick up the order yourself.",
+      "payment_body": "Payment is by Bit or PayBox, through a link shown after you order. Write the order number in the payment note. The order is confirmed once the payment is received."
     }
   },
   "errors": {
@@ -14,5 +47,30 @@
     "back_home": "Back to the home page",
     "generic_title": "Something went wrong",
     "retry": "Try again"
+  },
+  "contact": {
+    "title": "Contact us",
+    "call": "Call",
+    "whatsapp": "Message on WhatsApp",
+    "about_order": "About order",
+    "whatsapp_prefill_order": "Hi, I have a question about order {orderNumber}",
+    "phone_placeholder": "[Business phone]",
+    "whatsapp_placeholder": "[WhatsApp number]"
+  },
+  "footer": {
+    "nav_label": "Site information",
+    "links": {
+      "business": "Business details"
+    }
+  },
+  "returns_policy": {
+    "exemption_notice": {
+      "title": "Cancelling an order",
+      "catalog": "Fresh food product: the order cannot be cancelled after it is confirmed, under the Consumer Protection Law.",
+      "custom_cake": "Made especially for you: a custom cake cannot be cancelled after the order is confirmed, under the Consumer Protection Law.",
+      "before_payment": "Until you pay, you can still cancel the order: contact us by phone or WhatsApp.",
+      "defects": "This does not affect your rights if a product is defective.",
+      "version": "Text version:"
+    }
   }
 }
