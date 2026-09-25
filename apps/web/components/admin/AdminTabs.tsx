@@ -6,10 +6,11 @@ import { useTranslations } from 'next-intl';
 
 // Bottom navigation of the admin (design-tokens.md "ניהול"): 4 text tabs,
 // 56px high, the active one marked by a 3px accent bar. Custom-cake requests
-// live under the Orders tab (the design has exactly four tabs).
+// live under the Orders tab and the day's delivery list under the calendar
+// tab (the design has exactly four tabs).
 const TABS = [
   { key: 'orders', href: '/admin/orders', also: ['/admin/custom-cakes'] },
-  { key: 'capacity', href: '/admin/capacity', also: [] },
+  { key: 'capacity', href: '/admin/capacity', also: ['/admin/delivery'] },
   { key: 'catalog', href: '/admin/catalog', also: [] },
   { key: 'settings', href: '/admin/settings', also: [] },
 ] as const;

@@ -514,6 +514,25 @@
       "error_not_found": "This zone no longer exists. Reload the page.",
       "error_session": "Your session ended. Please sign in again.",
       "error_generic": "Saving failed. Please try again."
+    },
+    "delivery_list": {
+      "title": "Delivery list",
+      "open_for_day": "Delivery list for this day",
+      "day_title": "Deliveries for {weekday} {date}",
+      "day_nav": "Change day",
+      "previous_day": "Previous day",
+      "next_day": "Next day",
+      "stop_count": "{count, plural, one {One delivery.} other {# deliveries.}}",
+      "pending_note": "{count, plural, one {One more delivery order for this day is waiting for payment and is not on the list.} other {# more delivery orders for this day are waiting for payment and are not on the list.}}",
+      "print": "Print or save as PDF",
+      "share": "To send it to the courier: save as PDF and send it on WhatsApp, in a chat with disappearing messages. At the end of the day, delete the file and shred any printed page.",
+      "empty": "There are no paid deliveries for this day.",
+      "list_label": "Deliveries",
+      "address": "Address:",
+      "phone": "Phone:",
+      "notes": "Notes:",
+      "no_window": "No time set",
+      "pii_footer": "Customers' personal information. Delete or shred at the end of the delivery day."
     }
   }
 }

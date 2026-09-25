@@ -358,3 +358,53 @@
 .admin-confirm { display: flex; flex-direction: column; gap: var(--s2); }
 .admin-danger { border-color: var(--danger); color: var(--danger); }
 .admin-new-zone .admin-zone-fee { align-self: flex-start; }
+
+/* Delivery list (client-011): screen and print. The print sheet drops the
+   admin chrome and repeats the personal-data footer on every page (SEC-016). */
+.dl-count { margin-block: 0 var(--s3); font-weight: 600; }
+.dl-actions { display: flex; flex-direction: column; gap: var(--s2); margin-block-end: var(--s4); }
+.dl-actions .btn { inline-size: 100%; }
+.dl-stops { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s3); }
+.dl-stop {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-1);
+  padding: var(--s3) var(--s4);
+  break-inside: avoid;
+}
+.dl-stop-h { display: flex; align-items: baseline; gap: var(--s2); margin-block-end: var(--s1); }
+.dl-num {
+  flex: none;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+.dl-name { flex: 1; margin: 0; font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
+.dl-window { flex: none; font-weight: 600; }
+.dl-line { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+.dl-label { color: var(--ink-2); }
+.dl-phone { display: inline-flex; align-items: center; min-block-size: var(--tap); font-weight: 600; text-underline-offset: 3px; color: var(--ink); }
+.dl-footer { margin-block: var(--s6) 0; font-size: 13px; color: var(--ink-2); }
+.admin-day-links { margin-block: 0 var(--s2); }
+
+@media print {
+  @page { margin: 12mm 12mm 22mm; }
+  :root { color-scheme: light; }
+  body, .admin-shell, .admin-main { background: #ffffff !important; color: #000000 !important; }
+  .admin-appbar, .admin-tabs, .dl-noprint { display: none !important; }
+  .admin-main { max-inline-size: none; padding: 0; }
+  .admin-daytitle { font-size: 28px; }
+  .dl-stop { box-shadow: none; border: 1px solid #999999; border-radius: 8px; background: #ffffff; color: #000000; }
+  .dl-num { background: #000000; color: #ffffff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .dl-label, .dl-footer { color: #333333; }
+  .dl-phone { text-decoration: none; color: #000000; }
+  /* Fixed = repeated at the foot of every printed page. */
+  .dl-footer { position: fixed; inset-block-end: 0; inset-inline: 0; margin: 0; padding-block: 4mm; text-align: center; border-block-start: 1px solid #999999; background: #ffffff; }
+}

@@ -360,3 +360,97 @@ test.describe('delivery list API (api-008)', () => {
     expect((await user.rpc('fn_admin_delivery_list', { p_day: '2027-01-05' })).error?.message).toBe('admin_aal2_required');
   });
 });
+
+test.describe('delivery list screen (client-011)', () => {
+  test('anonymous visitor is sent to login', async ({ page }) => {
+    await page.goto('/admin/delivery');
+    await expect(page).toHaveURL(/\/admin\/login$/);
+  });
+
+  test('arrives with its data, courier fields only, phone LTR tap-to-call, print sheet without chrome and with the footer, audited', async ({ page }) => {
+    const errors = collectErrors(page);
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const day = freshDeliveryDay();
+    const numbers = [
+      await addDeliveryOrder(day, { name: 'דנה כהן', phone: '+972501112233', email: `dana-${tag()}@example.test`, city: 'רמת גן', address: 'הרצל 12, דירה 4', window: '16:00-18:00', notes: 'קומה 2, לדפוק חזק' }),
+      await addDeliveryOrder(day, { name: 'Avi Levi', phone: '+972541234567', city: 'גבעתיים', address: 'כצנלסון 5', window: '10:00-12:00' }),
+      await addDeliveryOrder(day, { name: 'נועה', phone: '+972521234567', city: 'חיפה', address: 'הנשיא 3' }),
+      await addDeliveryOrder(day, { status: 'payment_pending', name: 'ממתינה לתשלום', phone: '+972509999999' }),
+      await addDeliveryOrder(day, { status: 'payment_pending', name: 'עוד ממתינה', phone: '+972509999998' }),
+    ];
+
+    const apiCalls = [];
+    page.on('request', (r) => r.url().includes('/api/') && apiCalls.push(r.url()));
+    const res = await page.goto(`/admin/delivery?day=${day}`);
+    expect(res?.headers()['referrer-policy']).toBe('no-referrer');
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+    const weekdays = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    const [, m, dom] = day.split('-').map(Number);
+    await expect(page.getByTestId('delivery-title')).toHaveText(`משלוחים ליום ${weekdays[new Date(`${day}T12:00:00Z`).getUTCDay()]} ${dom}.${m}`);
+    await expect(page.getByTestId('delivery-count')).toHaveText('3 משלוחים.');
+    await expect(page.getByTestId('delivery-pending')).toHaveText('עוד 2 הזמנות משלוח ליום הזה מחכות לתשלום, ולא מופיעות ברשימה.');
+    const stops = page.getByTestId('delivery-stop');
+    await expect(stops).toHaveCount(3);
+    await expect(stops.nth(0)).toContainText('Avi Levi');
+    await expect(stops.nth(0).getByTestId('stop-window')).toHaveText('10:00-12:00');
+    await expect(stops.nth(1)).toContainText('דנה כהן');
+    await expect(stops.nth(1)).toContainText('כתובת: הרצל 12, דירה 4, רמת גן');
+    await expect(stops.nth(1)).toContainText('הערות: קומה 2, לדפוק חזק');
+    await expect(stops.nth(2).getByTestId('stop-window')).toHaveText('בלי שעה');
+
+    // Phone: local form, tap-to-call in E.164, LTR-isolated inside the RTL line.
+    const phone = stops.nth(1).getByTestId('stop-phone');
+    await expect(phone).toHaveText('050-111-2233');
+    await expect(phone).toHaveAttribute('href', 'tel:+972501112233');
+    expect(await phone.evaluate((el) => [getComputedStyle(el).direction, getComputedStyle(el).unicodeBidi])).toEqual(['ltr', 'isolate']);
+
+    // Minimization: nothing else about the orders reaches the page.
+    const html = await page.content();
+    for (const leak of ['example.test', 'ממתינה', ...numbers, '₪']) expect(html, leak).not.toContain(leak);
+    await expect(page.getByTestId('delivery-footer')).toHaveText('מידע אישי של לקוחות. למחוק או לגרוס בסוף יום המשלוחים.');
+    await expect(page.getByTestId('delivery-share')).toContainText('הודעות נעלמות');
+    expect(apiCalls).toEqual([]);
+    // The calendar tab stays active: the list belongs to the day.
+    await expect(page.getByRole('navigation', { name: 'ניווט ניהול' }).getByRole('link', { name: 'יומן' })).toHaveAttribute('aria-current', 'page');
+    await adminBaseline(page, 'delivery-list', errors);
+
+    // Print sheet: no app bar, tabs, day arrows, print button or pending note; the footer repeats (fixed).
+    await page.emulateMedia({ media: 'print' });
+    for (const sel of ['.admin-appbar', '.admin-tabs', '[data-testid="delivery-print"]', '[data-testid="delivery-pending"]', '[data-testid="next-day"]']) {
+      await expect(page.locator(sel), sel).toBeHidden();
+    }
+    await expect(stops).toHaveCount(3);
+    expect(await page.getByTestId('delivery-footer').evaluate((el) => getComputedStyle(el).position)).toBe('fixed');
+    await page.screenshot({ path: join(SCREENS, 'admin-delivery-list-print.png'), fullPage: true });
+    await page.pdf({ path: join(SCREENS, 'admin-delivery-list.pdf'), format: 'A4', printBackground: true });
+    await page.emulateMedia({ media: 'screen' });
+
+    // SEC-017: the render generated the list once and logged it.
+    const audit = await db("SELECT actor_id, metadata FROM audit_log WHERE action = 'delivery_list.generated' AND entity_id = $1", [day]);
+    expect(audit).toEqual([{ actor_id: admin.userId, metadata: { stop_count: 3, pending_count: 2 } }]);
+    await db('DELETE FROM orders WHERE delivery_date = $1', [day]);
+  });
+
+  test('empty day: says so, no print button; reached from the capacity day; arrows move the day; dark mode', async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.emulateMedia({ colorScheme: 'dark' });
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const day = freshDeliveryDay();
+    await page.goto(`/admin/capacity?day=${day}`);
+    await page.getByTestId('open-delivery-list').click();
+    await page.waitForURL(`**/admin/delivery?day=${day}`);
+    await expect(page.getByTestId('delivery-empty')).toHaveText('אין משלוחים ששולמו ליום הזה.');
+    await expect(page.getByTestId('delivery-print')).toHaveCount(0);
+    await expect(page.getByTestId('delivery-count')).toHaveCount(0);
+    await expect(page.getByTestId('delivery-footer')).toHaveCount(0);
+    await expect(page.getByTestId('delivery-stop')).toHaveCount(0);
+    await adminBaseline(page, 'delivery-list-empty-dark', errors);
+    await page.getByTestId('next-day').click();
+    await page.waitForURL(`**/admin/delivery?day=${new Date(Date.parse(`${day}T12:00:00Z`) + 864e5).toISOString().slice(0, 10)}`);
+    // An invalid day falls back to today (like the capacity screen), never an error page.
+    const r = await page.goto('/admin/delivery?day=2027-02-30');
+    expect(r?.status()).toBe(200);
+  });
+});
