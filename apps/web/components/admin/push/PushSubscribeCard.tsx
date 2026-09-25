@@ -27,6 +27,18 @@ function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
+/**
+ * iPhone/iPad outside a home-screen web app (blindspot-001): there iOS offers
+ * no web push at all, whatever the version. iPadOS reports a Mac user agent,
+ * so a Mac with touch counts as an iPad.
+ */
+function iosOutsideHomeScreenApp(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.userAgent.includes('Macintosh') && navigator.maxTouchPoints > 1);
+  const standalone = (navigator as Navigator & { standalone?: boolean }).standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  return ios && !standalone;
+}
+
 async function currentSubscription(): Promise<PushSubscription | null> {
   const reg = await navigator.serviceWorker.getRegistration(SW_SCOPE);
   return reg ? reg.pushManager.getSubscription() : null;
@@ -38,6 +50,7 @@ export function PushSubscribeCard({ vapidPublicKey, deviceCount }: { vapidPublic
   const [state, setState] = useState<State>('checking');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
+  const [iosHint, setIosHint] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -54,7 +67,10 @@ export function PushSubscribeCard({ vapidPublicKey, deviceCount }: { vapidPublic
           next = 'off';
         }
       }
-      if (!cancelled) setState(next);
+      if (!cancelled) {
+        setState(next);
+        setIosHint(iosOutsideHomeScreenApp());
+      }
     })();
     return () => {
       cancelled = true;
@@ -133,6 +149,12 @@ export function PushSubscribeCard({ vapidPublicKey, deviceCount }: { vapidPublic
         {t('title')}
       </h2>
       <p className="admin-hint">{t('extra_note')}</p>
+
+      {iosHint && state !== 'not_configured' ? (
+        <p className="admin-push-note" data-testid="push-ios-note">
+          {t('ios_note')}
+        </p>
+      ) : null}
 
       {state === 'not_configured' || state === 'unsupported' || state === 'denied' ? (
         <p className="admin-push-note" role="status" data-testid="push-note">

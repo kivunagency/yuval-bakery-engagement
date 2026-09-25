@@ -490,7 +490,8 @@
       "disabled_confirmation": "Notifications are off for this device.",
       "devices": "{count, plural, =0 {No device receives notifications yet.} one {One device receives notifications.} other {# devices receive notifications.}}",
       "not_configured": "Notifications are not set up on the server yet. New orders reach you by email.",
-      "unsubscribe_failed": "Could not turn off notifications. Try again in a moment."
+      "unsubscribe_failed": "Could not turn off notifications. Try again in a moment.",
+      "ios_note": "On iPhone and iPad, notifications work from ⁦iOS 16.4⁩, and only in the app added to the home screen: open this page in Safari, tap Share, then Add to Home Screen, and open the site from the new icon. Then turn notifications on there."
     }
   },
   "notification": {

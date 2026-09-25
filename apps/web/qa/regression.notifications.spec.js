@@ -583,3 +583,96 @@ test.describe('client-012 admin push subscribe', () => {
     await adminBaseline(page, 'unsupported', errors);
   });
 });
+
+// ---------------------------------------------------------------- blindspot-001
+// Web push is an extra, never the only channel (PRD US-10): email goes on every
+// event whatever the state of push, and an iPhone outside a home-screen web app
+// (where iOS has no web push at all) is told how to get it.
+const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+
+test.describe('blindspot-001 push is never the only channel', () => {
+  test('email still goes when push is not configured, and when every push endpoint is dead', async () => {
+    const notification = await loadNotificationModule();
+    const { client: admin, email: adminEmail } = await createAdmin();
+    const saved = { pub: process.env.VAPID_PUBLIC_KEY, priv: process.env.VAPID_PRIVATE_KEY };
+    try {
+      delete process.env.VAPID_PUBLIC_KEY;
+      delete process.env.VAPID_PRIVATE_KEY;
+      await db.withClient(async (c) => {
+        const order = await orderWithEmail(c, `guest-${crypto.randomUUID()}@example.test`);
+        const r = await notification.OrderCreated({ orderId: order.id });
+        expect(r.outcomes).toContainEqual({ channel: 'push', audience: 'admin', status: 'skipped', reason: 'push_not_configured' });
+        expect(capturedTo(adminEmail).filter((m) => m.subject.includes(order.order_number))).toHaveLength(1);
+      });
+    } finally {
+      process.env.VAPID_PUBLIC_KEY = saved.pub;
+      process.env.VAPID_PRIVATE_KEY = saved.priv;
+    }
+
+    const keys = subscriptionKeys();
+    const dead = await pushService(keys, 410);
+    try {
+      await admin.rpc('fn_admin_register_push_subscription', { p_endpoint: dead.endpoint, p_p256dh: keys.p256dh, p_auth_key: keys.auth });
+      await db.withClient(async (c) => {
+        const order = await orderWithEmail(c, `guest-${crypto.randomUUID()}@example.test`);
+        const r = await notification.OrderCreated({ orderId: order.id });
+        expect(r.outcomes).toContainEqual({ channel: 'push', audience: 'admin', status: 'failed', reason: 'push_http_410' });
+        expect(capturedTo(adminEmail).filter((m) => m.subject.includes(order.order_number))).toHaveLength(1);
+      });
+    } finally {
+      await dead.close();
+    }
+  });
+
+  test('web app manifest: standalone (what iOS needs for push), Hebrew RTL, placeholder name, linked from pages', async ({ page, request }) => {
+    const res = await request.get('/manifest.webmanifest');
+    expect(res.status()).toBe(200);
+    const m = await res.json();
+    expect(m).toMatchObject({ display: 'standalone', lang: 'he', dir: 'rtl', name: '[שם העסק]' });
+    expect(m.start_url).toBeUndefined();
+    await page.goto('/');
+    await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', /manifest\.webmanifest/);
+  });
+
+  test('iPhone in a Safari tab (no push there): the card explains Add to Home Screen, email still arrives', async ({ browser }) => {
+    const context = await browser.newContext({ userAgent: IPHONE_UA, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: 'he-IL', timezoneId: 'Asia/Jerusalem' });
+    const page = await context.newPage();
+    await page.addInitScript(() => {
+      delete window.PushManager;
+    });
+    const errors = collectErrors(page);
+    const user = await createUser({ withTotp: true });
+    await uiLogin(page, user);
+    await page.goto('/admin/settings');
+    await expect(page.getByTestId('push-card')).toHaveAttribute('data-state', 'unsupported');
+    await expect(page.getByTestId('push-ios-note')).toContainText('הוספה למסך הבית');
+    await expect(page.getByTestId('push-ios-note')).toContainText('iOS\u00a016.4');
+    await expect(page.getByTestId('push-note')).toContainText('במייל');
+    await adminBaseline(page, 'ios-safari-tab', errors);
+    await context.close();
+  });
+
+  test('iPhone home-screen web app: no Add-to-Home-Screen hint, the switch is offered', async ({ browser }) => {
+    const context = await browser.newContext({ userAgent: IPHONE_UA, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: 'he-IL', timezoneId: 'Asia/Jerusalem' });
+    const page = await context.newPage();
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'standalone', { get: () => true });
+      Object.defineProperty(Notification, 'permission', { get: () => 'default' });
+    });
+    const user = await createUser({ withTotp: true });
+    await uiLogin(page, user);
+    await page.goto('/admin/settings');
+    await expect(page.getByTestId('push-card')).toHaveAttribute('data-state', 'off');
+    await expect(page.getByTestId('push-ios-note')).toHaveCount(0);
+    await expect(page.getByTestId('push-toggle')).toBeVisible();
+    await context.close();
+  });
+
+  test('Android/desktop browsers get no iOS hint', async ({ page }) => {
+    const user = await createUser({ withTotp: true });
+    await uiLogin(page, user);
+    await page.goto('/admin/settings');
+    await expect(page.getByTestId('push-card')).not.toHaveAttribute('data-state', 'checking');
+    await expect(page.getByTestId('push-ios-note')).toHaveCount(0);
+  });
+});
