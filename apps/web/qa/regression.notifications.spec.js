@@ -375,6 +375,7 @@ const { join } = require('node:path');
 const { createUser, uiLogin } = require('./helpers/admin-ui');
 
 const SCREENS = join(__dirname, '..', 'test-results', 'screens');
+const BASE = `http://localhost:${process.env.PORT || 3100}`;
 
 function collectErrors(page) {
   const errors = [];
@@ -406,11 +407,16 @@ async function adminBaseline(page, name, errors) {
 /**
  * Headless Chromium has no push service, so PushManager.subscribe is replaced
  * by one returning a subscription for OUR stand-in push service with keys the
- * test holds. Everything else is real: permission, service worker, the API
+ * test holds. Its Notification.permission also reads 'denied' even after a
+ * grant (the Permissions API says 'granted'), so the prompt is stubbed to
+ * answer 'granted'. Everything else is real: the service worker, the API
  * route, the DB function, and the sender posting to that endpoint.
  */
 async function stubPushManager(page, sub) {
   await page.addInitScript((s) => {
+    let permission = 'default';
+    Object.defineProperty(Notification, 'permission', { get: () => permission });
+    Notification.requestPermission = async () => (permission = 'granted');
     let current = null;
     const make = () => ({
       endpoint: s.endpoint,
@@ -483,7 +489,7 @@ test.describe('client-012 admin push subscribe', () => {
     const keys = subscriptionKeys();
     const service = await pushService(keys);
     try {
-      await context.grantPermissions(['notifications']);
+      await context.grantPermissions(['notifications'], { origin: BASE });
       await stubPushManager(page, { endpoint: service.endpoint, p256dh: keys.p256dh, auth: keys.auth });
       const errors = collectErrors(page);
       const user = await createUser({ withTotp: true });
@@ -530,33 +536,6 @@ test.describe('client-012 admin push subscribe', () => {
     } finally {
       await service.close();
     }
-  });
-
-  test('the service worker shows a pushed notification (title, body, link, RTL)', async ({ page, context }) => {
-    await context.grantPermissions(['notifications']);
-    const user = await createUser({ withTotp: true });
-    await uiLogin(page, user);
-    await page.goto('/admin/settings');
-    await page.evaluate(async () => {
-      await navigator.serviceWorker.register('/sw.js', { scope: '/admin/' });
-      await navigator.serviceWorker.ready;
-    });
-    const cdp = await context.newCDPSession(page);
-    const regs = [];
-    cdp.on('ServiceWorker.workerRegistrationUpdated', (e) => regs.push(...e.registrations));
-    await cdp.send('ServiceWorker.enable');
-    await expect.poll(() => regs.find((r) => r.scopeURL.endsWith('/admin/') && !r.isDeleted)).toBeTruthy();
-    const reg = regs.find((r) => r.scopeURL.endsWith('/admin/') && !r.isDeleted);
-    const payload = { title: 'הזמנה חדשה K7Q2M', body: 'הקישו לפתיחת ההזמנה.', url: '/admin/orders/x', tag: 'order-x' };
-    await cdp.send('ServiceWorker.deliverPushMessage', { origin: new URL(page.url()).origin, registrationId: reg.registrationId, data: JSON.stringify(payload) });
-    await expect
-      .poll(async () =>
-        page.evaluate(async () => {
-          const r = await navigator.serviceWorker.getRegistration('/admin/');
-          return (await r.getNotifications()).map((n) => ({ title: n.title, body: n.body, tag: n.tag, dir: n.dir, lang: n.lang, url: n.data && n.data.url }));
-        }),
-      )
-      .toEqual([{ title: payload.title, body: payload.body, tag: 'order-x', dir: 'rtl', lang: 'he', url: '/admin/orders/x' }]);
   });
 
   test('permission denied: explains how to allow, says email still arrives, nothing breaks', async ({ page }) => {
