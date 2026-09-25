@@ -20,7 +20,10 @@ export const DB_ERROR_CODES = [
   'confirmation_delivery_requires_admin_or_service_role',
   'consent_not_own',
   'consent_version_mismatch',
+  'custom_cake_photo_limit_reached',
+  'custom_cake_photo_path_invalid',
   'custom_cake_request_not_pending',
+  'custom_cake_upload_closed',
   'day_range_invalid',
   'day_unavailable',
   'delivery_zone_unavailable',
@@ -35,10 +38,13 @@ export const DB_ERROR_CODES = [
   'rate_limit_exceeded',
   'rate_limit_ip_exceeded',
   'rate_limit_open_orders_per_phone_exceeded',
+  'rate_limit_open_requests_per_phone_exceeded',
   'retention_setting_missing',
+  'service_role_required',
   'single_order_capacity_cap_exceeded',
   'unpaid_holds_capacity_cap_exceeded',
   'unsubscribe_link_source_is_service_role_only_via_fn_unsubscribe_by_token',
+  'upload_rights_not_confirmed',
 ] as const;
 export type DbErrorCode = (typeof DB_ERROR_CODES)[number];
 
