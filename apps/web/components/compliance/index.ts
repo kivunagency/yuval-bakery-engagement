@@ -2,3 +2,4 @@
 // custom-cake and order-confirmation screens import from here.
 export { BusinessDetails } from './BusinessDetails';
 export { CancellationExemptionNotice } from './CancellationExemptionNotice';
+export { PrivacyNoticeAtCollection, NotesFieldHint, type PrivacyNoticeContext } from './PrivacyNoticeAtCollection';

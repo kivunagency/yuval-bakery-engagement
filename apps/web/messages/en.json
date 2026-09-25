@@ -60,7 +60,8 @@
   "footer": {
     "nav_label": "Site information",
     "links": {
-      "business": "Business details"
+      "business": "Business details",
+      "privacy": "Privacy"
     }
   },
   "returns_policy": {
@@ -71,6 +72,98 @@
       "before_payment": "Until you pay, you can still cancel the order: contact us by phone or WhatsApp.",
       "defects": "This does not affect your rights if a product is defective.",
       "version": "Text version:"
+    }
+  },
+  "privacy": {
+    "notice": {
+      "title": "How we use your details",
+      "collected_data": "{businessName} uses the details you enter here (name, phone and, for delivery, address) and is the owner of the database.",
+      "purpose_checkout": "They are used to carry out your order and coordinate the handover.",
+      "purpose_registration": "They are used to manage your account and show your orders. Marketing messages are sent only if you tick the separate box.",
+      "purpose_custom_cake": "They are used to review your custom cake request, set a price and carry out the order.",
+      "recipients_uncle": "For a delivery, your name, phone, address, time window and delivery notes are passed to the business's courier. The data is stored with hosting providers outside Israel.",
+      "photos": "Inspiration photos are seen only by the baker, are never published, and are deleted after the order.",
+      "retention": "You are not legally required to give these details, but without them we cannot carry out the order. Retention periods and your rights:",
+      "full_notice_link": "full privacy notice"
+    },
+    "notes_hint": "No need to write medical information here. For allergy questions, call us.",
+    "page": {
+      "title": "Privacy notice",
+      "intro": "This notice explains which details we collect when you order, why, who receives them, how long we keep them and what your rights are.",
+      "unset_number": "[not set]",
+      "owner": {
+        "title": "Who owns the database",
+        "body": "The database is owned by the business below. You can contact us about your details by phone or email."
+      },
+      "collected": {
+        "title": "What we collect",
+        "name": "Name.",
+        "phone": "Phone number (required, to coordinate the order).",
+        "address": "Street address and city, for delivery only. Not collected for pickup.",
+        "email": "Email, optional, to send you the order confirmation in writing.",
+        "notes": "Order notes and delivery notes you choose to write.",
+        "inscription": "Cake inscription text (it sometimes includes a child's name and age).",
+        "photos": "Inspiration photos for a custom cake.",
+        "profile_dates": "For registered customers who want benefits: birthday and anniversary (day and month only, no year). Optional."
+      },
+      "not_collected": {
+        "title": "What we do not collect:",
+        "birth_year": "Year of birth.",
+        "id_number": "ID number.",
+        "payment": "Payment details (you pay directly in Bit or PayBox).",
+        "location": "GPS location. We do not use analytics or advertising tracking."
+      },
+      "obligation": {
+        "title": "Do you have to give these details?",
+        "body": "There is no legal obligation. Without a name, phone and (for delivery) an address we cannot carry out the order."
+      },
+      "purposes": {
+        "title": "What the details are used for",
+        "order": "Carrying out the order.",
+        "delivery": "Coordinating the delivery or pickup.",
+        "account": "Managing a registered account and its order history.",
+        "marketing": "Marketing messages (benefits, promotions, a birthday greeting with a benefit) only if you ticked the separate consent box. You can unsubscribe at any time."
+      },
+      "recipients": {
+        "title": "Who receives the details",
+        "courier": "The business's courier, for deliveries only: name, address, phone, time window and delivery notes. Not the items, prices or inscription.",
+        "hosting": "Infrastructure providers: Netlify (website hosting) and Supabase (database and photos).",
+        "email": "Resend (sending email), if you gave an email address.",
+        "whatsapp": "WhatsApp (Meta), when the business contacts you on WhatsApp.",
+        "receipts": "The business's receipts software, if your name is written on a receipt."
+      },
+      "abroad": {
+        "title": "Transfer abroad",
+        "body": "The providers above store the data on servers outside Israel."
+      },
+      "retention": {
+        "title": "How long we keep the details",
+        "orders": "Identifying details on an order (name, phone, address, email, notes, inscription): {months} months after the order is completed, then deleted and the order is anonymized.",
+        "financial": "Items, amounts and dates of an order, without identifying details: for the period required for accounting.",
+        "photos": "Inspiration photos: {days} days after the order is completed, declined or expired, then deleted.",
+        "profile": "A registered profile: until you delete it, or after {months} months without activity, with notice 30 days in advance.",
+        "consent": "Records of marketing consent and its withdrawal: kept as evidence of consent.",
+        "pending": "These periods are pending confirmation by the business's accountant."
+      },
+      "rights": {
+        "title": "Your rights",
+        "access": "To see the details we hold about you (answer within 30 days).",
+        "correction": "To ask us to correct details that are wrong.",
+        "marketing": "To be removed from marketing messages at any time, by the link in any message or by asking us.",
+        "registered": "Registered customers can also download their details and delete their account. To use any of these rights, contact us by phone or email."
+      },
+      "photos": {
+        "title": "Inspiration photos",
+        "body": "Photos you upload for a custom cake are seen only by the baker, for making your cake. They are never published and are deleted {days} days after the order."
+      },
+      "health": {
+        "title": "Health information",
+        "body": "No need to write medical information in the notes. For allergy questions, call us."
+      },
+      "cookies": {
+        "title": "Cookies",
+        "body": "The site uses only essential cookies (keeping you signed in). No analytics, advertising or third-party cookies, so there is no cookie banner."
+      }
     }
   }
 }

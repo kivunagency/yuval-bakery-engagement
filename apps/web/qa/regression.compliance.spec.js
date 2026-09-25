@@ -13,7 +13,10 @@ const { checkPublicBaseline } = require('./helpers/baseline');
 // Tests below change business_* settings and restore them: run in order.
 test.describe.configure({ mode: 'serial' });
 
-const COMPLIANCE_ROUTES = [{ route: '/business', shot: 'business' }];
+const COMPLIANCE_ROUTES = [
+  { route: '/business', shot: 'business' },
+  { route: '/privacy', shot: 'privacy' },
+];
 
 const BUSINESS_KEYS = ['business_name', 'business_owner_name', 'business_registration_number', 'business_address', 'business_phone', 'business_whatsapp', 'business_email'];
 
@@ -155,5 +158,38 @@ test.describe('DB: public business settings read path', () => {
     expect(data.active_privacy_notice_version).toBe(code.privacy);
     expect(data.active_terms_version).toBe(code.terms);
     expect(data.active_cancellation_notice_version).toBe(code.cancellation);
+  });
+});
+
+test.describe('privacy notice (compliance-001, s.11)', () => {
+  test('footer links to /privacy', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByTestId('site-footer').getByRole('link', { name: 'פרטיות' })).toHaveAttribute('href', '/privacy');
+  });
+
+  test('/privacy names the courier as a recipient, shows retention from app_settings and its version', async ({ page }) => {
+    await page.goto('/privacy');
+    await expect(page.getByTestId('legal-version')).toContainText('privacy-2026-10-v1');
+    await expect(page.locator('#recipients')).toContainText('השליח מטעם העסק');
+    await expect(page.locator('#recipients')).toContainText('Netlify');
+    await expect(page.getByTestId('retention-orders')).toContainText('24');
+    await expect(page.getByTestId('retention-photos')).toContainText('30');
+    await expect(page.getByTestId('retention-profile')).toContainText('36');
+    await expect(page.locator('#cookies')).toBeVisible();
+    const notice = page.getByTestId('privacy-notice-at-collection');
+    await expect(notice).toContainText('לשליח מטעם העסק');
+    await expect(notice).toContainText('[שם העסק]');
+    await expect(notice.getByRole('link', { name: 'הודעת הפרטיות המלאה' })).toHaveAttribute('href', '/privacy');
+    await expect(notice.locator('input[type="checkbox"]')).toHaveCount(0); // a notice, not a consent
+  });
+
+  test('a changed retention setting changes the page (no hard-coded promise)', async ({ page }) => {
+    await withDb((db) => db.query("UPDATE app_settings SET value = '18'::jsonb WHERE key = 'guest_pii_months'"));
+    try {
+      await page.goto('/privacy');
+      await expect(page.getByTestId('retention-orders')).toContainText('18');
+    } finally {
+      await withDb((db) => db.query("UPDATE app_settings SET value = '24'::jsonb WHERE key = 'guest_pii_months'"));
+    }
   });
 });

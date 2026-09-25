@@ -16,3 +16,11 @@
 @media (prefers-color-scheme: dark) {
   .notice { background: var(--surface-2); }
 }
+.privacyNotice {
+  display: grid; gap: var(--s2);
+  padding: var(--s4);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-control);
+  font-size: 14px;
+}
+.privacyNotice p { margin: 0; }
+.hint { margin: 0; font-size: 13px; color: var(--ink-2); }
