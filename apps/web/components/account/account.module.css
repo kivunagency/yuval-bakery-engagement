@@ -1,0 +1,72 @@
+/* Customer account screens (client-005): registration, sign-in, account,
+   preferences, unsubscribe. Public tokens from app/globals.css; logical
+   properties only (RTL). Every control is at least 44px on both axes. */
+.page { display: grid; gap: var(--s5); }
+.lead { margin: 0; color: var(--ink-2); }
+.card {
+  display: grid; gap: var(--s4);
+  padding: var(--s4);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card);
+}
+.card h2 { font-size: 16px; }
+.form { display: grid; gap: var(--s4); }
+.field { display: grid; gap: 6px; }
+.field label, .legend { font-size: 14px; font-weight: 600; }
+.input, .select {
+  min-block-size: 52px; inline-size: 100%;
+  border-radius: var(--r-control); border: 1.5px solid var(--line-strong);
+  background: var(--surface); color: var(--ink);
+  padding-inline: var(--s3); font: inherit; font-size: 16px;
+}
+.input[dir='ltr'] { text-align: end; }
+.input[aria-invalid='true'] { border-color: var(--danger); }
+.hint { margin: 0; font-size: 14px; color: var(--ink-2); }
+.fieldError { margin: 0; font-size: 14px; font-weight: 600; color: var(--danger); }
+/* Checkbox: a 44x44 hit area (the input itself, so keyboard, label and
+   touch all hit it) drawing a 24px box; the tick is an inline SVG data URI. */
+.check {
+  display: grid; grid-template-columns: 44px 1fr; gap: var(--s2); align-items: start;
+  min-block-size: 44px; cursor: pointer;
+}
+.check > span { padding-block-start: 10px; }
+.check input {
+  appearance: none; -webkit-appearance: none;
+  inline-size: 44px; block-size: 44px; margin: 0;
+  display: grid; place-content: center; cursor: pointer;
+  background: transparent; border: 0; border-radius: var(--r-control);
+}
+.check input::before {
+  content: ''; inline-size: 24px; block-size: 24px; box-sizing: border-box;
+  border: 2px solid var(--line-strong); border-radius: 6px; background: var(--surface);
+}
+.check input:checked::before {
+  border-color: var(--accent);
+  background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 18px no-repeat;
+}
+.check input[aria-invalid='true']::before { border-color: var(--danger); }
+.check input:disabled { cursor: default; }
+.fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: var(--s3); min-inline-size: 0; }
+.fieldset:disabled { opacity: 0.6; }
+.dayMonth { display: grid; grid-template-columns: 1fr 2fr; gap: var(--s2); }
+.error {
+  margin: 0; padding: var(--s3); border-radius: var(--r-control);
+  background: var(--danger-bg); color: var(--danger); font-weight: 600;
+}
+.ok {
+  margin: 0; padding: var(--s3); border-radius: var(--r-control);
+  background: var(--ok-bg); color: var(--ok); font-weight: 600;
+}
+.submit { inline-size: 100%; }
+.actions { display: grid; gap: var(--s3); }
+.link { display: inline-flex; align-items: center; min-block-size: var(--tap); min-inline-size: var(--tap); text-underline-offset: 3px; font-weight: 600; }
+.details { margin: 0; display: grid; gap: var(--s3); }
+.row { display: grid; gap: 2px; }
+.row dt { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.row dd { margin: 0; overflow-wrap: anywhere; }
+.list { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--s2); }
+.list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s2); padding-block: var(--s2); border-block-end: 1px solid var(--line); }
+.list li:last-child { border-block-end: 0; }
+.muted { color: var(--ink-2); }
+@media (prefers-color-scheme: dark) {
+  .error { background: color-mix(in srgb, var(--danger) 16%, transparent); }
+}

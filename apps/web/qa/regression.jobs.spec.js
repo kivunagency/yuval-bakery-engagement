@@ -245,7 +245,12 @@ test.describe('job and capacity internals are not callable over the public API (
       const client = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
       if (who === 'authenticated') {
         const email = `customer-${Date.now()}-${Math.random().toString(36).slice(2)}@example.test`;
-        const { error } = await client.auth.signUp({ email, password: 'qa-password-123456' });
+        // Email confirmation is on in the local stack (api-010): create a
+        // confirmed user with the admin API, then sign in as it.
+        const service = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+        const { error: createError } = await service.auth.admin.createUser({ email, password: 'qa-password-123456', email_confirm: true });
+        expect(createError).toBeNull();
+        const { error } = await client.auth.signInWithPassword({ email, password: 'qa-password-123456' });
         expect(error).toBeNull();
       }
       const allowed = [];

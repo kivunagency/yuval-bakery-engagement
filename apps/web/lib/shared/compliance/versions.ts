@@ -10,6 +10,9 @@ export const TEXT_VERSIONS = {
   privacy: 'privacy-2026-10-v1',
   terms: 'terms-2026-10-v1',
   cancellation: 'cancellation-2026-10-v1',
+  // The marketing opt-in label (registration.marketing_optin_label, s.30A).
+  // fn_set_marketing_consent refuses a grant to any other version.
+  marketing: 'marketing-2026-10-v1',
 } as const;
 export type TextVersionKey = keyof typeof TEXT_VERSIONS;
 

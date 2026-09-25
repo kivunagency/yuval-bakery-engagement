@@ -20,9 +20,6 @@ export type AdminLoginStep = 'password' | 'enrol' | 'totp' | 'done';
 export type AdminAuthError = 'invalid' | 'rate_limited' | 'unavailable' | 'invalid_code' | 'session_expired';
 export type AdminAuthResult = { ok: true; next: AdminLoginStep } | { ok: false; error: AdminAuthError };
 
-// Moved to lib/server/http/client-ip.ts (shared with the public write routes).
-export { clientIp };
-
 /** Where the signed-in user (if any) stands in the admin login flow. */
 export async function adminLoginStep(): Promise<AdminLoginStep> {
   if (await getAdminSession()) return 'done';

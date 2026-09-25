@@ -1,0 +1,20 @@
+<!doctype html>
+<!--
+  Supabase Auth "Confirm signup" template (api-010). DRAFT wording, pending
+  Yuval and legal review; the business name stays a placeholder until she
+  gives it. Hosted Supabase: paste this into Authentication > Email Templates
+  > Confirm signup (infra, Yuval's account). The link MUST keep the
+  token_hash form: /account/confirm verifies it on the server, so it works on
+  any device, not only the browser that signed up.
+  Transactional only: no offer, coupon or promotion (compliance-spec section 5).
+-->
+<html lang="he" dir="rtl">
+  <body style="font-family: Arial, sans-serif; direction: rtl; text-align: right;">
+    <h1 style="font-size: 18px;">אישור כתובת האימייל</h1>
+    <p>קיבלנו בקשה לפתוח חשבון באתר ההזמנות של [שם העסק] עם הכתובת הזו.</p>
+    <p>
+      <a href="{{ .SiteURL }}/account/confirm?token_hash={{ .TokenHash }}&amp;type=email">לאישור הכתובת ופתיחת החשבון</a>
+    </p>
+    <p>אם לא ביקשתם לפתוח חשבון, אפשר להתעלם מההודעה. בלי אישור לא ייפתח חשבון.</p>
+  </body>
+</html>

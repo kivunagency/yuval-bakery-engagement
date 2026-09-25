@@ -1,6 +1,10 @@
 // Tiny stand-in for the hosted Supabase API gateway: one origin, path-routed.
-// Local stack only. /auth/v1/* -> Supabase Auth, /rest/v1/* -> PostgREST.
+// Local stack only. /auth/v1/* -> Supabase Auth, /rest/v1/* -> PostgREST,
+// /templates/<name>.html -> supabase/templates/ (Auth fetches its mail
+// templates by URL; hosted Supabase gets the same file pasted in the dashboard).
 import http from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 const routes = [
   ['/auth/v1', Number(process.env.AUTH_PORT)],
@@ -8,7 +12,17 @@ const routes = [
 ];
 
 http
-  .createServer((req, res) => {
+  .createServer(async (req, res) => {
+    const tpl = /^\/templates\/([a-z_]+\.html)$/.exec(req.url ?? '');
+    if (tpl && process.env.TEMPLATES_DIR) {
+      try {
+        const body = await readFile(join(process.env.TEMPLATES_DIR, tpl[1]));
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(body);
+      } catch {
+        res.writeHead(404).end();
+      }
+      return;
+    }
     const hit = routes.find(([prefix]) => req.url === prefix || req.url.startsWith(prefix + '/') || req.url.startsWith(prefix + '?'));
     if (!hit) {
       res.writeHead(404).end();
