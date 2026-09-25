@@ -473,6 +473,13 @@
         "5": "Friday",
         "6": "Saturday"
       }
+    },
+    "custom_cake": {
+      "whatsapp": {
+        "approved": "Hello, your cake request for {date} is approved. Price: {price} ILS. Order number: {orderNumber}. To pay: {link} Please put the order number in the payment note.",
+        "declined": "Hello, unfortunately we cannot make the cake you asked for on {date}. You can reply to this message to check another day.",
+        "declined_with_reason": "Hello, unfortunately we cannot make the cake you asked for on {date}. {reason} You can reply to this message to check another day."
+      }
     }
   }
 }
