@@ -344,3 +344,332 @@ test.describe('client-002 custom-cake form', () => {
     expect(posted).toBe(false);
   });
 });
+
+
+// ---------------------------------------------------------------------------
+// api-006: approve / decline / live capacity check (admin at aal2).
+// ---------------------------------------------------------------------------
+const { createUser, uiLogin } = require('./helpers/admin-ui');
+const { freshDay } = require('./helpers/db');
+
+/** A request for its own far-future day with the given capacity; returns ids. */
+async function requestOnFreshDay(request, { oven = 300, work = 300 } = {}) {
+  const day = await withClient((db) => freshDay(db, { oven, work }));
+  const phone = randomPhone();
+  const res = await post(request, body({ desiredDate: day, phone }));
+  expect(res.status()).toBe(201);
+  const { requestId } = await res.json();
+  created.push(requestId);
+  return { requestId, day, phone };
+}
+
+test.describe('api-006 approve / decline', () => {
+  test('without an aal2 admin session every admin route answers 401', async ({ request }) => {
+    const { requestId } = await requestOnFreshDay(request);
+    const h = { headers: { origin: ORIGIN } };
+    expect((await request.post(`/api/admin/custom-cake-requests/${requestId}/approve`, { ...h, data: { price: 100, ovenMinutes: 10, workMinutes: 10 } })).status()).toBe(401);
+    expect((await request.post(`/api/admin/custom-cake-requests/${requestId}/decline`, { ...h, data: {} })).status()).toBe(401);
+    expect((await request.get(`/api/admin/custom-cake-requests/${requestId}/capacity?oven=1&work=1`)).status()).toBe(401);
+    const env = localEnv();
+    const rpc = await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/rpc/fn_admin_custom_cake_capacity_check`, {
+      method: 'POST',
+      headers: { apikey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY, authorization: `Bearer ${env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ p_request_id: requestId, p_oven_minutes: 1, p_work_minutes: 1 }),
+    });
+    expect([401, 403, 404]).toContain(rpc.status);
+  });
+
+  test('approve: one transaction creates the payment_pending order and reserves exactly its minutes', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const api = page.request;
+    const { requestId, day } = await requestOnFreshDay(request, { oven: 300, work: 300 });
+
+    // CSRF and contract.
+    expect((await api.post(`/api/admin/custom-cake-requests/${requestId}/approve`, { data: { price: 350, ovenMinutes: 90, workMinutes: 120 } })).status()).toBe(403);
+    for (const data of [
+      { price: 0, ovenMinutes: 90, workMinutes: 120 },
+      { price: 350.001, ovenMinutes: 90, workMinutes: 120 },
+      { price: 350, ovenMinutes: -1, workMinutes: 120 },
+      { price: 350, ovenMinutes: 90, workMinutes: 1441 },
+      { price: 350, ovenMinutes: 1.5, workMinutes: 120 },
+      { price: 350, ovenMinutes: 90, workMinutes: 120, adminId: admin.userId },
+    ]) {
+      const r = await api.post(`/api/admin/custom-cake-requests/${requestId}/approve`, { headers: { origin: ORIGIN }, data });
+      expect(r.status(), JSON.stringify(data)).toBe(400);
+    }
+    expect((await api.post('/api/admin/custom-cake-requests/not-a-uuid/approve', { headers: { origin: ORIGIN }, data: { price: 1, ovenMinutes: 1, workMinutes: 1 } })).status()).toBe(400);
+
+    const check = await api.get(`/api/admin/custom-cake-requests/${requestId}/capacity?oven=90&work=120`);
+    expect(await check.json()).toMatchObject({ day, fits: true, hasDay: true, isBlackout: false, dayPassed: false, ovenMinutesLeft: 300, workMinutesLeft: 300 });
+
+    const res = await api.post(`/api/admin/custom-cake-requests/${requestId}/approve`, { headers: { origin: ORIGIN }, data: { price: 350, ovenMinutes: 90, workMinutes: 120 } });
+    expect(res.status()).toBe(200);
+    const ok = await res.json();
+    expect(ok).toMatchObject({ orderId: expect.any(String), orderNumber: expect.any(String), total: 350 });
+    const token = ok.paymentPageUrl.split('/order/')[1];
+    expect(token.length).toBeGreaterThanOrEqual(32);
+    expect(ok.whatsappHref).toMatch(/^https:\/\/wa\.me\/9725\d{8}\?text=/);
+    const text = decodeURIComponent(ok.whatsappHref.split('?text=')[1]);
+    expect(text).toContain(ok.orderNumber);
+    expect(text).toContain('350 ₪');
+    expect(text).toContain(ok.paymentPageUrl);
+
+    await withClient(async (db) => {
+      const o = (await db.query(
+        `SELECT status, order_source, custom_cake_request_id, total_displayed::float AS total, oven_minutes_cost, work_minutes_cost,
+                delivery_date::text AS d, lookup_token_hash = fn_hash_token($2) AS token_ok, privacy_notice_version
+         FROM orders WHERE id = $1`, [ok.orderId, token])).rows[0];
+      expect(o).toEqual({ status: 'payment_pending', order_source: 'custom_cake', custom_cake_request_id: requestId, total: 350,
+        oven_minutes_cost: 90, work_minutes_cost: 120, d: day, token_ok: true, privacy_notice_version: 'privacy-2026-10-v1' });
+      const r = (await db.query('SELECT status, order_id, price_displayed::float AS p FROM custom_cake_requests WHERE id = $1', [requestId])).rows[0];
+      expect(r).toEqual({ status: 'approved', order_id: ok.orderId, p: 350 });
+      const l = (await db.query('SELECT oven_minutes_reserved, work_minutes_reserved, oven_minutes_unpaid_reserved, work_minutes_unpaid_reserved FROM capacity_day_ledger WHERE day = $1', [day])).rows[0];
+      expect(l).toEqual({ oven_minutes_reserved: 90, work_minutes_reserved: 120, oven_minutes_unpaid_reserved: 90, work_minutes_unpaid_reserved: 120 });
+      const a = (await db.query(`SELECT actor_id FROM audit_log WHERE action = 'custom_cake.approved' AND entity_id = $1`, [requestId])).rows;
+      expect(a).toEqual([{ actor_id: admin.userId }]);
+    });
+
+    // Once approved it cannot be approved or declined again.
+    const again = await api.post(`/api/admin/custom-cake-requests/${requestId}/approve`, { headers: { origin: ORIGIN }, data: { price: 350, ovenMinutes: 90, workMinutes: 120 } });
+    expect(again.status()).toBe(409);
+    expect((await again.json()).error).toBe('not_pending');
+    const dec = await api.post(`/api/admin/custom-cake-requests/${requestId}/decline`, { headers: { origin: ORIGIN }, data: {} });
+    expect(dec.status()).toBe(409);
+  });
+
+  test('capacity changed between check and click: 409, a fresh check, nothing written, never overbooked', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const api = page.request;
+    const { requestId, day } = await requestOnFreshDay(request, { oven: 100, work: 100 });
+    expect((await (await api.get(`/api/admin/custom-cake-requests/${requestId}/capacity?oven=60&work=60`)).json()).fits).toBe(true);
+
+    // A paid standard order takes most of the day in the meantime.
+    await withClient((db) => db.query('UPDATE capacity_day_ledger SET oven_minutes_reserved = 50, work_minutes_reserved = 50 WHERE day = $1', [day]));
+
+    const res = await api.post(`/api/admin/custom-cake-requests/${requestId}/approve`, { headers: { origin: ORIGIN }, data: { price: 200, ovenMinutes: 60, workMinutes: 60 } });
+    expect(res.status()).toBe(409);
+    const j = await res.json();
+    expect(j.error).toBe('capacity_changed');
+    expect(j.check).toMatchObject({ fits: false, ovenMinutesLeft: 50, workMinutesLeft: 50 });
+    await withClient(async (db) => {
+      expect((await db.query('SELECT status, order_id FROM custom_cake_requests WHERE id = $1', [requestId])).rows[0]).toEqual({ status: 'pending_review', order_id: null });
+      expect((await db.query('SELECT count(*)::int AS n FROM orders WHERE custom_cake_request_id = $1', [requestId])).rows[0].n).toBe(0);
+      expect((await db.query('SELECT oven_minutes_reserved, work_minutes_reserved FROM capacity_day_ledger WHERE day = $1', [day])).rows[0]).toEqual({ oven_minutes_reserved: 50, work_minutes_reserved: 50 });
+    });
+    // What still fits can be approved.
+    const smaller = await api.post(`/api/admin/custom-cake-requests/${requestId}/approve`, { headers: { origin: ORIGIN }, data: { price: 200, ovenMinutes: 40, workMinutes: 35 } });
+    expect(smaller.status()).toBe(200);
+  });
+
+  test('decline: optional reason, no capacity touched, WhatsApp text carries the reason', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const api = page.request;
+    const { requestId, day } = await requestOnFreshDay(request);
+    expect((await api.post(`/api/admin/custom-cake-requests/${requestId}/decline`, { headers: { origin: ORIGIN }, data: { reason: 'x'.repeat(301) } })).status()).toBe(400);
+    const res = await api.post(`/api/admin/custom-cake-requests/${requestId}/decline`, { headers: { origin: ORIGIN }, data: { reason: 'היום הזה כבר מלא.' } });
+    expect(res.status()).toBe(200);
+    const j = await res.json();
+    expect(j.declined).toBe(true);
+    expect(decodeURIComponent(j.whatsappHref.split('?text=')[1])).toContain('היום הזה כבר מלא.');
+    await withClient(async (db) => {
+      expect((await db.query('SELECT status, decline_reason FROM custom_cake_requests WHERE id = $1', [requestId])).rows[0]).toEqual({ status: 'declined', decline_reason: 'היום הזה כבר מלא.' });
+      expect((await db.query('SELECT oven_minutes_reserved FROM capacity_day_ledger WHERE day = $1', [day])).rows[0].oven_minutes_reserved).toBe(0);
+    });
+    // Without a reason too (fresh request).
+    const other = await requestOnFreshDay(request);
+    const r2 = await api.post(`/api/admin/custom-cake-requests/${other.requestId}/decline`, { headers: { origin: ORIGIN }, data: {} });
+    expect(r2.status()).toBe(200);
+    expect((await withClient((db) => db.query('SELECT decline_reason FROM custom_cake_requests WHERE id = $1', [other.requestId]))).rows[0].decline_reason).toBeNull();
+  });
+
+  test('the capacity check agrees with the real approval over a matrix of ledger states and costs', async ({ request }) => {
+    const admin = await createUser({ admin: true, withTotp: false });
+    const { requestId, day } = await requestOnFreshDay(request, { oven: 100, work: 100 });
+    const ledgers = [
+      [0, 0, 0, 0, false], [50, 50, 50, 50, false], [30, 30, 0, 0, false], [60, 10, 60, 10, false],
+      [95, 95, 0, 0, false], [0, 0, 0, 0, true], [69, 0, 69, 0, false], [100, 100, 0, 0, false],
+    ];
+    const costs = [[0, 0], [1, 1], [5, 5], [30, 30], [35, 36], [40, 0], [0, 40], [70, 70], [71, 1], [100, 100], [101, 0]];
+    const disagreements = [];
+    let cases = 0;
+    await withClient(async (db) => {
+      await db.query('BEGIN');
+      try {
+        await db.query(`SELECT set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub: admin.userId, role: 'authenticated', aal: 'aal2' })]);
+        await db.query('SET LOCAL ROLE authenticated');
+        for (const [ovenRes, workRes, ovenUnpaid, workUnpaid, blackout] of ledgers) {
+          for (const [oven, work] of costs) {
+            await db.query('SAVEPOINT c');
+            await db.query('RESET ROLE');
+            await db.query(
+              `UPDATE capacity_day_ledger SET oven_minutes_reserved = $2, work_minutes_reserved = $3,
+                 oven_minutes_unpaid_reserved = $4, work_minutes_unpaid_reserved = $5, is_blackout = $6 WHERE day = $1`,
+              [day, ovenRes, workRes, ovenUnpaid, workUnpaid, blackout],
+            );
+            await db.query('SET LOCAL ROLE authenticated');
+            const fits = (await db.query('SELECT (fn_admin_custom_cake_capacity_check($1, $2, $3) ->> \'fits\')::boolean AS f', [requestId, oven, work])).rows[0].f;
+            let approved;
+            try {
+              await db.query('SAVEPOINT a');
+              await db.query(`SELECT id FROM fn_approve_custom_cake_request($1, 100, $2, $3, 'qa-token-qa-token-qa-token', 'p', 't', 'c')`, [requestId, oven, work]);
+              approved = true;
+            } catch (e) {
+              if (!String(e.message).startsWith('capacity_changed_recheck_before_approving')) throw e;
+              approved = false;
+              await db.query('ROLLBACK TO SAVEPOINT a');
+            }
+            cases += 1;
+            if (fits !== approved) disagreements.push({ ledger: [ovenRes, workRes, ovenUnpaid, workUnpaid, blackout], cost: [oven, work], fits, approved });
+            await db.query('ROLLBACK TO SAVEPOINT c');
+          }
+        }
+      } finally {
+        await db.query('ROLLBACK');
+      }
+    });
+    expect(cases).toBe(ledgers.length * costs.length);
+    expect(disagreements).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// client-008: admin queue /admin/custom-cakes (under the Orders tab).
+// ---------------------------------------------------------------------------
+const { join } = require('node:path');
+const { SCREENS } = require('./helpers/baseline');
+
+/** A pending request with a unique name, on its own day; returns the card locator too. */
+async function queued(page, request, over = {}, capacity = { oven: 300, work: 300 }) {
+  const day = await withClient((db) => freshDay(db, capacity));
+  const name = `QA Queue ${Math.random().toString(36).slice(2, 8)}`;
+  const res = await post(request, body({ desiredDate: day, name, ...over }));
+  expect(res.status()).toBe(201);
+  const { requestId } = await res.json();
+  created.push(requestId);
+  return { requestId, day, name, card: page.getByTestId('custom-cake-card').filter({ hasText: name }) };
+}
+
+test.describe('client-008 admin custom-cake queue', () => {
+  test('without an admin session the queue redirects to login', async ({ page }) => {
+    await page.goto('/admin/custom-cakes');
+    await expect(page).toHaveURL(/\/admin\/login$/);
+  });
+
+  test('arrives server-rendered with the request, customer text escaped, the Orders tab active; 390px checks', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    const q = await queued(page, request, { inscription: '<img src=x onerror=alert(1)>', notes: 'שכבה של <b>שוקולד</b>\nבלי אגוזים', phone: '052-555-1234', whatsappFollowupOk: true });
+    // A photo row whose file Storage cannot serve (no Storage locally): the card says so.
+    await withClient((db) => db.query('INSERT INTO custom_cake_photos (custom_cake_request_id, storage_path) VALUES ($1, $2)', [q.requestId, `requests/${q.requestId}/00000000-0000-4000-8000-000000000000.jpg`]));
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('dialog', (d) => { errors.push(`dialog ${d.message()}`); d.dismiss(); });
+    await uiLogin(page, admin);
+
+    const html = await (await page.request.get('/admin/custom-cakes')).text();
+    expect(html).toContain(q.name);
+    await page.goto('/admin/custom-cakes');
+    await expect(page.getByRole('heading', { level: 1, name: 'בקשות לעוגה בעיצוב אישי' })).toBeVisible();
+    await expect(page.locator('.admin-tabs a[aria-current="page"]')).toHaveText('הזמנות');
+    const card = q.card;
+    await expect(card).toBeVisible();
+    const weekday = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'][new Date(`${q.day}T12:00:00Z`).getUTCDay()];
+    await expect(card.getByRole('heading', { level: 2 })).toHaveText(`ליום ${weekday} ${Number(q.day.slice(8))}.${Number(q.day.slice(5, 7))}`);
+    await expect(card.locator('.ltr.num').first()).toHaveText('052-555-1234');
+    await expect(card.getByText('<img src=x onerror=alert(1)>')).toBeVisible();
+    await expect(card.locator('img[src="x"]')).toHaveCount(0);
+    await expect(card.locator('b')).toHaveCount(0);
+    await expect(card.getByText('הסכימו לתשובה בוואטסאפ')).toBeVisible();
+    await expect(card.getByText('אי אפשר להציג את תמונה 1 כרגע.')).toBeVisible();
+    await expect(card.getByText('הקלדת הדקות', { exact: false })).toBeVisible();
+
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    const small = await card.evaluate((el) =>
+      [...el.querySelectorAll('a, button, input, textarea')]
+        .filter((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && (r.width < 44 || r.height < 44); })
+        .map((n) => n.outerHTML.slice(0, 80)),
+    );
+    expect(small).toEqual([]);
+    await card.scrollIntoViewIfNeeded();
+    await card.screenshot({ path: join(SCREENS, 'admin-custom-cake-card.png') });
+    expect(errors).toEqual([]);
+  });
+
+  test('live capacity warning comes from the DB; approve shows the order and a WhatsApp link', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    const q = await queued(page, request, { phone: '050-777-8899' }, { oven: 100, work: 100 });
+    await uiLogin(page, admin);
+    await page.goto('/admin/custom-cakes');
+    const card = q.card;
+    await card.getByLabel('מחיר (₪)').fill('420');
+    await card.getByLabel('דקות תנור').fill('120');
+    await card.getByLabel('דקות עבודה').fill('30');
+    await expect(card.getByTestId('capacity-answer')).toContainText('לא נכנס ביום הזה. נשארו 100 דק׳ תנור ו-100 דק׳ עבודה.');
+    await expect(card.getByRole('button', { name: 'אישור ויצירת הזמנה' })).toBeDisabled();
+    await card.getByLabel('דקות תנור').fill('60');
+    await expect(card.getByTestId('capacity-answer')).toHaveText('נכנס. נשארו ביום 100 דק׳ תנור ו-100 דק׳ עבודה.');
+    await card.screenshot({ path: join(SCREENS, 'admin-custom-cake-fits.png') });
+    await card.getByRole('button', { name: 'אישור ויצירת הזמנה' }).click();
+
+    await expect(card.getByText('אושר. הזמנה על סך 420 ₪ מחכה לתשלום.')).toBeVisible();
+    const wa = card.getByRole('link', { name: 'שליחה בוואטסאפ' });
+    await expect(wa).toHaveAttribute('href', /^https:\/\/wa\.me\/972507778899\?text=/);
+    await expect(wa).toHaveAttribute('target', '_blank');
+    const orderNumber = (await card.locator('.admin-cc-order').textContent())?.trim();
+    expect(decodeURIComponent((await wa.getAttribute('href')).split('?text=')[1])).toContain(orderNumber);
+    await card.screenshot({ path: join(SCREENS, 'admin-custom-cake-approved.png') });
+    const r = await withClient((db) => db.query('SELECT r.status, o.status AS order_status, o.order_number FROM custom_cake_requests r JOIN orders o ON o.id = r.order_id WHERE r.id = $1', [q.requestId]));
+    expect(r.rows[0]).toEqual({ status: 'approved', order_status: 'payment_pending', order_number: orderNumber });
+
+    // Handled requests leave the queue.
+    await page.reload();
+    await expect(page.getByTestId('custom-cake-card').filter({ hasText: q.name })).toHaveCount(0);
+  });
+
+  test('capacity taken after the check: "capacity changed, re-check", nothing saved', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    const q = await queued(page, request, {}, { oven: 100, work: 100 });
+    await uiLogin(page, admin);
+    await page.goto('/admin/custom-cakes');
+    const card = q.card;
+    await card.getByLabel('מחיר (₪)').fill('300');
+    await card.getByLabel('דקות תנור').fill('60');
+    await card.getByLabel('דקות עבודה').fill('60');
+    await expect(card.getByTestId('capacity-answer')).toContainText('נכנס.');
+    await withClient((db) => db.query('UPDATE capacity_day_ledger SET oven_minutes_reserved = 70, work_minutes_reserved = 70 WHERE day = $1', [q.day]));
+    await card.getByRole('button', { name: 'אישור ויצירת הזמנה' }).click();
+    await expect(card.getByRole('alert')).toHaveText('הקיבולת השתנתה, צריך לבדוק שוב: ביום הזה כבר אין מקום לעוגה. לא נשמר כלום.');
+    await expect(card.getByTestId('capacity-answer')).toContainText('לא נכנס ביום הזה. נשארו 30 דק׳ תנור ו-30 דק׳ עבודה.');
+    await card.screenshot({ path: join(SCREENS, 'admin-custom-cake-capacity-changed.png') });
+    const r = await withClient((db) => db.query('SELECT status FROM custom_cake_requests WHERE id = $1', [q.requestId]));
+    expect(r.rows[0].status).toBe('pending_review');
+  });
+
+  test('decline with a reason: WhatsApp link carries it, request declined', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    const q = await queued(page, request);
+    await uiLogin(page, admin);
+    await page.goto('/admin/custom-cakes');
+    const card = q.card;
+    await card.getByRole('button', { name: 'דחייה' }).click();
+    await card.getByLabel('סיבה (לא חובה)').fill('אין מקום בתנור ביום הזה.');
+    await card.getByRole('button', { name: 'דחיית הבקשה' }).click();
+    await expect(card.getByText('הבקשה נדחתה.')).toBeVisible();
+    const href = await card.getByRole('link', { name: 'שליחה בוואטסאפ' }).getAttribute('href');
+    expect(decodeURIComponent(href.split('?text=')[1])).toContain('אין מקום בתנור ביום הזה.');
+    const r = await withClient((db) => db.query('SELECT status, decline_reason FROM custom_cake_requests WHERE id = $1', [q.requestId]));
+    expect(r.rows[0]).toEqual({ status: 'declined', decline_reason: 'אין מקום בתנור ביום הזה.' });
+  });
+
+  test('there is no promote-to-catalog action anywhere on the queue', async ({ page, request }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    const q = await queued(page, request);
+    await uiLogin(page, admin);
+    await page.goto('/admin/custom-cakes');
+    await expect(q.card).toBeVisible();
+    await expect(page.getByRole('button', { name: /קטלוג|catalog/i })).toHaveCount(0);
+    await expect(page.getByTestId('custom-cake-card').locator('a[href*="catalog"], form[action*="catalog"]')).toHaveCount(0);
+  });
+});

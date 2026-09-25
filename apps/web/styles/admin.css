@@ -476,3 +476,31 @@
   /* Fixed = repeated at the foot of every printed page. */
   .dl-footer { position: fixed; inset-block-end: 0; inset-inline: 0; margin: 0; padding-block: 4mm; text-align: center; border-block-start: 1px solid #999999; background: #ffffff; }
 }
+/* Custom-cake queue (client-008). */
+.admin-cc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s4); }
+.admin-cc { background: var(--surface); border-radius: var(--r-card); box-shadow: var(--shadow-1); padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); }
+.admin-cc-head { display: flex; flex-direction: column; gap: 2px; }
+.admin-cc-head h2 { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 1; margin-block-end: var(--s1); }
+.admin-cc-who { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s3); font-weight: 600; }
+.admin-cc-meta { margin: 0; font-size: 14px; color: var(--ink-2); }
+.admin-cc-text { margin: 0; display: grid; gap: 2px; }
+.admin-cc-text dt { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.admin-cc-text dd { margin: 0 0 var(--s2); overflow-wrap: anywhere; white-space: pre-wrap; }
+.admin-cc-none { color: var(--ink-2); }
+.admin-cc-photos ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s2); }
+.admin-cc-photo { display: block; inline-size: 104px; block-size: 104px; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
+.admin-cc-photo img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; }
+.admin-cc-time { border: 0; margin: 0; padding: 0; min-inline-size: 0; }
+.admin-cc-time legend { padding: 0; margin-block-end: var(--s2); font-size: 15px; font-weight: 600; }
+.admin-cc .admin-warn p, .admin-cc .admin-ok { margin: 0; }
+.admin-cc .admin-warn p + p { margin-block-start: var(--s1); }
+.admin-cc-decline { display: flex; flex-direction: column; gap: var(--s3); }
+.admin-cc-decline textarea {
+  min-block-size: 88px; border-radius: var(--r-control); border: 1.5px solid var(--line-strong);
+  background: var(--surface); color: var(--ink); padding: var(--s3); font: inherit; font-size: 16px; inline-size: 100%; resize: vertical;
+}
+.admin-cc-done { display: flex; flex-direction: column; gap: var(--s2); }
+.admin-cc-done p { margin: 0; }
+.admin-cc-order { font-family: var(--font-display); font-size: 32px; font-weight: 700; }
+.admin-cc-link { font-size: 14px; overflow-wrap: anywhere; color: var(--ink-2); }
+.admin-cc-wa { inline-size: 100%; }

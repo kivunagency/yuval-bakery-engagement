@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ilMobilePhone, isoDate, optionalEmail, shortText } from '@/lib/shared/contracts/primitives';
+import { ilMobilePhone, isoDate, minutes, money, optionalEmail, shortText } from '@/lib/shared/contracts/primitives';
 
 // Contracts for the custom-cake request (api-005, PRD US-2). Lengths are
 // SEC-025's (name 60, inscription 120, notes 500); the DB repeats them as
@@ -56,3 +56,101 @@ export type CustomCakeSubmitError =
   | 'rate_limited'
   | 'unavailable';
 export type CustomCakeApiErrorBody = { error: CustomCakeSubmitError | 'not_found' | 'upload_closed' };
+
+// ---- Admin (api-006, client-008) -------------------------------------------
+
+export const customCakeApprove = z.strictObject({
+  price: money.refine((v) => v > 0, 'price_positive'),
+  ovenMinutes: minutes,
+  workMinutes: minutes,
+});
+export type CustomCakeApprove = z.infer<typeof customCakeApprove>;
+
+export const customCakeDecline = z.strictObject({
+  /** Written by Yuval only (threat-model 3.5); optional (PRD US-2). */
+  reason: shortText(300).default(''),
+});
+
+export const customCakeCapacityQuery = z.strictObject({
+  oven: z.coerce.number().pipe(minutes),
+  work: z.coerce.number().pipe(minutes),
+});
+
+/** fn_admin_custom_cake_capacity_check, as the DB returns it. */
+export const capacityCheckRow = z.object({
+  day: isoDate,
+  day_passed: z.boolean(),
+  has_day: z.boolean(),
+  is_blackout: z.boolean(),
+  fits: z.boolean(),
+  oven_minutes_total: z.number().int().nullable(),
+  oven_minutes_left: z.number().int().nullable(),
+  work_minutes_total: z.number().int().nullable(),
+  work_minutes_left: z.number().int().nullable(),
+  oven_minutes_unpaid_left: z.number().int().nullable(),
+  work_minutes_unpaid_left: z.number().int().nullable(),
+});
+
+export type CustomCakeCapacityCheck = {
+  day: string;
+  dayPassed: boolean;
+  hasDay: boolean;
+  isBlackout: boolean;
+  fits: boolean;
+  ovenMinutesLeft: number | null;
+  workMinutesLeft: number | null;
+  ovenMinutesUnpaidLeft: number | null;
+  workMinutesUnpaidLeft: number | null;
+};
+
+export function toCapacityCheck(r: z.infer<typeof capacityCheckRow>): CustomCakeCapacityCheck {
+  return {
+    day: r.day,
+    dayPassed: r.day_passed,
+    hasDay: r.has_day,
+    isBlackout: r.is_blackout,
+    fits: r.fits,
+    ovenMinutesLeft: r.oven_minutes_left,
+    workMinutesLeft: r.work_minutes_left,
+    ovenMinutesUnpaidLeft: r.oven_minutes_unpaid_left,
+    workMinutesUnpaidLeft: r.work_minutes_unpaid_left,
+  };
+}
+
+export type CustomCakeApproveResponse = {
+  orderId: string;
+  orderNumber: string;
+  total: number;
+  paymentPendingExpiresAt: string;
+  /** Guest payment page with the one-time capability token; shown once, never stored in clear. */
+  paymentPageUrl: string;
+  /** wa.me link to the requester with the approval message (click-to-send, US-11); null if the phone is not a valid number. */
+  whatsappHref: string | null;
+};
+
+export type CustomCakeDeclineResponse = { declined: true; whatsappHref: string | null };
+
+export type CustomCakeAdminError =
+  | 'unauthorized'
+  | 'forbidden_origin'
+  | 'invalid_input'
+  | 'not_found'
+  | 'not_pending'
+  | 'capacity_changed'
+  | 'unavailable';
+export type CustomCakeAdminErrorBody = { error: CustomCakeAdminError; check?: CustomCakeCapacityCheck };
+
+/** One pending request as the admin queue shows it (client-008). */
+export type QueuePhoto = { path: string; url: string | null };
+export type QueueItem = {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  whatsappOk: boolean;
+  inscription: string | null;
+  notes: string | null;
+  desiredDate: string;
+  createdAt: string;
+  photos: QueuePhoto[];
+};

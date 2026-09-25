@@ -22,6 +22,7 @@ export const DB_ERROR_CODES = [
   'consent_version_mismatch',
   'custom_cake_photo_limit_reached',
   'custom_cake_photo_path_invalid',
+  'custom_cake_request_not_found',
   'custom_cake_request_not_pending',
   'custom_cake_upload_closed',
   'day_range_invalid',
