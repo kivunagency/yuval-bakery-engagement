@@ -91,7 +91,7 @@ Identity ---(opt-in flag, read)----------> Loyalty (Phase 2)
 **Capacity is the one context every write-path context depends on
 synchronously and none may bypass.** Ordering and CustomCake are both
 Conformists to Capacity's `reserve()`/`release()` contract: neither is
-allowed its own copy of "is there room" logic (Rule 19 — one shared
+allowed its own copy of "is there room" logic (Rule 19: one shared
 definition of the quantity, here "remaining minutes", not two).
 
 ## 5. Folder structure (Next.js, Rule 2 layering inside each domain folder)

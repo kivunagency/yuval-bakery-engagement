@@ -128,13 +128,13 @@ expires_at < now()`. This is naturally safe to re-run (a restart or a
 double-fire updates zero rows the second time), so no separate
 `cron_executions` dedup table is required the way it would be for an
 INSERT-based pg_cron job (per the 2026-04-20 learned rule on pg_cron +
-Edge Functions oversell risk) — the WHERE-clause conditional UPDATE is
+Edge Functions oversell risk); the WHERE-clause conditional UPDATE is
 idempotent by construction, not by an added dedup layer. Same job also
 releases the capacity hold (ADR-002) inside the same transaction as the
 status flip, so a crash mid-sweep cannot release capacity without also
 marking the order expired, or vice versa.
 
-## Rule 30 — spend caps and alerts (day one)
+## Rule 30: spend caps and alerts (day one)
 
 Every metered account gets a hard cap + an alert to a human, in the unit
 the provider bills in, configured the day the account is created:
@@ -146,7 +146,7 @@ the provider bills in, configured the day the account is created:
 - Resend: alert at 80/day sustained (before the 100/day hard cap bites).
 - Task included in tasks.json (`infra-spend-caps`).
 
-## Rule 27 — operations registry: GO
+## Rule 27: operations registry: GO
 
 Decision: **GO**, scoped to the five business-critical write operations,
 landed at the same time as the data-model pass (before API routes are

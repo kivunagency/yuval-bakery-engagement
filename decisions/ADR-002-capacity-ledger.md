@@ -93,7 +93,7 @@ re-check before approving" rather than silently overbooking (PRD US-2 AC:
 This is deliberately a single-table ledger, not a per-order-line
 reservations table with a SUM query, because the SUM-query pattern is
 exactly the race PRD-01 calls out ("two customers checking out for the last
-slot on the same day must never both succeed") — a read-then-write of a
+slot on the same day must never both succeed"). A read-then-write of a
 derived total has a race window a running total column with a `CHECK`
 constraint does not.
 
