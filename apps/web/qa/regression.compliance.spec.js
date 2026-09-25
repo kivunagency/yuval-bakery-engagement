@@ -17,6 +17,8 @@ const COMPLIANCE_ROUTES = [
   { route: '/business', shot: 'business' },
   { route: '/privacy', shot: 'privacy' },
   { route: '/accessibility', shot: 'accessibility' },
+  { route: '/terms', shot: 'terms' },
+  { route: '/returns', shot: 'returns' },
 ];
 
 const BUSINESS_KEYS = ['business_name', 'business_owner_name', 'business_registration_number', 'business_address', 'business_phone', 'business_whatsapp', 'business_email'];
@@ -214,5 +216,43 @@ test.describe('accessibility statement (compliance-003)', () => {
     await expect(link).toBeFocused();
     const outline = await link.evaluate((el) => getComputedStyle(el).outlineStyle);
     expect(outline).toBe('solid');
+  });
+});
+
+test.describe('terms and cancellation policy (compliance-004)', () => {
+  test('footer links to /terms and /returns', async ({ page }) => {
+    await page.goto('/');
+    const footer = page.getByTestId('site-footer');
+    await expect(footer.getByRole('link', { name: 'תנאי שימוש' })).toHaveAttribute('href', '/terms');
+    await expect(footer.getByRole('link', { name: 'מדיניות ביטולים' })).toHaveAttribute('href', '/returns');
+  });
+
+  test('/terms: version, business name placeholder, unsettled clauses stay visible placeholders, links work', async ({ page }) => {
+    await page.goto('/terms');
+    await expect(page.getByTestId('legal-version')).toContainText('terms-2026-10-v1');
+    await expect(page.locator('#about')).toContainText('[שם העסק]');
+    await expect(page.locator('#liability')).toContainText('[');
+    await expect(page.locator('#law')).toContainText('[');
+    await page.locator('#changes').getByRole('link', { name: 'מדיניות הביטולים' }).click();
+    // (links sit in a list under the section, not inside the sentence)
+    await expect(page).toHaveURL(/\/returns$/);
+  });
+
+  test('/returns: both exemption wordings from the same component, same version as checkout, defects kept, goodwill pending', async ({ page }) => {
+    await page.goto('/returns');
+    await expect(page.getByTestId('legal-version')).toContainText('cancellation-2026-10-v1');
+    const notices = page.getByTestId('cancellation-exemption-notice');
+    await expect(notices).toHaveCount(2);
+    await expect(notices.nth(0)).toHaveAttribute('data-kind', 'catalog');
+    await expect(notices.nth(1)).toHaveAttribute('data-kind', 'custom_cake');
+    await expect(notices.locator('a[href="/returns"]')).toHaveCount(0); // no link to itself
+    await expect(page.locator('#defects')).toContainText('פגום');
+    await expect(page.locator('#goodwill')).toContainText('ממתין להחלטת העסק');
+    await expect(page.locator('main')).not.toContainText('אין החזרים בשום מקרה');
+  });
+
+  test('the notice elsewhere links to the full policy', async ({ page }) => {
+    await page.goto('/business');
+    await expect(page.getByTestId('cancellation-exemption-notice').getByRole('link', { name: 'מדיניות הביטולים המלאה' })).toHaveAttribute('href', '/returns');
   });
 });

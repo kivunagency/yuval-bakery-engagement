@@ -62,7 +62,9 @@
     "links": {
       "business": "Business details",
       "privacy": "Privacy",
-      "accessibility": "Accessibility statement"
+      "accessibility": "Accessibility statement",
+      "terms": "Terms of use",
+      "returns": "Cancellation policy"
     }
   },
   "returns_policy": {
@@ -72,7 +74,38 @@
       "custom_cake": "Made especially for you: a custom cake cannot be cancelled after the order is confirmed, under the Consumer Protection Law.",
       "before_payment": "Until you pay, you can still cancel the order: contact us by phone or WhatsApp.",
       "defects": "This does not affect your rights if a product is defective.",
-      "version": "Text version:"
+      "version": "Text version:",
+      "policy_link": "Full cancellation policy"
+    },
+    "title": "Cancellation and returns policy",
+    "intro": "Our products are fresh food, and custom cakes are made especially for each customer. So the general right to cancel a distance purchase does not apply to them once the order is confirmed. This page explains what you can still do.",
+    "catalog_title": "Products from the catalog",
+    "custom_cake_title": "Custom cakes",
+    "sections": {
+      "before_payment": {
+        "title": "Before payment",
+        "body": "Until you pay, you can cancel the order at no cost: contact us by phone or WhatsApp with the order number. An unpaid order is also released automatically after the time shown on the payment screen."
+      },
+      "after_payment": {
+        "title": "After payment",
+        "body": "After payment the order is confirmed and preparation begins, so it cannot be cancelled under the Consumer Protection Law."
+      },
+      "goodwill": {
+        "title": "Beyond what the law requires",
+        "body": "[Cancellation policy beyond the law, if any (for example cancellation up to 48 hours before the date): pending the business's decision.]"
+      },
+      "defects": {
+        "title": "A defective product",
+        "body": "None of the above affects your rights if a product is defective or not what you ordered. Contact us as soon as possible."
+      },
+      "business_cancels": {
+        "title": "If the business cancels",
+        "body": "[What happens if the business has to cancel a paid order, and how the refund is made: pending the business's decision.]"
+      },
+      "how": {
+        "title": "How to contact us",
+        "body": "By phone or WhatsApp, using the contact details at the bottom of every page. Please have the order number ready."
+      }
     }
   },
   "privacy": {
@@ -204,6 +237,56 @@
       "contact": "Found something hard to use? Contact the business owner directly. Tell us which page, what the problem was and how to reach you, and we will get back to you.",
       "email_label": "Email:",
       "email_placeholder": "[Business email]"
+    }
+  },
+  "terms": {
+    "title": "Terms of use",
+    "sections": {
+      "about": {
+        "title": "About the site",
+        "body": "This site is operated by {businessName}, a home bakery."
+      },
+      "ordering": {
+        "title": "Ordering",
+        "body": "You can order up to the days shown as available, at least 24 hours before the delivery or pickup time. Each day's availability depends on the baking time left that day. An order is reserved when you place it and confirmed once the payment is received."
+      },
+      "custom_cakes": {
+        "title": "Custom cakes",
+        "body": "A custom cake request is not an order yet. The business reviews it, sets a price and confirms the date, and only then sends a payment link. Photos you upload must be yours or ones you have the right to share with the business, and they are used only for making the cake."
+      },
+      "prices": {
+        "title": "Prices and delivery fees",
+        "body": "The prices shown are final prices. The delivery fee depends on the delivery city and is shown before payment."
+      },
+      "payment": {
+        "title": "Payment",
+        "body": "Payment is by Bit or PayBox, through the link shown after the order, with the order number in the payment note. An unpaid order is released after the time shown on the payment screen."
+      },
+      "delivery": {
+        "title": "Delivery and pickup",
+        "body": "Delivery is made by the business's courier to the cities offered at checkout, within the time window you chose. [What happens if nobody is available to receive the order: pending the business's decision.]"
+      },
+      "allergens": {
+        "title": "Allergens",
+        "body": "Ingredients and allergens are listed on every product as entered by the business. The products are made in a home kitchen. [Trace wording: pending the business.] For allergy questions, call us before ordering."
+      },
+      "liability": {
+        "title": "Liability",
+        "body": "[Liability wording: pending legal review.]"
+      },
+      "law": {
+        "title": "Governing law and jurisdiction",
+        "body": "[Governing law and jurisdiction: pending legal review.]"
+      },
+      "changes": {
+        "title": "Changes and related policies",
+        "body": "The version of these terms is shown at the top of this page; an order records the version shown when it was placed."
+      }
+    },
+    "links": {
+      "business": "Business details",
+      "returns": "Cancellation policy",
+      "privacy": "Privacy notice"
     }
   }
 }

@@ -12,6 +12,8 @@ export const FOOTER_LINKS = [
   { href: '/business', key: 'business' },
   { href: '/privacy', key: 'privacy' },
   { href: '/accessibility', key: 'accessibility' },
+  { href: '/terms', key: 'terms' },
+  { href: '/returns', key: 'returns' },
 ] as const;
 
 export function SiteFooter({ settings }: { settings: PublicSiteSettings }) {
