@@ -356,6 +356,10 @@ test.describe('payment links (settings-payment, SEC-009)', () => {
 
   test('API: 401 anon; 403 Origin; 400 names the field (http, other host, missing code); wrong code 401 and nothing written; fresh code saves, audits and emails every admin', async ({ page, request, baseURL }) => {
     expect((await request.put('/api/admin/settings/payment-links', { data: { bit: BIT, code: '123456' } })).status()).toBe(401);
+    // The daily email cap (Rule 30) counts every admin mail of the whole suite; this test is about the
+    // mail being sent, not the cap (regression.notifications owns that), so it gets room and puts the cap back.
+    const [cap] = await db(`SELECT value FROM app_settings WHERE key = 'email_daily_hard_cap'`);
+    await db(`UPDATE app_settings SET value = '100000'::jsonb WHERE key = 'email_daily_hard_cap'`);
     const other = await createUser({ admin: true, withTotp: false }); // a second admin: must get the email too
     const admin = await createUser({ admin: true, withTotp: true });
     await uiLogin(page, admin);
@@ -417,6 +421,7 @@ test.describe('payment links (settings-payment, SEC-009)', () => {
       const [last] = await db(`SELECT metadata FROM audit_log WHERE action = 'settings.payment_links_updated' ORDER BY id DESC LIMIT 1`);
       expect(last.metadata.changed).toEqual({ payment_link_paybox: { from: PAYBOX, to: null } });
     } finally {
+      await db(`UPDATE app_settings SET value = $1::jsonb WHERE key = 'email_daily_hard_cap'`, [JSON.stringify(cap.value)]);
       await resetSettings();
     }
   });
