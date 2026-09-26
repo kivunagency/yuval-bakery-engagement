@@ -244,6 +244,7 @@ never reported as passed.
   - Deleting the PDF from Storage at retention (`fn_retention_due` lists `confirmation_pdf`) is still not wired in `lib/server/jobs/retention.ts` (reported there as DID NOT RUN); until it is, an anonymized order's file stays in the private bucket, but its link is revoked (`fn_anonymize_order`) and the route refuses it.
   - Whether a downloadable PDF plus a WhatsApp link meets s.14C(b) is still for legal review before launch (PRD US-0c). An order with an email counts as confirmed by the DB rule (`trg_orders_guard_fulfillment` checks for an email, not for a sent one); if the email failed, nothing blocks "delivered". Unchanged, named.
   - The PDF is Hebrew only (the shipped language); en.json has the keys for completeness.
+  - Email budget: checkout now sends the admin email for every order (one per admin address) before the customer's confirmation, and both count toward the daily cap (`email_daily_hard_cap` 100, Resend free tier). With Yuval as the only admin that is two emails per order; beyond about 50 emailed orders a day, customer confirmations are refused (`daily_cap`), the order stays valid and has the PDF on its page, but no email delivery is recorded. Seen on the local stack with 25 test admins (the test lifts the caps and restores them).
 
 ## 4. Change log
 
