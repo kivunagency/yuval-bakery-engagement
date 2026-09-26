@@ -1,5 +1,6 @@
 // Tiny stand-in for the hosted Supabase API gateway: one origin, path-routed.
 // Local stack only. /auth/v1/* -> Supabase Auth, /rest/v1/* -> PostgREST,
+// /storage/v1/* -> Supabase Storage,
 // /templates/<name>.html -> supabase/templates/ (Auth fetches its mail
 // templates by URL; hosted Supabase gets the same file pasted in the dashboard).
 import http from 'node:http';
@@ -9,6 +10,7 @@ import { join } from 'node:path';
 const routes = [
   ['/auth/v1', Number(process.env.AUTH_PORT)],
   ['/rest/v1', Number(process.env.REST_PORT)],
+  ['/storage/v1', Number(process.env.STORAGE_PORT)],
 ];
 
 http

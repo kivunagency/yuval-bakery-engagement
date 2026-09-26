@@ -55,4 +55,32 @@ test.describe('DB privileges', () => {
     const denied = await anon.rpc('fn_unsubscribe_by_token', { p_token: 'no-such-token' });
     expect(denied.error?.message).toContain('permission denied');
   });
+
+  test('Storage: anon and a signed-in customer can neither list nor read nor write the private bucket; product photos are public-read only', async () => {
+    const env = localEnv();
+    const anon = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+    const service = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+    const path = `requests/qa-${Date.now()}/probe.jpg`;
+    const bytes = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
+    expect((await service.storage.from('custom-cake-inspiration').upload(path, bytes, { contentType: 'image/jpeg' })).error).toBeNull();
+
+    // private bucket: nothing for anon
+    const list = await anon.storage.from('custom-cake-inspiration').list('requests');
+    expect(list.data ?? []).toEqual([]);
+    expect((await anon.storage.from('custom-cake-inspiration').download(path)).data).toBeNull();
+    const publicUrl = anon.storage.from('custom-cake-inspiration').getPublicUrl(path).data.publicUrl;
+    expect((await fetch(publicUrl)).ok).toBe(false);
+    expect((await anon.storage.from('custom-cake-inspiration').upload(`incoming/x/${Date.now()}`, bytes, { contentType: 'image/jpeg' })).error).not.toBeNull();
+
+    // product photos: readable by public URL, not writable by anon
+    const pp = `qa/${Date.now()}.jpg`;
+    expect((await service.storage.from('product-photos').upload(pp, bytes, { contentType: 'image/jpeg' })).error).toBeNull();
+    expect((await fetch(anon.storage.from('product-photos').getPublicUrl(pp).data.publicUrl)).ok).toBe(true);
+    expect((await anon.storage.from('product-photos').upload(`qa/anon-${Date.now()}.jpg`, bytes, { contentType: 'image/jpeg' })).error).not.toBeNull();
+
+    // buckets refuse types the API refuses
+    expect((await service.storage.from('custom-cake-inspiration').upload(`qa/${Date.now()}.svg`, Buffer.from('<svg/>'), { contentType: 'image/svg+xml' })).error).not.toBeNull();
+    await service.storage.from('custom-cake-inspiration').remove([path]);
+    await service.storage.from('product-photos').remove([pp]);
+  });
 });
