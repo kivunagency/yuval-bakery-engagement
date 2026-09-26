@@ -7,6 +7,19 @@ import { isolatedDate, weekdayKey } from '@/components/day-state/format';
 import { findOrderErrorBody, findOrderResponse, type FoundOrder } from '@/lib/shared/contracts/find-order';
 import styles from './find-order.module.css';
 
+// "city, X***" from the DB. City and the masked street part are isolated
+// separately, so "***" stays with its letter whatever script either is in
+// (a Latin initial after a Hebrew city put "***" at the far end of the line).
+function MaskedAddress({ value }: { value: string }) {
+  const cut = value.lastIndexOf(', ');
+  if (cut < 0) return <bdi>{value}</bdi>;
+  return (
+    <>
+      <bdi>{value.slice(0, cut)}</bdi>, <bdi>{value.slice(cut + 2)}</bdi>
+    </>
+  );
+}
+
 type State = { kind: 'idle' } | { kind: 'found'; order: FoundOrder } | { kind: 'not_found' } | { kind: 'error'; message: string };
 
 // The find-my-order form (US-0d). Shows only what the DB returned: the masked
@@ -110,7 +123,9 @@ export function FindOrderForm() {
               {o.maskedAddress ? (
                 <div>
                   <dt>{t('address_label')}</dt>
-                  <dd><bdi data-testid="find-order-address">{o.maskedAddress}</bdi></dd>
+                  <dd data-testid="find-order-address">
+                    <MaskedAddress value={o.maskedAddress} />
+                  </dd>
                 </div>
               ) : null}
             </dl>
