@@ -296,12 +296,23 @@ test.describe.serial('registry on', () => {
     }
   });
 
-  test('transport: foreign Origin 403, GET and DELETE 405, oversized body 413', async () => {
+  test('transport: foreign or null Origin 403, GET and DELETE 405, oversized body 413 with or without Content-Length', async () => {
     expect((await mcp(verifier, 'tools/list', {}, { origin: 'https://evil.example' })).status).toBe(403);
+    expect((await mcp(verifier, 'tools/list', {}, { origin: 'null' })).status).toBe(403);
+    expect((await mcp(verifier, 'tools/list', {}, { origin: ON })).status).toBe(200);
     expect((await fetch(`${ON}${MCP_PATH}`, { headers: { authorization: `Bearer ${verifier}` } })).status).toBe(405);
     expect((await fetch(`${ON}${MCP_PATH}`, { method: 'DELETE', headers: { authorization: `Bearer ${verifier}` } })).status).toBe(405);
     const big = await fetch(`${ON}${MCP_PATH}`, { method: 'POST', headers: { authorization: `Bearer ${verifier}`, 'content-type': 'application/json' }, body: 'x'.repeat(70_000) });
     expect(big.status).toBe(413);
+    // No Content-Length (a streamed body): measured after authentication.
+    const stream = new ReadableStream({
+      start(c) {
+        c.enqueue(new TextEncoder().encode('x'.repeat(70_000)));
+        c.close();
+      },
+    });
+    const chunked = await fetch(`${ON}${MCP_PATH}`, { method: 'POST', headers: { authorization: `Bearer ${verifier}`, 'content-type': 'application/json' }, body: stream, duplex: 'half' });
+    expect(chunked.status).toBe(413);
   });
 
   test('MCP protocol: initialize, and tools/list carries only the navigation tools (progressive disclosure)', async () => {

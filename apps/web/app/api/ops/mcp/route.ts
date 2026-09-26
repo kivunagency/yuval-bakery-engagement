@@ -15,6 +15,14 @@ export const runtime = 'nodejs';
 const HEADERS = { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' };
 const MAX_BODY_BYTES = 64 * 1024;
 
+function sameOrigin(origin: string, audience: string): boolean {
+  try {
+    return new URL(origin).origin === new URL(audience).origin;
+  } catch {
+    return false;
+  }
+}
+
 const notFound = () => new Response(null, { status: 404, headers: HEADERS });
 
 function refuseUnlessOn() {
@@ -32,21 +40,25 @@ export async function POST(request: Request) {
   if (!cfg) return response;
 
   // MCP transport security: a browser page on another origin must not drive
-  // this endpoint (DNS rebinding). Agents send no Origin.
+  // this endpoint (DNS rebinding). Agents send no Origin. "null" (a sandboxed
+  // frame) or anything unparsable is foreign too.
   const origin = request.headers.get('origin');
-  if (origin !== null && new URL(origin).origin !== new URL(cfg.audience).origin) {
+  if (origin !== null && !sameOrigin(origin, cfg.audience)) {
     return Response.json({ error: 'forbidden_origin' }, { status: 403, headers: HEADERS });
   }
-  if (Number(request.headers.get('content-length') ?? 0) > MAX_BODY_BYTES) {
-    return Response.json({ error: 'payload_too_large' }, { status: 413, headers: HEADERS });
-  }
+  const tooLarge = () => Response.json({ error: 'payload_too_large' }, { status: 413, headers: HEADERS });
+  if (Number(request.headers.get('content-length') ?? 0) > MAX_BODY_BYTES) return tooLarge();
 
   const principal = await resolvePrincipal(request, cfg);
   if (!principal) {
     return Response.json({ error: 'unauthorized' }, { status: 401, headers: { ...HEADERS, 'WWW-Authenticate': 'Bearer realm="ops-registry"' } });
   }
 
-  const res = await handleMcpRequest(request, principal);
+  // The header can be absent (chunked body): measure what actually arrived.
+  const body = await request.text();
+  if (Buffer.byteLength(body) > MAX_BODY_BYTES) return tooLarge();
+
+  const res = await handleMcpRequest(new Request(request.url, { method: 'POST', headers: request.headers, body }), principal);
   for (const [k, v] of Object.entries(HEADERS)) res.headers.set(k, v);
   return res;
 }

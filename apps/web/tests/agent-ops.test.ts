@@ -241,12 +241,12 @@ describe('agent token (SECURITY.md B: audience-bound, expires, fail closed)', ()
 
 describe('switch and roles per environment (threat-model 3.7)', () => {
   it('off unless OPS_REGISTRY_ENABLED is exactly "true"', () => {
-    for (const v of [undefined, '', '1', 'TRUE', 'yes', 'false']) expect(opsRegistryConfig({ OPS_REGISTRY_ENABLED: v, OPS_REGISTRY_TOKEN_SECRET: SECRET } as NodeJS.ProcessEnv).state).toBe('off');
+    for (const v of [undefined, '', '1', 'TRUE', 'yes', 'false']) expect(opsRegistryConfig({ OPS_REGISTRY_ENABLED: v, OPS_REGISTRY_TOKEN_SECRET: SECRET }).state).toBe('off');
   });
 
   it('on without a secret of 32+ characters is misconfigured, never a fallback', () => {
-    for (const s of [undefined, '', 'short', 'x'.repeat(31)]) expect(opsRegistryConfig({ OPS_REGISTRY_ENABLED: 'true', OPS_REGISTRY_TOKEN_SECRET: s } as NodeJS.ProcessEnv).state).toBe('misconfigured');
-    expect(opsRegistryConfig({ OPS_REGISTRY_ENABLED: 'true', OPS_REGISTRY_TOKEN_SECRET: SECRET } as NodeJS.ProcessEnv)).toEqual({
+    for (const s of [undefined, '', 'short', 'x'.repeat(31)]) expect(opsRegistryConfig({ OPS_REGISTRY_ENABLED: 'true', OPS_REGISTRY_TOKEN_SECRET: s }).state).toBe('misconfigured');
+    expect(opsRegistryConfig({ OPS_REGISTRY_ENABLED: 'true', OPS_REGISTRY_TOKEN_SECRET: SECRET })).toEqual({
       state: 'on',
       secret: SECRET,
       audience: 'https://bakery.example/api/ops/mcp',

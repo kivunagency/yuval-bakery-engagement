@@ -15,7 +15,7 @@ export type OpsRegistryConfig =
   | { state: 'misconfigured' }
   | { state: 'on'; secret: string; audience: string; appEnv: 'local' | 'dev' | 'prod' };
 
-export function opsRegistryConfig(env: NodeJS.ProcessEnv = process.env): OpsRegistryConfig {
+export function opsRegistryConfig(env: Record<string, string | undefined> = process.env): OpsRegistryConfig {
   if (env.OPS_REGISTRY_ENABLED !== 'true') return { state: 'off' };
   const secret = env.OPS_REGISTRY_TOKEN_SECRET ?? '';
   if (secret.length < MIN_SECRET_LENGTH) return { state: 'misconfigured' };
