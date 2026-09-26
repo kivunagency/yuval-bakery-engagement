@@ -1,3 +1,4 @@
+import 'server-only';
 // Uniform result envelope (agent-ops-registry template, lib/result.ts). Every
 // operation returns one of these, so the agent sees the same success/failure
 // shape from every tool. Error codes are part of the agent-facing contract:

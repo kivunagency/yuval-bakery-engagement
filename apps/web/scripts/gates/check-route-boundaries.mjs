@@ -25,6 +25,12 @@ import { runRatchet } from './lib/ratchet.mjs';
 // output/frontend/src. A gate written against either layout is silently vacuous on the
 // other, which is the failure this whole line of work exists to stop.
 const SKIP = new Set([
+  // YuvalBakery adaptation (wave-3 integration): gitignored build output, not
+  // source. netlify/functions is the esbuild bundle of netlify/src; the gates
+  // saw the bundled dependencies' catches when a build had run first.
+  'test-results',
+  'playwright-report',
+  'functions',
   'node_modules',
   '.git',
   '.next',

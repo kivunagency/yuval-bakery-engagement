@@ -10,8 +10,7 @@ import { BusinessDetailsForm } from '@/components/admin/settings/BusinessDetails
 // PUT /api/admin/settings/business.
 export default async function AdminBusinessSettingsPage() {
   await requireAdminPage();
-  const t = await getTranslations('admin.settings');
-  const settings = await loadBusinessSettings(await createUserClient());
+  const [t, settings] = await Promise.all([getTranslations('admin.settings'), createUserClient().then(loadBusinessSettings)]);
   return (
     <>
       <Link href="/admin/settings" className="admin-back-link" prefetch={false}>

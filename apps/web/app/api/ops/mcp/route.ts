@@ -16,11 +16,9 @@ const HEADERS = { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' };
 const MAX_BODY_BYTES = 64 * 1024;
 
 function sameOrigin(origin: string, audience: string): boolean {
-  try {
-    return new URL(origin).origin === new URL(audience).origin;
-  } catch {
-    return false;
-  }
+  // An Origin that is not a URL is not the same origin: refused.
+  if (!URL.canParse(origin) || !URL.canParse(audience)) return false;
+  return new URL(origin).origin === new URL(audience).origin;
 }
 
 const notFound = () => new Response(null, { status: 404, headers: HEADERS });

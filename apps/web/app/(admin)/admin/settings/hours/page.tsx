@@ -12,8 +12,7 @@ import { OrderRulesForm } from '@/components/admin/settings/OrderRulesForm';
 // shown, never edited: it follows the first slot (api-003).
 export default async function AdminHoursSettingsPage() {
   await requireAdminPage();
-  const t = await getTranslations('admin.settings');
-  const settings = await loadOrderSettings(await createUserClient());
+  const [t, settings] = await Promise.all([getTranslations('admin.settings'), createUserClient().then(loadOrderSettings)]);
   const first = settings.slots[0]?.start ?? null;
   return (
     <>

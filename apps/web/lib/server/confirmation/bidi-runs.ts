@@ -1,3 +1,4 @@
+import 'server-only';
 import bidiFactory from 'bidi-js';
 
 // Right-to-left lines for the confirmation PDF (US-0c). pdfkit has no bidi
@@ -15,7 +16,7 @@ import bidiFactory from 'bidi-js';
 // Nothing here changes content: the characters are the logical string's.
 
 const bidi = bidiFactory();
-const HEBREW = /[֐-׿יִ-ﭏ]/;
+const HEBREW = /[\u0590-\u05FF\uFB1D-\uFB4F]/;
 // Directional marks and isolates steer the algorithm but have no glyph in the font.
 const BIDI_CONTROL = /[‎‏؜‪-‮⁦-⁩]/;
 

@@ -19,12 +19,12 @@ import { BUSINESS_FIELDS } from '@/lib/shared/contracts/business-settings';
 // server-side as the admin's own JWT; only edits go through the admin APIs.
 export default async function AdminSettingsPage() {
   const session = await requireAdminPage();
-  const [tPages, t, tSettings] = await Promise.all([
+  const [tPages, t, tSettings, supabase] = await Promise.all([
     getTranslations('admin.shell.pages'),
     getTranslations('admin.delivery_zones'),
     getTranslations('admin.settings'),
+    createUserClient(),
   ]);
-  const supabase = await createUserClient();
   const [zones, deviceCount, business, payment, order] = await Promise.all([
     listZonesForAdmin(supabase),
     countAdminPushDevices(supabase, session.userId),

@@ -35,15 +35,18 @@ export default async function AdminOrdersPage({
   searchParams: Promise<{ status?: string; day?: string; done?: string; order?: string; count?: string }>;
 }) {
   await requireAdminPage();
-  const t = await getTranslations('admin.orders');
-  const tc = await getTranslations('confirmation.admin');
-  const tw = await getTranslations('admin.capacity.weekday');
-  const params = await searchParams;
+  const [t, tc, tw, params, supabase] = await Promise.all([
+    getTranslations('admin.orders'),
+    getTranslations('confirmation.admin'),
+    getTranslations('admin.capacity.weekday'),
+    searchParams,
+    createUserClient(),
+  ]);
   const status = orderListFilter.parse(params.status);
   const day = orderListDay.parse(params.day ?? null);
   const now = new Date();
   const today = jerusalemDate(now);
-  const view = await loadAdminOrders(await createUserClient(), { status, day, today, now });
+  const view = await loadAdminOrders(supabase, { status, day, today, now });
   const listHref = (s: string, d: string | null = day) => `/admin/orders?${new URLSearchParams(d ? { status: s, day: d } : { status: s }).toString()}`;
   const listQuery = new URLSearchParams(day ? { status, day } : { status }).toString();
 

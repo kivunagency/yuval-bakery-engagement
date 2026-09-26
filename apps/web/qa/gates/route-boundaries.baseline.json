@@ -2,10 +2,10 @@
   "_comment": "Rule 2, route boundaries ratchet. Counts may go DOWN, never up. Regenerate only when lowering.",
   "rule": "Rule 2, route boundaries",
   "summary": {
-    "routes_total": 60,
+    "routes_total": 80,
     "routes_violating": 0,
-    "routes_holding_a_client_only": 20,
-    "db_clients_held": 42,
+    "routes_holding_a_client_only": 35,
+    "db_clients_held": 82,
     "inline_query": 0
   },
   "items": {
@@ -49,6 +49,10 @@
       "_db_client_held": 2,
       "inline_query": 0
     },
+    "app/api/admin/orders/[id]/confirmation-sent/route.ts": {
+      "_db_client_held": 2,
+      "inline_query": 0
+    },
     "app/api/admin/orders/[id]/mark-fulfilled/route.ts": {
       "_db_client_held": 2,
       "inline_query": 0
@@ -61,8 +65,44 @@
       "_db_client_held": 2,
       "inline_query": 0
     },
+    "app/api/admin/products/[id]/photos/[photoId]/route.ts": {
+      "_db_client_held": 5,
+      "inline_query": 0
+    },
+    "app/api/admin/products/[id]/photos/route.ts": {
+      "_db_client_held": 4,
+      "inline_query": 0
+    },
+    "app/api/admin/products/[id]/photos/upload-url/route.ts": {
+      "_db_client_held": 4,
+      "inline_query": 0
+    },
+    "app/api/admin/products/[id]/route.ts": {
+      "_db_client_held": 3,
+      "inline_query": 0
+    },
+    "app/api/admin/products/route.ts": {
+      "_db_client_held": 2,
+      "inline_query": 0
+    },
     "app/api/admin/push-subscriptions/route.ts": {
       "_db_client_held": 3,
+      "inline_query": 0
+    },
+    "app/api/admin/settings/business/route.ts": {
+      "_db_client_held": 3,
+      "inline_query": 0
+    },
+    "app/api/admin/settings/order-rules/route.ts": {
+      "_db_client_held": 2,
+      "inline_query": 0
+    },
+    "app/api/admin/settings/payment-links/route.ts": {
+      "_db_client_held": 3,
+      "inline_query": 0
+    },
+    "app/api/admin/settings/time-slots/route.ts": {
+      "_db_client_held": 2,
       "inline_query": 0
     },
     "app/api/capacity/route.ts": {
@@ -70,6 +110,14 @@
       "inline_query": 0
     },
     "app/(admin)/admin/capacity/page.tsx": {
+      "_db_client_held": 2,
+      "inline_query": 0
+    },
+    "app/(admin)/admin/catalog/[id]/page.tsx": {
+      "_db_client_held": 2,
+      "inline_query": 0
+    },
+    "app/(admin)/admin/catalog/page.tsx": {
       "_db_client_held": 2,
       "inline_query": 0
     },
@@ -85,7 +133,19 @@
       "_db_client_held": 2,
       "inline_query": 0
     },
+    "app/(admin)/admin/settings/business/page.tsx": {
+      "_db_client_held": 2,
+      "inline_query": 0
+    },
+    "app/(admin)/admin/settings/hours/page.tsx": {
+      "_db_client_held": 2,
+      "inline_query": 0
+    },
     "app/(admin)/admin/settings/page.tsx": {
+      "_db_client_held": 2,
+      "inline_query": 0
+    },
+    "app/(admin)/admin/settings/payment/page.tsx": {
       "_db_client_held": 2,
       "inline_query": 0
     }

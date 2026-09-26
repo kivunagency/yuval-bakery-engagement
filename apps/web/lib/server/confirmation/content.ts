@@ -1,7 +1,6 @@
 import 'server-only';
 import { createTranslator } from 'next-intl';
 import he from '@/messages/he.json';
-import { formatPrice } from '@/components/price/Price';
 import { formatIls, vatLabelKey } from '@/lib/shared/price/vat';
 import { isolatedDate, weekdayKey } from '@/components/day-state/format';
 import { displayPhone } from '@/lib/shared/contact/links';
@@ -61,8 +60,8 @@ export function buildConfirmationDocument(order: PublicOrder, settings: PublicSi
     { kind: 'text', text: `${t('payment.when')}: ${when}` },
     { kind: 'text', text: `${t('payment.how')}: ${how}` },
     { kind: 'heading', text: t('payment.items_heading') },
-    ...o.items.map((i): Block => ({ kind: 'row', label: t('payment.line', { name: isolate(i.name), quantity: i.quantity }), value: formatPrice(i.lineTotal) })),
-    ...(o.fulfillment === 'delivery' ? [{ kind: 'row', label: t('payment.delivery_fee'), value: formatPrice(o.deliveryFee) } as Block] : []),
+    ...o.items.map((i): Block => ({ kind: 'row', label: t('payment.line', { name: isolate(i.name), quantity: i.quantity }), value: formatIls(i.lineTotal) })),
+    ...(o.fulfillment === 'delivery' ? [{ kind: 'row', label: t('payment.delivery_fee'), value: formatIls(o.deliveryFee) } as Block] : []),
     { kind: 'rule' },
     { kind: 'row', label: t('confirmation.pdf.total_with_label', { label: t(`business.${vatLabelKey(s.vat_status)}`) }), value: formatIls(o.total), strong: true },
 

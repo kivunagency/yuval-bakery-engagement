@@ -10,8 +10,7 @@ import { ProductList } from '@/components/admin/products/ProductList';
 // through /api/admin/products and the audited DB functions.
 export default async function AdminCatalogPage() {
   await requireAdminPage();
-  const t = await getTranslations('admin.products');
-  const products = await listProductsForAdmin(await createUserClient());
+  const [t, products] = await Promise.all([getTranslations('admin.products'), createUserClient().then(listProductsForAdmin)]);
   return (
     <>
       <div className="admin-orders-head">

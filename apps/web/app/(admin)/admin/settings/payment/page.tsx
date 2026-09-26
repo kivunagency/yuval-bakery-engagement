@@ -12,8 +12,7 @@ import { PaymentLinksForm } from '@/components/admin/settings/PaymentLinksForm';
 // PUT /api/admin/settings/payment-links with a fresh TOTP code.
 export default async function AdminPaymentSettingsPage() {
   await requireAdminPage();
-  const t = await getTranslations('admin.settings');
-  const settings = await loadPaymentLinkSettings(await createUserClient());
+  const [t, settings] = await Promise.all([getTranslations('admin.settings'), createUserClient().then(loadPaymentLinkSettings)]);
   // "26.9, 14:05" in Asia/Jerusalem, isolated LTR inside the Hebrew sentence.
   const when = (iso: string | null) => (iso ? `\u2066${shortDate(jerusalemDate(new Date(iso)))}, ${jerusalemHhmm(new Date(iso))}\u2069` : null);
   return (

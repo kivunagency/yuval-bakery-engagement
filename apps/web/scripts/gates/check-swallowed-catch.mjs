@@ -38,6 +38,12 @@ import { runRatchet } from './lib/ratchet.mjs';
 const SELF = resolve(fileURLToPath(import.meta.url));
 
 const SKIP = new Set([
+  // YuvalBakery adaptation (wave-3 integration): gitignored build output, not
+  // source. netlify/functions is the esbuild bundle of netlify/src; the gates
+  // saw the bundled dependencies' catches when a build had run first.
+  'test-results',
+  'playwright-report',
+  'functions',
   'node_modules',
   '.git',
   '.next',

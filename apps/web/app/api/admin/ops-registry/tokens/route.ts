@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminSession } from '@/lib/server/auth/admin';
-import { createUserClient } from '@/lib/server/supabase/server';
 import { isSameOrigin } from '@/lib/server/http/origin';
 import { opsRegistryConfig } from '@/lib/server/agent-ops/config';
 import { rolesAllowedIn, ROLE_ORDER } from '@/lib/server/agent-ops/auth';
-import { mintAgentToken } from '@/lib/server/agent-ops/token';
+import { mintAgentTokenForAdmin } from '@/lib/server/agent-ops/mint';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,21 +38,11 @@ export async function POST(request: Request) {
   if (!body.success) return json({ error: 'invalid_input' }, 400);
   if (!rolesAllowedIn(cfg.appEnv).includes(body.data.role)) return json({ error: 'role_not_allowed' }, 403);
 
-  const supabase = await createUserClient();
-  const { data } = await supabase.auth.getSession();
-  const accessToken = data.session?.access_token;
-  if (!accessToken) return json({ error: 'unauthorized' }, 401);
-
-  const minted = await mintAgentToken({ secret: cfg.secret, audience: cfg.audience, adminId: admin.userId, role: body.data.role, accessToken });
-  if (!minted) return json({ error: 'session_expiring' }, 409);
-
-  const { error } = await supabase.rpc('fn_ops_registry_token_minted', {
-    p_token_id: minted.tokenId,
-    p_role: body.data.role,
-    p_expires_at: new Date(minted.expiresAt * 1000).toISOString(),
-  });
-  // No audit row, no token (SEC-017).
-  if (error) return json({ error: 'unavailable' }, 503);
+  const minted = await mintAgentTokenForAdmin({ secret: cfg.secret, audience: cfg.audience, adminId: admin.userId, role: body.data.role });
+  if (!minted.ok) {
+    const status = minted.error === 'unauthorized' ? 401 : minted.error === 'session_expiring' ? 409 : 503;
+    return json({ error: minted.error }, status);
+  }
 
   return json({ token: minted.token, tokenType: 'Bearer', role: body.data.role, audience: cfg.audience, expiresAt: new Date(minted.expiresAt * 1000).toISOString() }, 201);
 }
