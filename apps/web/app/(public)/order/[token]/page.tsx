@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { getOrderByToken } from '@/lib/server/ordering/order-by-token';
+import { getPublicOrderByToken } from '@/lib/server/ordering/order-by-token';
+import { confirmationLinkToken, confirmationPath } from '@/lib/server/confirmation/link';
+import { confirmationFilename } from '@/lib/server/confirmation/content';
 import { getPaymentLinks } from '@/lib/server/payment/payment-links';
 import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
 import { BusinessDetails, CancellationExemptionNotice } from '@/components/compliance';
 import { ContactBlock } from '@/components/contact-block';
 import { PriceWithVat } from '@/components/price';
-import { formatPrice } from '@/components/price/Price';
+import { formatIls } from '@/lib/shared/price/vat';
 import { isolatedDate, weekdayKey } from '@/components/day-state/format';
 import { CopyOrderNumber } from '@/components/order/CopyOrderNumber';
 import { jerusalemDate, jerusalemHhmm } from '@/lib/shared/time/jerusalem';
@@ -22,10 +24,10 @@ import styles from '@/components/order/order.module.css';
 // rel="noreferrer". Server component: the order, the payment links and the
 // business details are read here; only the copy button runs in the browser.
 //
-// Seam for wave 3: the confirmation PDF (US-0c) is generated from the same
-// getOrderByToken() view (Rule 15) and its download link goes where
-// data-testid="confirmation-seam" is. Find-my-order (US-0d) lands on this
-// same page once it has issued a token.
+// The confirmation PDF (US-0c) is built from this same view
+// (fn_order_public_view, Rule 15). Its link is derived from the order id
+// (lib/server/confirmation/link.ts), so rendering this page writes nothing:
+// the document is issued at checkout, or on the first open of the link.
 
 export const dynamic = 'force-dynamic';
 
@@ -36,11 +38,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function OrderPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const order = await getOrderByToken(token);
-  if (!order) notFound();
+  const found = await getPublicOrderByToken(token);
+  if (!found) notFound();
+  const order = found.view;
 
-  const [t, td, links, settings] = await Promise.all([
+  const [t, tc, td, links, settings] = await Promise.all([
     getTranslations('payment'),
+    getTranslations('confirmation.page'),
     getTranslations('day_state'),
     getPaymentLinks(),
     getPublicSiteSettings(),
@@ -55,7 +59,16 @@ export default async function OrderPage({ params }: { params: Promise<{ token: s
         ? t('hold_today', { time: jerusalemHhmm(expires) })
         : t('hold_other_day', { time: jerusalemHhmm(expires), day: dayLabel(expiresDay) })
       : null;
-  const amount = formatPrice(order.total);
+  const amount = formatIls(order.total);
+  // Live orders only: an expired or cancelled one never needed a confirmation.
+  let confirmationHref: string | null = null;
+  if (order.status === 'payment_pending' || order.status === 'paid' || order.status === 'fulfilled') {
+    try {
+      confirmationHref = confirmationPath(confirmationLinkToken(found.id));
+    } catch (e) {
+      console.error('confirmation link unavailable', e instanceof Error ? e.message : 'unknown');
+    }
+  }
   const code = <span className="ltr">{order.orderNumber}</span>;
 
   const payButton = (method: 'bit' | 'paybox', href: string | null) =>
@@ -156,13 +169,13 @@ export default async function OrderPage({ params }: { params: Promise<{ token: s
         {order.items.map((i, n) => (
           <div className={styles.row} key={n}>
             <span>{t('line', { name: isolate(i.name), quantity: i.quantity })}</span>
-            <span className="num">{formatPrice(i.lineTotal)}</span>
+            <span className="num">{formatIls(i.lineTotal)}</span>
           </div>
         ))}
         {order.fulfillment === 'delivery' ? (
           <div className={styles.row}>
             <span>{t('delivery_fee')}</span>
-            <span className="num">{formatPrice(order.deliveryFee)}</span>
+            <span className="num">{formatIls(order.deliveryFee)}</span>
           </div>
         ) : null}
         <div className={`${styles.row} ${styles.totalRow}`}>
@@ -171,10 +184,18 @@ export default async function OrderPage({ params }: { params: Promise<{ token: s
         </div>
       </section>
 
-      <div data-testid="confirmation-seam" hidden />
+      {confirmationHref ? (
+        <section className={styles.confirmation} aria-labelledby="confirmation-heading" data-testid="order-confirmation">
+          <h2 id="confirmation-heading">{tc('heading')}</h2>
+          <a className={styles.download} href={confirmationHref} download={confirmationFilename(order.orderNumber)} rel="noreferrer" data-testid="confirmation-download">
+            {tc('download')}
+          </a>
+          <p className={styles.keep}>{tc('kept')}</p>
+        </section>
+      ) : null}
 
       <div className={styles.legal}>
-        <CancellationExemptionNotice kind="catalog" />
+        <CancellationExemptionNotice kind={order.source === 'custom_cake' ? 'custom_cake' : 'catalog'} />
         <BusinessDetails settings={settings} variant="summary" />
         <ContactBlock phone={settings.business_phone} whatsapp={settings.business_whatsapp} orderNumber={order.orderNumber} headingId="order-contact-heading" />
       </div>

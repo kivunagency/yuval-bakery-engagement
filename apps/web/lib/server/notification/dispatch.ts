@@ -79,7 +79,7 @@ export async function dispatch(input: DispatchInput, deps?: NotifierDeps): Promi
 async function run(input: DispatchInput, d: NotifierDeps, report: NotificationReport): Promise<void> {
   const links = adminLinks(d.siteUrl);
   const out = (o: ChannelOutcome) => report.outcomes.push(o);
-  const entityType = input.event === 'order_created' ? 'order' : 'custom_cake_request';
+  const entityType = input.event === 'order_created' ? 'order' : input.event === 'payment_links_changed' ? 'setting_change' : 'custom_cake_request';
   const key = (channel: AttemptKey['channel'], audience: AttemptKey['audience']): AttemptKey => ({
     event: input.event, channel, audience, entityType, entityId: input.entityId,
   });
@@ -95,8 +95,19 @@ async function run(input: DispatchInput, d: NotifierDeps, report: NotificationRe
     await sendToAdmins(d, key('email', 'admin'), tpl.newOrderEmail(o, links), out, skip);
     if (!plausibleEmail(o.customer_email)) return skip(key('email', 'customer'), 'no_customer_email');
     if (!input.confirmationPdf) return skip(key('email', 'customer'), 'confirmation_pdf_pending');
-    const message = { ...tpl.orderConfirmationEmail(o, await d.store.business()), to: o.customer_email.trim(), attachments: [input.confirmationPdf] };
+    const { url, ...attachment } = input.confirmationPdf;
+    const message = { ...tpl.orderConfirmationEmail(o, await d.store.business(), url), to: o.customer_email.trim(), attachments: [attachment] };
     await sendEmail(d, key('email', 'customer'), message, out, skip);
+    return;
+  }
+
+  if (input.event === 'payment_links_changed') {
+    // SEC-009: every admin hears of it, by email always and by push as an extra.
+    const f = await d.store.paymentLinksFacts(input.entityId);
+    if (!f) return skip(key('email', 'admin'), 'entity_not_found');
+    const settingsUrl = `${d.siteUrl}/admin/settings/payment`;
+    await sendPushToAdmins(d, key('push', 'admin'), tpl.paymentLinksChangedPush(f, settingsUrl), out, skip);
+    await sendToAdmins(d, key('email', 'admin'), tpl.paymentLinksChangedEmail(f, settingsUrl), out, skip);
     return;
   }
 

@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import type { CatalogProduct } from '@/lib/shared/contracts/catalog';
 import { AllergenChips } from '@/components/catalog/AllergenChips';
 import { ProductPhoto } from '@/components/catalog/ProductPhoto';
-import { Price } from '@/components/price/Price';
+import { PriceAmount } from '@/components/price';
 import styles from '@/components/catalog/catalog.module.css';
 
 // One product (design-tokens.md, "כרטיס מוצר"). Three states: orderable,
@@ -43,7 +43,7 @@ export function ProductCard({ product, wide, blocked, inCart, onAdd }: Props) {
       <ProductPhoto photo={product.photos[0]} eager={wide} />
       <div className={styles.row}>
         <h3 id={headingId}>{product.name}</h3>
-        <Price amount={product.price} className={styles.price} />
+        <PriceAmount amount={product.price} className={styles.price} />
       </div>
       {note ? <p className={styles.stateNote}>{note}</p> : null}
       <AllergenChips contains={product.allergens} mayContain={product.mayContain} notes={product.allergenNotes} />

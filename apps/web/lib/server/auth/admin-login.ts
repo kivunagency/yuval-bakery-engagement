@@ -147,3 +147,34 @@ export async function adminSignOut(): Promise<void> {
   if (data.user) await supabase.rpc('fn_admin_record_auth_event', { p_action: 'admin.signed_out' });
   await supabase.auth.signOut({ scope: 'global' });
 }
+
+export type StepUpResult = { ok: true } | { ok: false; error: 'invalid_code' | 'rate_limited' | 'unavailable' | 'session_expired' };
+
+/**
+ * SEC-009 step-up: an admin who is already at aal2 types a fresh TOTP code
+ * for one sensitive action (changing the payment links). Verified with
+ * Supabase Auth like the login step and counted in the same rate limit
+ * (fn_admin_auth_attempt_begin, kind totp, per IP and per account). On
+ * success Auth issues a new access token whose amr "totp" timestamp is now;
+ * `supabase` (the same createUserClient() instance the caller then uses for
+ * the write) carries that token, and the DB function checks its age itself
+ * (fn_admin_totp_verified_within), so the step cannot be skipped by calling
+ * the DB directly.
+ */
+export async function stepUpTotp(supabase: Awaited<ReturnType<typeof createUserClient>>, code: string): Promise<StepUpResult> {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) return { ok: false, error: 'session_expired' };
+  const attempt = await beginAttempt('totp', userData.user.id);
+  if (typeof attempt !== 'number') return { ok: false, error: attempt };
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  let verified = false;
+  for (const f of factors?.totp ?? []) {
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: f.id, code });
+    if (!error) {
+      verified = true;
+      break;
+    }
+  }
+  await finishAttempt(attempt, verified);
+  return verified ? { ok: true } : { ok: false, error: 'invalid_code' };
+}

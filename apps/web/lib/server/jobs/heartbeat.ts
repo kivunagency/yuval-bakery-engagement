@@ -7,6 +7,7 @@ import { DbError } from '@/lib/server/supabase/rpc';
 export const JOB_NAMES = {
   expiry: 'expire_payment_pending_orders',
   retention: 'retention_sweep',
+  capacityRollforward: 'capacity_rollforward',
 } as const;
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];
 

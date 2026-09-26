@@ -1,0 +1,25 @@
+{
+  "_comment": "House shape (Rule 2, Rule 24) ratchet. Counts may go DOWN, never up. Regenerate only when lowering.",
+  "rule": "House shape (Rule 2, Rule 24)",
+  "summary": {
+    "appRoot": ".",
+    "packageRoot": ".",
+    "serverLayer": "present",
+    "serverModules": 73,
+    "missingServerOnly": 1,
+    "clientImportsServer": 0,
+    "unnamedContext": 2,
+    "strayRootScripts": 0
+  },
+  "items": {
+    "lib/server/env.ts": {
+      "unnamedContext": 1
+    },
+    "lib/server/health.ts": {
+      "unnamedContext": 1
+    },
+    "lib/server/notification/types.ts": {
+      "missingServerOnly": 1
+    }
+  }
+}

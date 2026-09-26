@@ -58,6 +58,9 @@ h2 { font-size: 16px; line-height: 1.4; }
 
 /* Focus ring in ink color, 3px, offset 2px, never blue (design-tokens.md). */
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+/* qa-006: Tab from the year reaches the date field's own calendar button; the field then
+   matches only :focus-within (not :focus or :focus-visible), and Chromium's thin orange ring is under 3:1. */
+input[type="date"]:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
 
 .skip-link {
   position: absolute;

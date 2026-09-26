@@ -50,3 +50,26 @@ RESET ROLE; SET ROLE anon;
 SELECT 'T14b_anon_delivery_list' AS t, fn_admin_delivery_list('2026-10-01');
 RESET ROLE;
 SELECT 'T14c_list_audited=' || count(*) AS t FROM audit_log WHERE action = 'delivery_list.generated' AND entity_id = '2026-10-01';
+-- 15-17 (ops-registry-001): the registry audit functions run as the admin's own aal2 JWT only, rate limit per agent token, and stay append-only.
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal1","role":"authenticated"}',false);
+DO $$ BEGIN PERFORM fn_ops_registry_call_begin('T15aaaaaaaaaaaaaaaaa', 'explore', 'verifier', '{}'); RAISE NOTICE 'T15_aal1_accepted'; EXCEPTION WHEN others THEN RAISE NOTICE 'T15_aal1_refused=%', SQLERRM; END $$;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000000c","aal":"aal2","role":"authenticated"}',false);
+DO $$ BEGIN PERFORM fn_ops_registry_call_begin('T15aaaaaaaaaaaaaaaaa', 'explore', 'verifier', '{}'); RAISE NOTICE 'T15_customer_accepted'; EXCEPTION WHEN others THEN RAISE NOTICE 'T15_customer_refused=%', SQLERRM; END $$;
+RESET ROLE;
+UPDATE app_settings SET value = '2' WHERE key = 'ops_registry_calls_per_token_per_minute';
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000000a","aal":"aal2","role":"authenticated"}',false);
+SELECT 'T16_calls=' || string_agg(r, ',' ORDER BY g) AS t
+FROM (SELECT g, coalesce(fn_ops_registry_call_begin('T16aaaaaaaaaaaaaaaaa', 'explore', 'verifier', '{}')::text, 'limited') AS r FROM generate_series(1, 3) g) s;
+DO $$ BEGIN PERFORM fn_ops_registry_call_finish(-1, 'T16aaaaaaaaaaaaaaaaa', 'ok'); RAISE NOTICE 'T16b_foreign_call_accepted'; EXCEPTION WHEN others THEN RAISE NOTICE 'T16b_foreign_call_refused=%', SQLERRM; END $$;
+DO $$ BEGIN PERFORM fn_ops_registry_token_minted('T16aaaaaaaaaaaaaaaaa', 'verifier', now() + interval '2 hours'); RAISE NOTICE 'T16c_long_token_accepted'; EXCEPTION WHEN others THEN RAISE NOTICE 'T16c_long_token_refused=%', SQLERRM; END $$;
+UPDATE audit_log SET action = 'x' WHERE actor_id = 'agent-token:T16aaaaaaaaaaaaaaaaa';
+RESET ROLE;
+DELETE FROM audit_log WHERE actor_id = 'agent-token:T16aaaaaaaaaaaaaaaaa';
+SET ROLE anon;
+SELECT 'T17_anon_ops_begin' AS t, fn_ops_registry_call_begin('T17aaaaaaaaaaaaaaaaa', 'explore', 'verifier', '{}');
+RESET ROLE;
+UPDATE app_settings SET value = '60' WHERE key = 'ops_registry_calls_per_token_per_minute';
+SELECT 'T17b_agent_rows=' || count(*) FILTER (WHERE action = 'ops_registry.call') || '/' || count(*) FILTER (WHERE action = 'ops_registry.call_rate_limited') AS t
+FROM audit_log WHERE actor_id = 'agent-token:T16aaaaaaaaaaaaaaaaa' AND metadata ->> 'delegated_by' = '00000000-0000-0000-0000-00000000000a';

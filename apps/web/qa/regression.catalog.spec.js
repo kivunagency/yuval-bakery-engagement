@@ -19,7 +19,7 @@ async function withDb(fn) {
   }
 }
 
-/** Insert a product (published unless told otherwise) and return its id. */
+/** Insert a product (published unless told otherwise; a deleted one is never published, CHECK products_deleted_not_published) and return its id. */
 async function insertProduct(db, over = {}) {
   const p = {
     id: randomUUID(),
@@ -37,7 +37,7 @@ async function insertProduct(db, over = {}) {
   await db.query(
     `INSERT INTO products (id, name, price_displayed, cost_basis, oven_minutes_cost, work_minutes_cost, ingredients,
        allergens, allergens_may_contain, allergens_confirmed, photo_alt, is_available, is_published, deleted_at)
-     VALUES ($1, $2, $3, 'per_unit', $4, $5, 'QA ingredients', $6, $7, true, 'QA alt', $8, $9, CASE WHEN $10 THEN now() END)`,
+     VALUES ($1, $2, $3, 'per_unit', $4, $5, 'QA ingredients', $6, $7, true, 'QA alt', $8, $9 AND NOT $10, CASE WHEN $10 THEN now() END)`,
     [p.id, p.name, p.price, p.oven, p.work, p.allergens, p.mayContain, p.available, p.published, p.deleted],
   );
   return p;
@@ -86,13 +86,13 @@ test.describe('api-001: GET /api/catalog', () => {
     }
   });
 
-  test('photo URL is built from storage_path (public product-photos bucket), ordered, alt falls back to photo_alt', async ({ request }) => {
+  test('photo URL is built from storage_path (public product-photos bucket), ordered, each photo with its own alt text', async ({ request }) => {
     const env = localEnv();
     const p = await withDb(async (db) => {
       const prod = await insertProduct(db);
       await db.query(
         `INSERT INTO product_photos (product_id, storage_path, alt_text, position) VALUES
-           ($1, 'qa/second.webp', 'second photo', 2), ($1, 'qa/first.webp', NULL, 1), ($1, '../escape.webp', 'bad', 3)`,
+           ($1, 'qa/second.webp', 'second photo', 2), ($1, 'qa/first.webp', 'first photo', 1), ($1, '../escape.webp', 'bad', 3)`,
         [prod.id],
       );
       return prod;
@@ -101,7 +101,7 @@ test.describe('api-001: GET /api/catalog', () => {
       const body = await (await request.get('/api/catalog')).json();
       const got = body.products.find((x) => x.id === p.id);
       expect(got.photos).toEqual([
-        { url: `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-photos/qa/first.webp`, alt: 'QA alt' },
+        { url: `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-photos/qa/first.webp`, alt: 'first photo' },
         { url: `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-photos/qa/second.webp`, alt: 'second photo' },
       ]);
     } finally {
@@ -494,5 +494,30 @@ test.describe('client-001: catalog screen', () => {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       await page.screenshot({ path: join(SCREENS, `catalog-${scheme}.png`), fullPage: true });
     }
+  });
+});
+
+// catalog-price-unify: the catalog uses the app's one money formatter
+// (formatIls via PriceAmount) and the shared VAT wording (VatLabel), not a
+// formatter of its own. Seed: croissant 14.00, vat_status exempt.
+test.describe('catalog-price-unify', () => {
+  test('card price is formatIls output; the note above the grid is VatLabel "note"; the sign renders to the left of the number', async ({ page }) => {
+    await page.goto('/');
+    const card = page.locator('[data-testid="product-card"]').filter({ hasText: 'קרואסון חמאה (דמו)' });
+    const price = card.locator('.num').first();
+    expect(await price.textContent()).toBe('14 ₪');
+    await expect(page.getByTestId('catalog-vat-note')).toHaveText('המחירים סופיים');
+    // RTL: the shekel sign is drawn to the LEFT of the digits (design-tokens.md "Price").
+    const [signX, digitsX] = await price.evaluate((el) => {
+      const text = el.firstChild;
+      const r = document.createRange();
+      r.setStart(text, text.textContent.length - 1);
+      r.setEnd(text, text.textContent.length);
+      const sign = r.getBoundingClientRect().x;
+      r.setStart(text, 0);
+      r.setEnd(text, 2);
+      return [sign, r.getBoundingClientRect().x];
+    });
+    expect(signX).toBeLessThan(digitsX);
   });
 });

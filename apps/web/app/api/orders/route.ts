@@ -1,8 +1,9 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { after, NextResponse, type NextRequest } from 'next/server';
 import { createOrderRequest, type CheckoutErrorBody } from '@/lib/shared/contracts/checkout';
 import { createStandardOrder } from '@/lib/server/ordering/create-order';
 import { isSameOrigin } from '@/lib/server/http/origin';
 import { clientIpFrom } from '@/lib/server/http/client-ip';
+import { onOrderCreated } from '@/lib/server/confirmation/on-order-created';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,5 +53,9 @@ export async function POST(request: NextRequest) {
 
   const result = await createStandardOrder(parsed.data, clientIpFrom(request.headers));
   if (!result.ok) return fail({ error: result.error, ...(result.pickAnotherDay ? { pickAnotherDay: true } : {}) });
+  // After the response: issue the confirmation PDF, notify (admin push and
+  // email, customer email with the PDF) and record an emailed confirmation
+  // (US-0c). Never fails the order.
+  after(() => onOrderCreated(result.orderId));
   return NextResponse.json({ token: result.token }, { status: 201, headers: NO_STORE });
 }

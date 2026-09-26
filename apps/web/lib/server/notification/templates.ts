@@ -1,7 +1,7 @@
 import 'server-only';
 import { createTranslator } from 'next-intl';
 import he from '@/messages/he.json';
-import { formatPrice } from '@/components/price/Price';
+import { formatIls } from '@/lib/shared/price/vat';
 import { isolatedDate } from '@/components/day-state/format';
 import type { EmailMessage } from '@/lib/server/notification/email/provider';
 import type { PushPayload } from '@/lib/shared/contracts/push';
@@ -19,6 +19,7 @@ import type { PushPayload } from '@/lib/shared/contracts/push';
 
 const t = createTranslator({ locale: 'he', messages: he, namespace: 'notification' });
 const tBusiness = createTranslator({ locale: 'he', messages: he, namespace: 'business' });
+const tConfirmation = createTranslator({ locale: 'he', messages: he, namespace: 'confirmation.email' });
 
 const NAME_MAX = 60;
 const REASON_MAX = 500;
@@ -128,7 +129,7 @@ export function newOrderEmail(o: OrderFacts, links: Links): Omit<EmailMessage, '
     orderNumber: o.order_number,
     date: isolatedDate(o.delivery_date),
     fulfillment: t(o.fulfillment_type === 'delivery' ? 'common.fulfillment.delivery' : 'common.fulfillment.pickup'),
-    total: formatPrice(Number(o.total_displayed)),
+    total: formatIls(Number(o.total_displayed)),
   };
   return layout(
     t('new_order.subject', { orderNumber: o.order_number }),
@@ -148,12 +149,20 @@ export function newCustomCakeEmail(r: CustomCakeFacts, links: Links): Omit<Email
 
 // ---------------------------------------------------------------- customer emails (no customer text)
 
-export function orderConfirmationEmail(o: OrderFacts, b: BusinessFacts): Omit<EmailMessage, 'to'> {
+/** confirmationUrl: the 24-month link to the same PDF (US-0c), built by the server from the order id, never from customer input. */
+export function orderConfirmationEmail(o: OrderFacts, b: BusinessFacts, confirmationUrl?: string): Omit<EmailMessage, 'to'> {
+  const link: Block[] = confirmationUrl
+    ? [
+        { kind: 'p', text: tConfirmation('link_intro'), html: escapeHtml(tConfirmation('link_intro')) },
+        { kind: 'cta', href: confirmationUrl, label: tConfirmation('link_cta') },
+      ]
+    : [];
   return layout(
     t('order_confirmation.subject', { orderNumber: o.order_number }),
     [
       msg('order_confirmation.body', { orderNumber: o.order_number, date: isolatedDate(o.delivery_date) }),
       msg('order_confirmation.payment', {}),
+      ...link,
       contactLine(b),
     ],
     t('common.footer_customer', { businessName: businessName(b) }),
@@ -165,7 +174,7 @@ export function customCakeApprovedEmail(r: CustomCakeFacts, b: BusinessFacts): O
   const blocks: Block[] = [
     msg('custom_cake_approved.body', {
       date: isolatedDate(r.desired_date),
-      price: r.price_displayed === null ? '' : formatPrice(Number(r.price_displayed)),
+      price: r.price_displayed === null ? '' : formatIls(Number(r.price_displayed)),
       orderNumber,
     }),
   ];
@@ -205,4 +214,35 @@ export function quotaAlertPush(count: number, cap: number, settingsUrl: string):
     url: settingsUrl,
     tag: 'email-quota',
   };
+}
+
+// ---------------------------------------------------------------- payment links changed (SEC-009)
+
+export type PaymentLinksFacts = {
+  changed_at: string;
+  admin_name: string | null;
+  bit_changed: boolean;
+  paybox_changed: boolean;
+  bit_link: string | null;
+  paybox_link: string | null;
+};
+
+const LINK_MAX = 500;
+
+/** To every admin. The new links as text (never as clickable links), from the audit row. */
+export function paymentLinksChangedEmail(f: PaymentLinksFacts, settingsUrl: string): Omit<EmailMessage, 'to'> {
+  const blocks: Block[] = [
+    msg('payment_links_changed.body', { time: jerusalemDateTime(f.changed_at), admin: cleanText(f.admin_name, NAME_MAX) || t('common.name_missing') }),
+  ];
+  for (const [method, changed, value] of [['bit', f.bit_changed, f.bit_link], ['paybox', f.paybox_changed, f.paybox_link]] as const) {
+    if (!changed) continue;
+    const link = cleanText(value, LINK_MAX);
+    blocks.push(link ? msg(`payment_links_changed.${method}_set`, { link }) : msg(`payment_links_changed.${method}_removed`, {}));
+  }
+  blocks.push(msg('payment_links_changed.not_you', {}), { kind: 'cta', href: settingsUrl, label: t('payment_links_changed.cta') });
+  return layout(t('payment_links_changed.subject'), blocks, t('common.footer_admin'));
+}
+
+export function paymentLinksChangedPush(_f: PaymentLinksFacts, settingsUrl: string): PushPayload {
+  return { title: t('push.payment_links_title'), body: t('push.payment_links_body'), url: settingsUrl, tag: 'payment-links' };
 }

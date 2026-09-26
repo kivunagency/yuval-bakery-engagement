@@ -5,14 +5,16 @@ import { createUserClient } from '@/lib/server/supabase/server';
 import { HOLDS_ALERT_PCT, loadAdminOrders, ORDER_LIST_LIMIT, RECENT_EXPIRY_HOURS } from '@/lib/server/ordering/admin-orders-list';
 import { orderListDay, orderListFilter } from '@/lib/shared/contracts/admin-orders';
 import { waMeHref } from '@/lib/shared/contact/links';
+import { serverEnv } from '@/lib/server/env';
+import { confirmationLinkToken, confirmationPath } from '@/lib/server/confirmation/link';
 import { BUSINESS_TZ, jerusalemDate } from '@/lib/shared/time/jerusalem';
 import { ORDER_STATUSES } from '@/lib/shared/types';
 import { shortDate } from '@/components/day-state/format';
-import { formatPrice } from '@/components/price/Price';
+import { formatIls } from '@/lib/shared/price/vat';
 import { OrderCard, type OrderCardLabels } from '@/components/admin/orders/OrderCard';
 import { ReleaseUnpaid } from '@/components/admin/orders/ReleaseUnpaid';
 
-const DONE = ['paid', 'cancelled', 'fulfilled', 'released'] as const;
+const DONE = ['paid', 'cancelled', 'fulfilled', 'released', 'confirmation_sent'] as const;
 const timeFmt = new Intl.DateTimeFormat('en-GB', { timeZone: BUSINESS_TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 /** Jerusalem "1.10" (no leading zeros, design-tokens.md) and "14:30" of an instant. */
@@ -33,23 +35,41 @@ export default async function AdminOrdersPage({
   searchParams: Promise<{ status?: string; day?: string; done?: string; order?: string; count?: string }>;
 }) {
   await requireAdminPage();
-  const t = await getTranslations('admin.orders');
-  const tw = await getTranslations('admin.capacity.weekday');
-  const params = await searchParams;
+  const [t, tc, tw, params, supabase] = await Promise.all([
+    getTranslations('admin.orders'),
+    getTranslations('confirmation.admin'),
+    getTranslations('admin.capacity.weekday'),
+    searchParams,
+    createUserClient(),
+  ]);
   const status = orderListFilter.parse(params.status);
   const day = orderListDay.parse(params.day ?? null);
   const now = new Date();
   const today = jerusalemDate(now);
-  const view = await loadAdminOrders(await createUserClient(), { status, day, today, now });
+  const view = await loadAdminOrders(supabase, { status, day, today, now });
   const listHref = (s: string, d: string | null = day) => `/admin/orders?${new URLSearchParams(d ? { status: s, day: d } : { status: s }).toString()}`;
   const listQuery = new URLSearchParams(day ? { status, day } : { status }).toString();
 
   const weekdayOf = (day: string) => tw(String(new Date(`${day}T12:00:00Z`).getUTCDay()));
   const dayLabel = (day: string) => `${weekdayOf(day)} ${shortDate(day)}`;
+  const siteUrl = serverEnv().SITE_URL.replace(/\/+$/, '');
+  // US-0c: the confirmation link is derived from the order id, so building it
+  // here writes nothing; the PDF is issued when it is first opened or when
+  // Yuval presses "I sent it". Fixed template, no customer text (SEC-024).
+  const confirmationFor = (o: (typeof view.orders)[number]): OrderCardLabels['confirmation'] => {
+    if (o.status !== 'paid' || !o.confirmationMissing || o.piiPurged) return null;
+    try {
+      const url = `${siteUrl}${confirmationPath(confirmationLinkToken(o.id))}`;
+      return { whatsappHref: waMeHref(o.phone, tc('whatsapp_text', { number: o.orderNumber, url })), linkAvailable: true };
+    } catch (e) {
+      console.error('confirmation link unavailable', e instanceof Error ? e.message : 'unknown');
+      return { whatsappHref: null, linkAvailable: false };
+    }
+  };
   const labelsFor = (o: (typeof view.orders)[number]): OrderCardLabels => {
     const whenIso = o.status === 'expired' ? o.expiredAt : o.status === 'payment_pending' ? o.expiresAt : null;
     // SEC-024: fixed template from the server, no customer free text (not even the name), URL-encoded by waMeHref.
-    const text = t(`whatsapp_text.${o.status}`, { number: o.orderNumber, date: shortDate(o.deliveryDate), total: formatPrice(o.total) });
+    const text = t(`whatsapp_text.${o.status}`, { number: o.orderNumber, date: shortDate(o.deliveryDate), total: formatIls(o.total) });
     return {
       weekday: weekdayOf(o.deliveryDate),
       date: shortDate(o.deliveryDate),
@@ -57,6 +77,7 @@ export default async function AdminOrdersPage({
       whatsappHref: o.piiPurged ? null : waMeHref(o.phone, text),
       expiry: whenIso ? jerusalemWhen(whenIso) : null,
       checkLatePayment: o.status === 'expired' && o.deliveryDate >= today,
+      confirmation: confirmationFor(o),
     };
   };
 
@@ -77,6 +98,10 @@ export default async function AdminOrdersPage({
       {done === 'released' && Number.isFinite(doneCount) ? (
         <p className="admin-ok" role="status" data-testid="orders-done">
           {t('done.released', { count: doneCount })}
+        </p>
+      ) : done === 'confirmation_sent' && doneOrder ? (
+        <p className="admin-ok" role="status" data-testid="orders-done">
+          {tc.rich('done', { number: doneOrder, ltr })}
         </p>
       ) : done && done !== 'released' && doneOrder ? (
         <p className="admin-ok" role="status" data-testid="orders-done">

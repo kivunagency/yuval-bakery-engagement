@@ -15,6 +15,7 @@ export const FOOTER_LINKS = [
   { href: '/terms', key: 'terms' },
   { href: '/returns', key: 'returns' },
   { href: '/account', key: 'account' },
+  { href: '/find-order', key: 'find_order' },
 ] as const;
 
 export function SiteFooter({ settings }: { settings: PublicSiteSettings }) {

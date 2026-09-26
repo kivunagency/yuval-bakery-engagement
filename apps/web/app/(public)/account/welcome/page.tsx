@@ -7,7 +7,11 @@ import { PreferencesForm } from '@/components/account/PreferencesForm';
 import { monthNames } from '@/components/account/month-names';
 import styles from '@/components/account/account.module.css';
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+// qa-006/compliance-005: every page has a title of its own (WCAG 2.4.2)
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('registration');
+  return { title: t('welcome_title'), robots: { index: false, follow: false } };
+}
 
 // Second step of registration, right after the email is confirmed: the
 // optional s.30A choice, as its own act (source 'registration').

@@ -57,3 +57,13 @@ a.pay:hover { background: var(--surface-2); }
 .totalRow { border-block-start: 1px solid var(--line); padding-block-start: var(--s2); }
 .legal { display: grid; gap: var(--s4); font-size: 14px; }
 .steps b { white-space: nowrap; }
+
+/* Written confirmation (US-0c): one secondary action, same weight as the pay buttons. */
+.confirmation { background: var(--surface); border-radius: var(--r-card); padding: var(--s4); box-shadow: var(--shadow-1); display: grid; gap: var(--s3); }
+.confirmation h2 { font-size: 17px; line-height: 1.4; }
+.download {
+  min-block-size: 48px; display: flex; align-items: center; justify-content: center; padding-inline: var(--s4);
+  border-radius: var(--r-control); border: 1.5px solid var(--ink); background: var(--surface); color: var(--ink);
+  font-size: 16px; font-weight: 600; text-decoration: none; text-align: center;
+}
+a.download:hover { background: var(--surface-2); }

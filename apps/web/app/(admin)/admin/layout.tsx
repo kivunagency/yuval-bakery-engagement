@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { requireAdminPage } from '@/lib/server/auth/admin';
+import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
 import { signOutAction } from '@/app/(admin-auth)/admin/login/actions';
 import { AdminTabs } from '@/components/admin/AdminTabs';
 import { ScopedIntlProvider } from '@/components/i18n/ScopedIntlProvider';
@@ -14,14 +15,14 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 // (tests/admin-pages-guarded.test.ts enforces that).
 export default async function AdminShellLayout({ children }: { children: React.ReactNode }) {
   await requireAdminPage();
-  const t = await getTranslations();
+  const [t, site] = await Promise.all([getTranslations(), getPublicSiteSettings()]);
   return (
     <ScopedIntlProvider scope="admin">
     <div className="admin-shell">
       <header className="admin-appbar">
         <p className="admin-brand">
           {t('admin.shell.title')}
-          <small>{t('business.details.name')}</small>
+          <small>{site.business_name ?? t('business.details.name')}</small>
         </p>
         <form action={signOutAction}>
           <button type="submit" className="admin-link-button" data-testid="admin-sign-out">

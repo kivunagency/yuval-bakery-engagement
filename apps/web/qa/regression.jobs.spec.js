@@ -270,3 +270,92 @@ test.describe('job and capacity internals are not callable over the public API (
     expect(error?.message).toMatch(/permission denied/);
   });
 });
+
+test.describe('capacity-rollforward (netlify/functions/capacity-rollforward.mjs)', () => {
+  const JOB = 'capacity_rollforward';
+
+  test('is scheduled daily at 22:10 UTC (just after midnight in Jerusalem, summer and winter)', async () => {
+    const mod = await loadFunction('capacity-rollforward');
+    expect(mod.config).toEqual({ schedule: '10 22 * * *' });
+  });
+
+  test('the day that enters the window opens from the weekly pattern without Yuval saving it; manual days kept; heartbeat written; idempotent', async () => {
+    await db.withClient(async (c) => {
+      const { rows: [{ last, first }] } = await c.query(
+        `SELECT (fn_business_date() + (value::text::int) - 1)::text AS last, fn_business_date()::text AS first FROM app_settings WHERE key = 'capacity_pattern_horizon_days'`,
+      );
+      const { rows: [{ dow }] } = await c.query(`SELECT EXTRACT(DOW FROM $1::date)::int AS dow`, [last]);
+      const { rows: savedPattern } = await c.query(`SELECT * FROM capacity_weekly_pattern WHERE weekday = $1`, [dow]);
+      const { rows: savedDay } = await c.query(`SELECT * FROM capacity_day_ledger WHERE day = $1`, [last]);
+      expect(savedDay.every((d) => d.oven_minutes_reserved === 0 && d.work_minutes_reserved === 0), 'the last day of the window has no orders').toBe(true);
+      try {
+        // Yuval's pattern for that weekday, saved at some point in the past.
+        await c.query(
+          `INSERT INTO capacity_weekly_pattern (weekday, is_working_day, oven_minutes_total, work_minutes_total) VALUES ($1, true, 321, 432)
+           ON CONFLICT (weekday) DO UPDATE SET is_working_day = true, oven_minutes_total = 321, work_minutes_total = 432`,
+          [dow],
+        );
+        // Yesterday the window ended one day earlier: the last day has no row yet.
+        await c.query(`DELETE FROM capacity_day_ledger WHERE day = $1`, [last]);
+
+        const { status, body } = await invoke('capacity-rollforward');
+        expect(status).toBe(200);
+        expect(body).toMatchObject({ job: JOB, ok: true, from: first, days: expect.any(Number), heartbeat: 'written_by_wrapper', error: null });
+        expect(body.written).toBeGreaterThanOrEqual(1);
+        const { rows: [row] } = await c.query(
+          `SELECT oven_minutes_total, work_minutes_total, is_blackout, source, oven_minutes_reserved FROM capacity_day_ledger WHERE day = $1`,
+          [last],
+        );
+        expect(row).toEqual({ oven_minutes_total: 321, work_minutes_total: 432, is_blackout: false, source: 'pattern', oven_minutes_reserved: 0 });
+
+        // A day Yuval set by hand is never overwritten by the job.
+        await c.query(`UPDATE capacity_day_ledger SET oven_minutes_total = 11, source = 'manual' WHERE day = $1`, [last]);
+        const again = await invoke('capacity-rollforward');
+        expect(again.body.ok).toBe(true);
+        expect((await c.query(`SELECT oven_minutes_total, source FROM capacity_day_ledger WHERE day = $1`, [last])).rows[0]).toEqual({ oven_minutes_total: 11, source: 'manual' });
+
+        const hb = await db.heartbeat(c, JOB);
+        expect(hb.last_error).toBeNull();
+        expect(Date.now() - new Date(hb.last_success_at).getTime()).toBeLessThan(60_000);
+      } finally {
+        await c.query(`DELETE FROM capacity_day_ledger WHERE day = $1`, [last]);
+        for (const d of savedDay) {
+          await c.query(
+            `INSERT INTO capacity_day_ledger (day, oven_minutes_total, work_minutes_total, is_blackout, source) VALUES ($1, $2, $3, $4, $5)`,
+            [last, d.oven_minutes_total, d.work_minutes_total, d.is_blackout, d.source],
+          );
+        }
+        if (savedPattern.length === 0) await c.query(`DELETE FROM capacity_weekly_pattern WHERE weekday = $1`, [dow]);
+        else {
+          const p = savedPattern[0];
+          await c.query(`UPDATE capacity_weekly_pattern SET is_working_day = $2, oven_minutes_total = $3, work_minutes_total = $4 WHERE weekday = $1`, [dow, p.is_working_day, p.oven_minutes_total, p.work_minutes_total]);
+        }
+      }
+    });
+  });
+
+  test('a failed run is recorded in the heartbeat with its error and answers 500; last_success_at unchanged', async () => {
+    await db.withClient(async (c) => {
+      const before = await db.heartbeat(c, JOB);
+      const { rows: saved } = await c.query(`SELECT value, description FROM app_settings WHERE key = 'capacity_pattern_horizon_days'`);
+      await c.query(`DELETE FROM app_settings WHERE key = 'capacity_pattern_horizon_days'`);
+      try {
+        const { status, body } = await invoke('capacity-rollforward');
+        expect(status).toBe(500);
+        expect(body).toMatchObject({ ok: false, heartbeat: 'written_by_wrapper' });
+        expect(body.error).toContain('retention_setting_missing');
+        const hb = await db.heartbeat(c, JOB);
+        expect(hb.last_error).toContain('capacity_pattern_horizon_days');
+        expect(hb.last_success_at?.toISOString?.() ?? hb.last_success_at).toEqual(before.last_success_at?.toISOString?.() ?? before.last_success_at);
+      } finally {
+        await c.query(`INSERT INTO app_settings (key, value, description) VALUES ('capacity_pattern_horizon_days', $1, $2)`, [JSON.stringify(saved[0].value), saved[0].description]);
+      }
+    });
+  });
+
+  test('the seeded heartbeat row exists from the migration (the staleness alert has a row to watch)', async () => {
+    await db.withClient(async (c) => {
+      expect((await c.query(`SELECT count(*)::int AS n FROM cron_heartbeats WHERE job_name = $1`, [JOB])).rows[0].n).toBe(1);
+    });
+  });
+});

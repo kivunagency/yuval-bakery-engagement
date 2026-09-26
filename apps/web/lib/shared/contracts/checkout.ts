@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ilMobilePhone, isoDate, optionalEmail, personName } from '@/lib/shared/contracts/primitives';
 import { MAX_LINE_QUANTITY } from '@/lib/shared/cart';
-import { FULFILLMENT_TYPES, ORDER_STATUSES } from '@/lib/shared/types';
+import { FULFILLMENT_TYPES, ORDER_SOURCES, ORDER_STATUSES } from '@/lib/shared/types';
 
 // Checkout and order contracts (api-003, client-003, client-004).
 // The client sends WHAT it wants (product ids, quantities, day, slot, city,
@@ -92,6 +92,8 @@ export const lookupToken = z.string().regex(/^[A-Za-z0-9_-]{22}$/);
 export const orderView = z.object({
   orderNumber: z.string().max(20),
   status: z.enum(ORDER_STATUSES),
+  /** standard or custom_cake: picks the cancellation-exemption wording (US-0c). */
+  source: z.enum(ORDER_SOURCES),
   fulfillment: z.enum(FULFILLMENT_TYPES),
   day: isoDate,
   slotStart: hhmm.nullable(),

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { dispatch, emailHash, type NotifierDeps } from '@/lib/server/notification/dispatch';
-import type { BeginResult, CustomCakeFactsRow, NotificationStore, OrderFactsRow } from '@/lib/server/notification/store';
+import type { BeginResult, CustomCakeFactsRow, NotificationStore, OrderFactsRow, PaymentLinksFactsRow } from '@/lib/server/notification/store';
 import type { EmailMessage, EmailProvider } from '@/lib/server/notification/email/provider';
 import { resendProvider } from '@/lib/server/notification/email/provider';
 import type { PushSender } from '@/lib/server/notification/push/sender';
@@ -8,7 +8,7 @@ import { readNotificationConfig } from '@/lib/server/notification/config';
 import { isAllowedPushEndpoint, pushSubscriptionBody } from '@/lib/shared/contracts/push';
 import { safeCustomerName, escapeHtml } from '@/lib/server/notification/templates';
 import type { PushPayload } from '@/lib/shared/contracts/push';
-import { formatPrice } from '@/components/price/Price';
+import { formatIls } from '@/lib/shared/price/vat';
 import he from '@/messages/he.json';
 
 const ORDER_ID = '11111111-1111-4111-8111-111111111111';
@@ -27,7 +27,13 @@ const cake = (over: Partial<CustomCakeFactsRow> = {}): CustomCakeFactsRow => ({
   payment_pending_expires_at: null, ...over,
 });
 
-function fakes(opts: { order?: OrderFactsRow | null; cake?: CustomCakeFactsRow | null; begin?: (n: number) => Partial<BeginResult>; emailFails?: boolean } = {}) {
+const CHANGE_ID = '33333333-3333-4333-8333-333333333333';
+const links = (over: Partial<PaymentLinksFactsRow> = {}): PaymentLinksFactsRow => ({
+  change_id: CHANGE_ID, changed_at: '2026-10-14T10:00:00Z', admin_name: 'QA admin', bit_changed: true, paybox_changed: true,
+  bit_link: 'https://www.bitpay.co.il/app/me/<script>', paybox_link: null, ...over,
+});
+
+function fakes(opts: { order?: OrderFactsRow | null; cake?: CustomCakeFactsRow | null; links?: PaymentLinksFactsRow | null; begin?: (n: number) => Partial<BeginResult>; emailFails?: boolean } = {}) {
   const emails: EmailMessage[] = [];
   const pushes: PushPayload[] = [];
   const finished: { id: string; status: string; reason: string | null }[] = [];
@@ -36,6 +42,7 @@ function fakes(opts: { order?: OrderFactsRow | null; cake?: CustomCakeFactsRow |
   const store: NotificationStore = {
     orderFacts: async () => (opts.order === undefined ? order() : opts.order),
     customCakeFacts: async () => (opts.cake === undefined ? cake() : opts.cake),
+    paymentLinksFacts: async () => (opts.links === undefined ? links() : opts.links),
     adminEmails: async () => ['yuval@example.test'],
     business: async () => ({ name: null, phone: null }),
     activePushSubscriptions: async () => [{ id: SUB_ID, endpoint: 'https://fcm.googleapis.com/fcm/send/x', p256dh: 'k', auth_key: 'a' }],
@@ -195,7 +202,7 @@ describe('custom cake events', () => {
     const m = f.emails[0]!;
     expect(m.to).toBe('noa@example.test');
     expect(m.subject).toContain('C9X4T');
-    expect(m.text).toContain(formatPrice(350));
+    expect(m.text).toContain(formatIls(350));
     expect(m.text).toContain('15.10, 16:00'); // 13:00Z is 16:00 in Jerusalem (IDT)
     expect(m.text + m.html).not.toContain('Noa');
   });
@@ -306,5 +313,32 @@ describe('resend adapter', () => {
       throw new TypeError('fetch failed');
     }) as unknown as typeof fetch);
     expect(await q.send({ to: 'a@b.test', subject: 's', html: 'h', text: 'h' })).toEqual({ ok: false, error: 'resend_network_error' });
+  });
+});
+
+describe('PaymentLinksChanged (SEC-009)', () => {
+  it('push + email to every admin with the new links as escaped text; a removed link says so', async () => {
+    const f = fakes();
+    const report = await dispatch({ event: 'payment_links_changed', entityId: CHANGE_ID }, f.deps);
+    expect(report.outcomes).toEqual([
+      { channel: 'push', audience: 'admin', status: 'sent', reason: null },
+      { channel: 'email', audience: 'admin', status: 'sent', reason: null },
+    ]);
+    const [mail] = f.emails;
+    expect(mail?.to).toBe('yuval@example.test');
+    expect(mail?.text).toContain('https://www.bitpay.co.il/app/me/<script>');
+    expect(mail?.html).toContain('&lt;script&gt;');
+    expect(mail?.html).not.toContain('<a href="https://www.bitpay');
+    expect(mail?.text).toContain('PayBox');
+    expect(mail?.text).toContain('https://shop.example/admin/settings/payment');
+    expect(f.pushes[0]).toMatchObject({ url: 'https://shop.example/admin/settings/payment', tag: 'payment-links' });
+    expect(JSON.stringify(f.pushes[0])).not.toContain('bitpay');
+  });
+
+  it('an unknown change id sends nothing and is recorded as skipped', async () => {
+    const f = fakes({ links: null });
+    const report = await dispatch({ event: 'payment_links_changed', entityId: CHANGE_ID }, f.deps);
+    expect(report.outcomes).toEqual([{ channel: 'email', audience: 'admin', status: 'skipped', reason: 'entity_not_found' }]);
+    expect(f.emails).toEqual([]);
   });
 });

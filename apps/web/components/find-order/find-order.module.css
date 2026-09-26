@@ -1,0 +1,38 @@
+/* Find my order (US-0d). Fields per design-tokens.md "שדות וטפסים", as the custom-cake form. */
+.header { display: grid; gap: var(--s3); margin-block-end: var(--s5); }
+.back {
+  display: inline-flex; align-items: center; min-block-size: var(--tap); min-inline-size: var(--tap);
+  font-size: 15px; font-weight: 600; text-underline-offset: 3px; justify-self: start;
+}
+.intro { margin: 0; color: var(--ink-2); }
+.stack { display: grid; gap: var(--s5); }
+.notice { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.inlineLink { display: inline-flex; align-items: center; min-block-size: var(--tap); color: var(--ink); text-underline-offset: 3px; }
+.form { display: grid; gap: var(--s5); }
+.field { display: grid; gap: var(--s1); }
+.field label { font-size: 14px; font-weight: 600; line-height: 1.4; }
+.input {
+  inline-size: 100%; min-block-size: 52px; padding: 12px var(--s3);
+  font: inherit; font-size: 16px; color: var(--ink); background: var(--surface);
+  border: 1.5px solid var(--line-strong); border-radius: var(--r-control);
+}
+.input[dir='ltr'] { text-align: end; }
+.input[aria-invalid='true'] { border-color: var(--danger); }
+.hint { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.error { margin: 0; font-size: 14px; font-weight: 600; color: var(--danger); }
+.submit {
+  min-block-size: 52px; border: 0; border-radius: var(--r-control); background: var(--accent); color: #fff;
+  font: inherit; font-size: 17px; font-weight: 600; cursor: pointer;
+}
+.submit:disabled { opacity: 0.7; cursor: progress; }
+.miss { margin: 0; padding: var(--s3); border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 15px; }
+.result { background: var(--surface); border-radius: var(--r-card); padding: var(--s4); box-shadow: var(--shadow-1); display: grid; gap: var(--s3); }
+.result h2 { font-size: 17px; line-height: 1.4; }
+.result dl { margin: 0; display: grid; gap: var(--s2); }
+.result dt { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.result dd { margin: 0; }
+.download {
+  min-block-size: 48px; display: flex; align-items: center; justify-content: center; padding-inline: var(--s4);
+  border-radius: var(--r-control); border: 1.5px solid var(--ink); background: var(--surface); color: var(--ink);
+  font-size: 16px; font-weight: 600; text-decoration: none; text-align: center;
+}
