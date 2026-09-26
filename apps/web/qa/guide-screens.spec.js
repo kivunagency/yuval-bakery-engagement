@@ -105,9 +105,11 @@ test('guide screenshots', async ({ page, request }) => {
   await page.getByRole('button', { name: 'אישור' }).click();
   await page.waitForURL('**/admin/orders');
 
-  // 2. products (not built yet)
+  // 2. products: the list, then the new-product form
   await page.goto('/admin/catalog');
   await shot(page, '03-products');
+  await page.goto('/admin/catalog/new');
+  await shot(page, '03b-product-new');
 
   // 3. capacity of one day, 4. weekly pattern
   await page.goto(`/admin/capacity?day=${setup.day}`);

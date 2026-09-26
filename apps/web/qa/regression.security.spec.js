@@ -47,7 +47,20 @@ const AUTHENTICATED_EXECUTE_ALLOWLIST = {
   fn_mark_order_paid: ['admin', 'api-004 mark paid'],
   fn_mark_order_fulfilled: ['admin', 'api-004 mark fulfilled'],
   fn_find_guest_records_by_phone: ['admin', 'privacy: a data-subject request by phone'],
-  fn_record_order_confirmation_delivered: ['admin', 'US-0c confirmation delivery (admin or service role)'],
+  fn_record_order_confirmation_delivered: ['admin_or_service', 'US-0c: email channel only with the service key, whatsapp_manual only by an aal2 admin'],
+  fn_admin_create_product: ['admin', 'client-006 products'],
+  fn_admin_update_product: ['admin', 'client-006 products'],
+  fn_admin_delete_product: ['admin', 'client-006 products (soft delete)'],
+  fn_admin_add_product_photo: ['admin', 'client-006 product photos (SEC-011)'],
+  fn_admin_update_product_photo: ['admin', 'client-006 product photos (alt text, order)'],
+  fn_admin_delete_product_photo: ['admin', 'client-006 product photos'],
+  fn_admin_set_business_details: ['admin', 'settings-business (s.14C fields)'],
+  fn_admin_set_payment_links: ['admin', 'settings-payment (SEC-009, fresh TOTP step checked in the app, audited)'],
+  fn_admin_set_time_slots: ['admin', 'settings-slots'],
+  fn_admin_set_order_rules: ['admin', 'settings-slots (expiry windows, limited threshold)'],
+  fn_ops_registry_token_minted: ['admin', 'ops-registry-001 audit of an agent token, as the minting admin'],
+  fn_ops_registry_call_begin: ['admin', 'ops-registry-001 audit of an agent call, as the delegating admin'],
+  fn_ops_registry_call_finish: ['admin', 'ops-registry-001 audit of an agent call, as the delegating admin'],
   // the customer's own account (api-010)
   fn_register_customer: ['self', 'api-010 profile row of the signed-in user'],
   fn_update_my_profile: ['self', 'api-010 own profile'],
@@ -56,7 +69,6 @@ const AUTHENTICATED_EXECUTE_ALLOWLIST = {
   // the same public reads anon has
   fn_business_date: ['public', 'blindspot-002'],
   fn_earliest_delivery_date: ['public', 'blindspot-002'],
-  fn_lookup_order_by_phone_and_number: ['public', 'US-0d, rate limited in the DB'],
   fn_public_day_availability: ['public', 'api-002, states only'],
   fn_public_site_settings: ['public', 'compliance-002, whitelisted fields'],
   has_aal2: ['public', 'called by RLS policies'],
@@ -105,6 +117,7 @@ test.describe('DB privileges', () => {
       const src = r.prosrc;
       const ok =
         guard === 'admin' ? /IF NOT[\s\S]{0,80}is_admin_aal2\(\)[\s\S]{0,200}RAISE EXCEPTION/i.test(src)
+        : guard === 'admin_or_service' ? /is_admin_aal2\(\)/.test(src) && /NOT fn_is_service_role\(\)[\s\S]{0,40}RAISE EXCEPTION/i.test(src) && /NOT v_admin[\s\S]{0,40}RAISE EXCEPTION/i.test(src)
         : guard === 'member' ? /IF NOT is_admin\(\) THEN\s+RAISE EXCEPTION/i.test(src)
         : guard === 'self' ? /auth\.uid\(\)/.test(src)
         : guard === 'public' ? ANON_EXECUTE_ALLOWLIST.includes(r.proname)
