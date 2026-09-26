@@ -46,7 +46,7 @@ lib/server/          DB, auth, secrets. Every file starts with import 'server-on
 lib/shared/          no I/O: types (DB enums mirrored and tested), Zod contracts, Asia/Jerusalem time
 messages/            en.json (keys, primary) and he.json (UI text)
 supabase/migrations  the migrations that ship to Supabase (moved from output/db/)
-lib/server/jobs/     scheduled jobs (expiry sweep, daily retention), called by netlify/src/*
+lib/server/jobs/     scheduled jobs (expiry sweep, daily retention, daily capacity roll-forward), called by netlify/src/*
 netlify/src/         Netlify Scheduled Functions, thin wrappers (built output netlify/functions/ is gitignored)
 qa/                  Playwright regression + smoke
 qa/                  Playwright regression + smoke (regression.<domain>.spec.js per domain)

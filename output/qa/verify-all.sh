@@ -71,6 +71,7 @@ record "qa-006 screen reader listening (NVDA / VoiceOver)" "DID NOT RUN (needs a
 record "compliance-005 IS 5568 NEEDS-HUMAN items (9, output/qa/is5568-report.md)" "DID NOT RUN (a person decides them; the automated IS 5568 checks run in the regression specs)"
 record "compliance-005 IS 5568 on DEV before PROD" "DID NOT RUN (no DEV yet; run regression.is5568 with SKIP_WEBSERVER against it)"
 record "job-001 scheduled on Netlify" "DID NOT RUN (no Netlify site yet, infra-002)"
+record "job-001 + capacity-rollforward scheduled on Netlify" "DID NOT RUN (no Netlify site yet, infra-002)"
 record "api-010 hosted Auth mail (custom SMTP + template)" "DID NOT RUN (Yuval's Supabase + Resend accounts, infra)"
 record "job-002 real email via Resend" "DID NOT RUN (no Resend account yet, Yuval's; capture adapter used)"
 record "US-0c CONFIRMATION_LINK_SECRET in Netlify env" "DID NOT RUN (no Netlify site yet; Yuval sets it, DEV and PROD)"
