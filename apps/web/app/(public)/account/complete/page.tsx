@@ -8,7 +8,11 @@ import { CompleteDetailsForm } from '@/components/account/CompleteDetailsForm';
 import { TEXT_VERSIONS } from '@/lib/shared/compliance/versions';
 import styles from '@/components/account/account.module.css';
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+// qa-006/compliance-005: every page has a title of its own (WCAG 2.4.2)
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('account');
+  return { title: t('complete_title'), robots: { index: false, follow: false } };
+}
 
 // A confirmed user without a profile: the phone was already taken, or the
 // sign-up data could not be used. Same notice and fields as registration.

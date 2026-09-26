@@ -12,7 +12,11 @@ import { displayPhone } from '@/lib/shared/contact/links';
 import { signOutAction } from './actions';
 import styles from '@/components/account/account.module.css';
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+// qa-006/compliance-005: every page has a title of its own (WCAG 2.4.2)
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('account');
+  return { title: t('title'), robots: { index: false, follow: false } };
+}
 
 const ORDER_STATUSES = ['payment_pending', 'paid', 'fulfilled', 'expired', 'cancelled'] as const;
 const CONSENT_SOURCES = ['registration', 'profile', 'unsubscribe_link', 'admin_on_request', 'account_deletion'] as const;

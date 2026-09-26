@@ -6,7 +6,11 @@ import { getCustomerSession } from '@/lib/server/identity/customer-auth';
 import { SignInForm } from '@/components/account/SignInForm';
 import styles from '@/components/account/account.module.css';
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+// qa-006/compliance-005: every page has a title of its own (WCAG 2.4.2)
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('account');
+  return { title: t('login_title'), robots: { index: false, follow: false } };
+}
 
 const NOTICES = ['link_invalid', 'signed_out'] as const;
 
