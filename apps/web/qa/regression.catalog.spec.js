@@ -19,7 +19,7 @@ async function withDb(fn) {
   }
 }
 
-/** Insert a product (published unless told otherwise) and return its id. */
+/** Insert a product (published unless told otherwise; a deleted one is never published, CHECK products_deleted_not_published) and return its id. */
 async function insertProduct(db, over = {}) {
   const p = {
     id: randomUUID(),
@@ -37,7 +37,7 @@ async function insertProduct(db, over = {}) {
   await db.query(
     `INSERT INTO products (id, name, price_displayed, cost_basis, oven_minutes_cost, work_minutes_cost, ingredients,
        allergens, allergens_may_contain, allergens_confirmed, photo_alt, is_available, is_published, deleted_at)
-     VALUES ($1, $2, $3, 'per_unit', $4, $5, 'QA ingredients', $6, $7, true, 'QA alt', $8, $9, CASE WHEN $10 THEN now() END)`,
+     VALUES ($1, $2, $3, 'per_unit', $4, $5, 'QA ingredients', $6, $7, true, 'QA alt', $8, $9 AND NOT $10, CASE WHEN $10 THEN now() END)`,
     [p.id, p.name, p.price, p.oven, p.work, p.allergens, p.mayContain, p.available, p.published, p.deleted],
   );
   return p;
@@ -86,13 +86,13 @@ test.describe('api-001: GET /api/catalog', () => {
     }
   });
 
-  test('photo URL is built from storage_path (public product-photos bucket), ordered, alt falls back to photo_alt', async ({ request }) => {
+  test('photo URL is built from storage_path (public product-photos bucket), ordered, each photo with its own alt text', async ({ request }) => {
     const env = localEnv();
     const p = await withDb(async (db) => {
       const prod = await insertProduct(db);
       await db.query(
         `INSERT INTO product_photos (product_id, storage_path, alt_text, position) VALUES
-           ($1, 'qa/second.webp', 'second photo', 2), ($1, 'qa/first.webp', NULL, 1), ($1, '../escape.webp', 'bad', 3)`,
+           ($1, 'qa/second.webp', 'second photo', 2), ($1, 'qa/first.webp', 'first photo', 1), ($1, '../escape.webp', 'bad', 3)`,
         [prod.id],
       );
       return prod;
@@ -101,7 +101,7 @@ test.describe('api-001: GET /api/catalog', () => {
       const body = await (await request.get('/api/catalog')).json();
       const got = body.products.find((x) => x.id === p.id);
       expect(got.photos).toEqual([
-        { url: `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-photos/qa/first.webp`, alt: 'QA alt' },
+        { url: `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-photos/qa/first.webp`, alt: 'first photo' },
         { url: `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-photos/qa/second.webp`, alt: 'second photo' },
       ]);
     } finally {
