@@ -13,6 +13,7 @@
 # schedule lives in each function's exported config; UTC cron.
 #   expire-orders   */15 * * * *   payment_pending expiry + heartbeat (keep-alive)
 #   retention-daily 40 0 * * *     retention sweep and purges
+#   capacity-rollforward 10 22 * * *  weekly pattern into the next 60 days + heartbeat
 [functions]
   directory = "netlify/functions"
 

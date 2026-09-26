@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it } from 'vitest';
 import { runExpirySweep } from '@/lib/server/jobs/expire-orders';
 import { runRetention } from '@/lib/server/jobs/retention';
+import { runCapacityRollforward } from '@/lib/server/jobs/capacity-rollforward';
 
 // Wrapper behaviour the local-stack regression cannot force: the RPC itself
 // failing (DB unreachable, timeout). The DB paths are covered by
@@ -73,5 +74,29 @@ describe('runRetention', () => {
     expect(out.did_not_run.storage_confirmation_pdf_deletion.pdfs_due).toBe(1);
     expect(calls.map((c) => c.fn)).not.toContain('fn_mark_photos_purged');
     expect(calls.map((c) => c.fn)).not.toContain('fn_mark_confirmation_pdf_purged');
+  });
+});
+
+describe('runCapacityRollforward', () => {
+  it('materializes the pattern and records a successful run; days kept below reserved are reported, not a failure', async () => {
+    const { client, calls } = fakeClient((fn) =>
+      fn === 'fn_materialize_capacity_from_pattern' ? { data: { from: '2026-09-26', days: 60, written: 1, kept_manual: 2, kept_below_reserved: ['2026-10-01'] } } : {},
+    );
+    expect(await runCapacityRollforward(client)).toEqual({
+      job: 'capacity_rollforward', ok: true, from: '2026-09-26', days: 60, written: 1, kept_manual: 2, kept_below_reserved: ['2026-10-01'],
+      error: null, heartbeat: 'written_by_wrapper',
+    });
+    expect(calls).toEqual([
+      { fn: 'fn_materialize_capacity_from_pattern', args: {} },
+      { fn: 'fn_record_cron_run', args: { p_job_name: 'capacity_rollforward', p_ok: true, p_error: null } },
+    ]);
+  });
+
+  it('a failed call is recorded with its error; unreachable DB says the heartbeat was not written', async () => {
+    const { client, calls } = fakeClient((fn) => (fn === 'fn_materialize_capacity_from_pattern' ? { error: { message: 'retention_setting_missing: capacity_pattern_horizon_days' } } : {}));
+    expect(await runCapacityRollforward(client)).toMatchObject({ ok: false, written: 0, heartbeat: 'written_by_wrapper', error: 'retention_setting_missing: capacity_pattern_horizon_days' });
+    expect(calls[1]).toEqual({ fn: 'fn_record_cron_run', args: { p_job_name: 'capacity_rollforward', p_ok: false, p_error: 'retention_setting_missing: capacity_pattern_horizon_days' } });
+    const down = fakeClient(() => 'throw');
+    expect(await runCapacityRollforward(down.client)).toMatchObject({ ok: false, heartbeat: 'not_written', error: 'fetch failed' });
   });
 });
