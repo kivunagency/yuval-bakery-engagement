@@ -71,6 +71,7 @@ record "job-001 scheduled on Netlify" "DID NOT RUN (no Netlify site yet, infra-0
 record "api-010 hosted Auth mail (custom SMTP + template)" "DID NOT RUN (Yuval's Supabase + Resend accounts, infra)"
 record "job-002 real email via Resend" "DID NOT RUN (no Resend account yet, Yuval's; capture adapter used)"
 record "job-002 real web push to a device" "DID NOT RUN (stand-in push service on 127.0.0.1 only)"
+record "ops registry live probe + real MCP client" "DID NOT RUN (nothing deployed; SECURITY.md Pre-OPERATE gate)"
 
 echo; echo "================ verify-all ================"
 fail=0

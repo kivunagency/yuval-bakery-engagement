@@ -119,3 +119,29 @@ creates the account (infra-003).
 | Delivery/pickup time slots | table `time_slots` (start, end, Asia/Jerusalem) | None ship in the migration (Yuval's hours are open); `seed.sql` has synthetic ones. The first active start is copied into `app_settings.earliest_slot_time` by a trigger: do not edit that key by hand. |
 | Bit / PayBox links | `app_settings` `payment_link_bit`, `payment_link_paybox` | JSON null until set; shown only if https on the host allowlist in `lib/shared/payment/links.ts` (UNVERIFIED hosts). Read through `fn_payment_link_settings()` (service role). |
 | Order creation | `POST /api/orders` -> `fn_create_standard_order` (service role only) | The client never sends an amount; the DB prices, reserves and checks the slot lead time. |
+
+## Operations registry (ops-registry-001, Rule 27)
+
+The five business operations of ADR-001 over MCP Streamable HTTP, for an
+agent acting for Yuval: `markOrderPaid`, `approveCustomCakeRequest`,
+`declineCustomCakeRequest`, `generateDeliveryList` (counts per city only),
+`updateDayCapacity`. Code: `lib/server/agent-ops/` (copied from the
+`agent-ops-registry/` template), routes `app/api/ops/mcp` and
+`app/api/admin/ops-registry/tokens`. How agents authenticate and what each
+role may do, with the evidence per gate: `lib/server/agent-ops/SECURITY.md`.
+
+| Env (Netlify, per context; never committed) | Meaning |
+|---|---|
+| `OPS_REGISTRY_ENABLED` | exactly `true` switches the registry on. Anything else, or unset (the default everywhere, production included): both routes answer 404 |
+| `OPS_REGISTRY_TOKEN_SECRET` | 32+ random characters, required when on (503 without it). Rotating it ends every agent token at once. Treat it like the service role key |
+
+Local use: set both in `.env.local`, `npm run build && npm start`, sign in to
+`/admin` (password + TOTP), then from that browser tab:
+
+```js
+await (await fetch('/api/admin/ops-registry/tokens', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"role":"verifier"}' })).json()
+```
+
+and give the agent the MCP URL (`<SITE_URL>/api/ops/mcp`) with the header
+`Authorization: Bearer <token>`. The token lives at most one hour. With
+`APP_ENV=prod` only `verifier` can be minted and no write operation runs.
