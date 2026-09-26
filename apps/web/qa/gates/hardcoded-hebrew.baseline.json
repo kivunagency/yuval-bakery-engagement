@@ -1,0 +1,15 @@
+{
+  "_comment": "Rule 1, English-first i18n ratchet. Counts may go DOWN, never up. Regenerate only when lowering.",
+  "rule": "Rule 1, English-first i18n",
+  "summary": {
+    "files": 218,
+    "filesWithHebrew": 1,
+    "hebrewLines": 1,
+    "filesWithHebrewOnlyInComments": 9
+  },
+  "items": {
+    "tests/i18n.test.ts": {
+      "hebrewLines": 1
+    }
+  }
+}

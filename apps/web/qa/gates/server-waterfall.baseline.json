@@ -1,0 +1,64 @@
+{
+  "_comment": "Rule 31, the server building its own waterfall ratchet. Counts may go DOWN, never up. Regenerate only when lowering.",
+  "rule": "Rule 31, the server building its own waterfall",
+  "summary": {
+    "server_files_scanned": 36,
+    "files_with_a_waterfall": 13,
+    "chains": 13,
+    "awaits_in_chains": 33
+  },
+  "items": {
+    "app/(admin)/admin/capacity/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 2
+    },
+    "app/(admin)/admin/custom-cakes/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 2
+    },
+    "app/(admin)/admin/delivery/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 2
+    },
+    "app/(admin)/admin/orders/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 3
+    },
+    "app/(admin)/admin/settings/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 3
+    },
+    "app/(public)/account/complete/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 3
+    },
+    "app/(public)/account/login/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 3
+    },
+    "app/(public)/account/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 4
+    },
+    "app/(public)/account/welcome/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 3
+    },
+    "app/(public)/register/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 2
+    },
+    "app/(public)/unsubscribe/done/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 2
+    },
+    "app/(public)/unsubscribe/page.tsx": {
+      "chains": 1,
+      "serial_awaits": 2
+    },
+    "app/layout.tsx": {
+      "chains": 1,
+      "serial_awaits": 2
+    }
+  }
+}

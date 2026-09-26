@@ -1,0 +1,51 @@
+{
+  "_comment": "Rule 20, catch blocks that swallow ratchet. Counts may go DOWN, never up. Regenerate only when lowering.",
+  "rule": "Rule 20, catch blocks that swallow",
+  "summary": {
+    "files_scanned": 257,
+    "files_with_a_swallow": 12,
+    "empty": 0,
+    "comment_only": 4,
+    "returns_falsy": 9,
+    "total": 13
+  },
+  "items": {
+    "app/api/admin/push-subscriptions/route.ts": {
+      "returns_falsy": 1
+    },
+    "components/checkout/CheckoutForm.tsx": {
+      "comment_only": 1
+    },
+    "lib/server/auth/admin-login.ts": {
+      "comment_only": 1
+    },
+    "lib/server/auth/admin.ts": {
+      "returns_falsy": 1
+    },
+    "lib/server/custom-cake/queue.ts": {
+      "comment_only": 1
+    },
+    "lib/server/http/origin.ts": {
+      "returns_falsy": 1
+    },
+    "lib/server/identity/customer-auth.ts": {
+      "comment_only": 1,
+      "returns_falsy": 1
+    },
+    "lib/server/jobs/heartbeat.ts": {
+      "returns_falsy": 1
+    },
+    "lib/server/ordering/admin-order-route.ts": {
+      "returns_falsy": 1
+    },
+    "lib/shared/contracts/push.ts": {
+      "returns_falsy": 1
+    },
+    "lib/shared/payment/links.ts": {
+      "returns_falsy": 1
+    },
+    "qa/regression.custom-cake.spec.js": {
+      "returns_falsy": 1
+    }
+  }
+}
