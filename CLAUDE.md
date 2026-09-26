@@ -18,6 +18,7 @@ Sessions may run in the cloud, where the Kivun agency agents, skills and laws un
 - DB migrations: `apps/web/supabase/migrations/` (moved from `output/db/` at scaffold, numbering kept). New migration = next free timestamp; check open PRs for a collision before opening yours. `output/db/tests/run.sh` applies every migration to a throwaway postgres:17 (Docker, or a local PostgreSQL 17 when Docker Hub is unreachable, as in cloud sessions) and asserts the privilege test.
 - Local dev and E2E: `cd apps/web && npm run stack:up` (PostgreSQL 17 + Supabase Auth + PostgREST, no Docker). See `apps/web/README.md`.
 - One command for every check: `bash output/qa/verify-all.sh`.
+- Managed QA user (Rule 22, qa-005): username `qa-admin@example.test` on the local stack (`npm run qa:user`), file `apps/web/.qa.env` (gitignored; template `.qa.env.example`). DEV/PROD QA users are created in Yuval's project and live in that environment's `.qa.env`. Memory and docs hold the username and the path, never the password or the TOTP secret.
 - Business operations registry (Rule 27): `agent-ops-registry/` is the template, GO per ADR-001, off in production by default (threat model).
 
 ## Branches (Rule 6, Rule 23)

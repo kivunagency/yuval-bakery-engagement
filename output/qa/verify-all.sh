@@ -42,6 +42,7 @@ if [ -n "${SMOKE_BASE_URL:-}" ]; then
 else
   record "smoke.spec.js (live url)" "DID NOT RUN (SMOKE_BASE_URL not set, nothing deployed yet)"
 fi
+record "qa-005 QA user on DEV/PROD (.qa.env of that env)" "DID NOT RUN (no DEV yet; the user is created in Yuval's project)"
 record "job-001 scheduled on Netlify" "DID NOT RUN (no Netlify site yet, infra-002)"
 record "api-010 hosted Auth mail (custom SMTP + template)" "DID NOT RUN (Yuval's Supabase + Resend accounts, infra)"
 record "job-002 real email via Resend" "DID NOT RUN (no Resend account yet, Yuval's; capture adapter used)"
