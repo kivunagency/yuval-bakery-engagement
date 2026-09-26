@@ -54,6 +54,7 @@ export const DB_ERROR_CODES = [
   'notification_invalid_argument',
   'order_cannot_be_fulfilled_without_confirmation',
   'order_items_invalid',
+  'ops_registry_invalid_argument',
   'order_number_generation_exhausted',
   'privacy_notice_version_mismatch',
   'product_unavailable',
