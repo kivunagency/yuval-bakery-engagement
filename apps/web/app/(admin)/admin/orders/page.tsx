@@ -8,7 +8,7 @@ import { waMeHref } from '@/lib/shared/contact/links';
 import { BUSINESS_TZ, jerusalemDate } from '@/lib/shared/time/jerusalem';
 import { ORDER_STATUSES } from '@/lib/shared/types';
 import { shortDate } from '@/components/day-state/format';
-import { formatPrice } from '@/components/price/Price';
+import { formatIls } from '@/lib/shared/price/vat';
 import { OrderCard, type OrderCardLabels } from '@/components/admin/orders/OrderCard';
 import { ReleaseUnpaid } from '@/components/admin/orders/ReleaseUnpaid';
 
@@ -49,7 +49,7 @@ export default async function AdminOrdersPage({
   const labelsFor = (o: (typeof view.orders)[number]): OrderCardLabels => {
     const whenIso = o.status === 'expired' ? o.expiredAt : o.status === 'payment_pending' ? o.expiresAt : null;
     // SEC-024: fixed template from the server, no customer free text (not even the name), URL-encoded by waMeHref.
-    const text = t(`whatsapp_text.${o.status}`, { number: o.orderNumber, date: shortDate(o.deliveryDate), total: formatPrice(o.total) });
+    const text = t(`whatsapp_text.${o.status}`, { number: o.orderNumber, date: shortDate(o.deliveryDate), total: formatIls(o.total) });
     return {
       weekday: weekdayOf(o.deliveryDate),
       date: shortDate(o.deliveryDate),

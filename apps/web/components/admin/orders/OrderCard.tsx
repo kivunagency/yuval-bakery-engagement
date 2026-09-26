@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { Price } from '@/components/price/Price';
+import { PriceAmount } from '@/components/price';
 import { displayPhone } from '@/lib/shared/contact/links';
 import type { AdminOrderView } from '@/lib/shared/contracts/admin-orders';
 import { OrderActions } from './OrderActions';
@@ -74,7 +74,7 @@ export function OrderCard({ order, labels, listQuery }: { order: AdminOrderView;
 
       <p className="admin-order-total">
         <span>{t('total')}</span>
-        <Price amount={order.total} className="admin-order-amount" />
+        <PriceAmount amount={order.total} className="admin-order-amount" />
       </p>
 
       {labels.expiry && order.status === 'payment_pending' ? (

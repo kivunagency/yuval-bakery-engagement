@@ -7,7 +7,7 @@ import { PreferencesForm } from '@/components/account/PreferencesForm';
 import { ProfileForm } from '@/components/account/ProfileForm';
 import { monthNames } from '@/components/account/month-names';
 import { ContactBlock } from '@/components/contact-block';
-import { Price } from '@/components/price/Price';
+import { PriceAmount } from '@/components/price';
 import { displayPhone } from '@/lib/shared/contact/links';
 import { signOutAction } from './actions';
 import styles from '@/components/account/account.module.css';
@@ -144,7 +144,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                   {t('order_number')} <span className="ltr num">{o.order_number}</span>, {date(o.delivery_date)}
                 </span>
                 <span>
-                  {statusLabel(o.status)}, <Price amount={o.total_displayed} />
+                  {statusLabel(o.status)}, <PriceAmount amount={o.total_displayed} />
                 </span>
               </li>
             ))}

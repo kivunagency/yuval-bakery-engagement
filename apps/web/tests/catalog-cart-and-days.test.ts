@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addToCart, cartCount, EMPTY_CART, MAX_LINE_QUANTITY, moveCartToDay, parseCart } from '@/lib/shared/cart';
 import { isolatedDate, shortDate, weekdayKey } from '@/components/day-state/format';
-import { formatPrice } from '@/components/price/Price';
+import { formatIls } from '@/lib/shared/price/vat';
 
 describe('cart (client-side, one day per order)', () => {
   it('adds lines, counts units, caps a line quantity', () => {
@@ -39,8 +39,8 @@ describe('day and price formatting', () => {
     expect(isolatedDate('2026-09-28')).toBe('⁦28.9⁩');
   });
   it('price: whole shekels without decimals, otherwise two, then the shekel sign', () => {
-    expect(formatPrice(120)).toBe('120 ₪');
-    expect(formatPrice(145.5)).toBe('145.50 ₪');
-    expect(formatPrice(1200)).toBe('1,200 ₪');
+    expect(formatIls(120)).toBe('120 ₪');
+    expect(formatIls(145.5)).toBe('145.50 ₪');
+    expect(formatIls(1200)).toBe('1,200 ₪');
   });
 });

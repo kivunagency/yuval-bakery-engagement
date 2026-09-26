@@ -24,7 +24,7 @@ import { DayStrip } from '@/components/day-state/DayStrip';
 import { isSelectableDay } from '@/components/day-state/DayState';
 import { BusinessDetails, CancellationExemptionNotice, NotesFieldHint, PrivacyNoticeAtCollection } from '@/components/compliance';
 import { PriceWithVat } from '@/components/price';
-import { formatPrice } from '@/components/price/Price';
+import { formatIls } from '@/lib/shared/price/vat';
 import styles from '@/components/checkout/checkout.module.css';
 
 // The checkout screen (client-003). Everything it shows arrives from the
@@ -328,7 +328,7 @@ export function CheckoutForm({ products, days: initialDays, range, zones, slots,
                 {zone ? (
                   <>
                     <span>{zone.name}</span>
-                    <span className="num">{t('zone_fee', { fee: formatPrice(zone.fee) })}</span>
+                    <span className="num">{t('zone_fee', { fee: formatIls(zone.fee) })}</span>
                   </>
                 ) : null}
               </div>
@@ -402,12 +402,12 @@ export function CheckoutForm({ products, days: initialDays, range, zones, slots,
           {quote.lines.map((l) => (
             <div className={styles.sumRow} key={l.productId}>
               <span>{t('line', { name: isolate(l.name), quantity: l.quantity })}</span>
-              <span className="num">{formatPrice(l.lineTotal)}</span>
+              <span className="num">{formatIls(l.lineTotal)}</span>
             </div>
           ))}
           <div className={styles.sumRow}>
             <span>{fulfillment === 'pickup' ? t('pickup_line') : zone ? t('delivery_line', { city: isolate(city) }) : t('delivery')}</span>
-            <span className="num" data-testid="summary-fee">{formatPrice(quote.deliveryFee)}</span>
+            <span className="num" data-testid="summary-fee">{formatIls(quote.deliveryFee)}</span>
           </div>
           <div className={styles.sumTotal}>
             <b>{t('total')}</b>

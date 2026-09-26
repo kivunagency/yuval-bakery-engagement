@@ -11,6 +11,7 @@ import { DayStrip } from '@/components/day-state/DayStrip';
 import { isSelectableDay } from '@/components/day-state/DayState';
 import { isolatedDate, weekdayKey } from '@/components/day-state/format';
 import { ProductCard, type BlockedReason } from '@/components/catalog/ProductCard';
+import { VatLabel } from '@/components/price';
 import styles from '@/components/catalog/catalog.module.css';
 
 // The catalog screen (client-001). Everything it shows arrives as props from
@@ -113,7 +114,9 @@ export function CatalogScreen({ businessName, catalog, availability, initialDay 
           <h2 id="products-heading" className="visually-hidden">
             {t('products_heading')}
           </h2>
-          <p className={styles.priceNote}>{catalog.vatStatus === 'licensed' ? t('price_incl_vat') : t('price_final')}</p>
+          <p className={styles.priceNote} data-testid="catalog-vat-note">
+            <VatLabel vatStatus={catalog.vatStatus} variant="note" />
+          </p>
           {products.length === 0 ? <p className={styles.empty}>{t('empty')}</p> : null}
           <div className={styles.cat}>
             {products.slice(0, customAt).map((p, i) => (

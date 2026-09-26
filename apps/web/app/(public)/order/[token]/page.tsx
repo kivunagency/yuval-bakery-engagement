@@ -7,7 +7,7 @@ import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
 import { BusinessDetails, CancellationExemptionNotice } from '@/components/compliance';
 import { ContactBlock } from '@/components/contact-block';
 import { PriceWithVat } from '@/components/price';
-import { formatPrice } from '@/components/price/Price';
+import { formatIls } from '@/lib/shared/price/vat';
 import { isolatedDate, weekdayKey } from '@/components/day-state/format';
 import { CopyOrderNumber } from '@/components/order/CopyOrderNumber';
 import { jerusalemDate, jerusalemHhmm } from '@/lib/shared/time/jerusalem';
@@ -55,7 +55,7 @@ export default async function OrderPage({ params }: { params: Promise<{ token: s
         ? t('hold_today', { time: jerusalemHhmm(expires) })
         : t('hold_other_day', { time: jerusalemHhmm(expires), day: dayLabel(expiresDay) })
       : null;
-  const amount = formatPrice(order.total);
+  const amount = formatIls(order.total);
   const code = <span className="ltr">{order.orderNumber}</span>;
 
   const payButton = (method: 'bit' | 'paybox', href: string | null) =>
@@ -156,13 +156,13 @@ export default async function OrderPage({ params }: { params: Promise<{ token: s
         {order.items.map((i, n) => (
           <div className={styles.row} key={n}>
             <span>{t('line', { name: isolate(i.name), quantity: i.quantity })}</span>
-            <span className="num">{formatPrice(i.lineTotal)}</span>
+            <span className="num">{formatIls(i.lineTotal)}</span>
           </div>
         ))}
         {order.fulfillment === 'delivery' ? (
           <div className={styles.row}>
             <span>{t('delivery_fee')}</span>
-            <span className="num">{formatPrice(order.deliveryFee)}</span>
+            <span className="num">{formatIls(order.deliveryFee)}</span>
           </div>
         ) : null}
         <div className={`${styles.row} ${styles.totalRow}`}>

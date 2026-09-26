@@ -1,1 +1,1 @@
-export { PriceWithVat, VatLabel } from './PriceWithVat';
+export { PriceAmount, PriceWithVat, VatLabel } from './PriceWithVat';

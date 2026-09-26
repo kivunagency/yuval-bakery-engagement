@@ -27,7 +27,9 @@
     },
     "price": {
       "final_price": "מחיר סופי",
-      "incl_vat": "כולל מע״מ"
+      "incl_vat": "כולל מע״מ",
+      "all_final": "המחירים סופיים",
+      "all_incl_vat": "המחירים כוללים מע״מ"
     },
     "all_details_link": "כל פרטי העסק",
     "legal_draft_notice": "נוסח טיוטה, ממתין לבדיקה משפטית. פרטים בסוגריים מרובעים עוד לא הוגדרו.",
@@ -355,8 +357,6 @@
     },
     "ingredients_label": "רכיבים",
     "details_summary": "רכיבים ופרטים",
-    "price_incl_vat": "המחירים כוללים מע״מ",
-    "price_final": "המחירים סופיים",
     "photo_placeholder": "תמונה תגיע בקרוב",
     "cart_label": "סל, {count, plural, =0 {ריק} one {פריט אחד} other {# פריטים}}",
     "added": "{name} נוסף לסל",

@@ -27,7 +27,9 @@
     },
     "price": {
       "final_price": "final price",
-      "incl_vat": "incl. VAT"
+      "incl_vat": "incl. VAT",
+      "all_final": "Prices are final",
+      "all_incl_vat": "Prices include VAT"
     },
     "all_details_link": "All business details",
     "legal_draft_notice": "Draft text, pending legal review. Details in square brackets are not set yet.",
@@ -355,8 +357,6 @@
     },
     "ingredients_label": "Ingredients",
     "details_summary": "Ingredients and details",
-    "price_incl_vat": "Prices include VAT",
-    "price_final": "Prices are final",
     "photo_placeholder": "Photo coming soon",
     "cart_label": "Cart, {count, plural, =0 {empty} one {1 item} other {# items}}",
     "added": "{name} added to the cart",

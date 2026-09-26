@@ -8,7 +8,7 @@ import { readNotificationConfig } from '@/lib/server/notification/config';
 import { isAllowedPushEndpoint, pushSubscriptionBody } from '@/lib/shared/contracts/push';
 import { safeCustomerName, escapeHtml } from '@/lib/server/notification/templates';
 import type { PushPayload } from '@/lib/shared/contracts/push';
-import { formatPrice } from '@/components/price/Price';
+import { formatIls } from '@/lib/shared/price/vat';
 import he from '@/messages/he.json';
 
 const ORDER_ID = '11111111-1111-4111-8111-111111111111';
@@ -195,7 +195,7 @@ describe('custom cake events', () => {
     const m = f.emails[0]!;
     expect(m.to).toBe('noa@example.test');
     expect(m.subject).toContain('C9X4T');
-    expect(m.text).toContain(formatPrice(350));
+    expect(m.text).toContain(formatIls(350));
     expect(m.text).toContain('15.10, 16:00'); // 13:00Z is 16:00 in Jerusalem (IDT)
     expect(m.text + m.html).not.toContain('Noa');
   });

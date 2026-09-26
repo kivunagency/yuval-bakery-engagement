@@ -1,7 +1,7 @@
 import 'server-only';
 import { createTranslator } from 'next-intl';
 import he from '@/messages/he.json';
-import { formatPrice } from '@/components/price/Price';
+import { formatIls } from '@/lib/shared/price/vat';
 import { isolatedDate } from '@/components/day-state/format';
 import type { EmailMessage } from '@/lib/server/notification/email/provider';
 import type { PushPayload } from '@/lib/shared/contracts/push';
@@ -128,7 +128,7 @@ export function newOrderEmail(o: OrderFacts, links: Links): Omit<EmailMessage, '
     orderNumber: o.order_number,
     date: isolatedDate(o.delivery_date),
     fulfillment: t(o.fulfillment_type === 'delivery' ? 'common.fulfillment.delivery' : 'common.fulfillment.pickup'),
-    total: formatPrice(Number(o.total_displayed)),
+    total: formatIls(Number(o.total_displayed)),
   };
   return layout(
     t('new_order.subject', { orderNumber: o.order_number }),
@@ -165,7 +165,7 @@ export function customCakeApprovedEmail(r: CustomCakeFacts, b: BusinessFacts): O
   const blocks: Block[] = [
     msg('custom_cake_approved.body', {
       date: isolatedDate(r.desired_date),
-      price: r.price_displayed === null ? '' : formatPrice(Number(r.price_displayed)),
+      price: r.price_displayed === null ? '' : formatIls(Number(r.price_displayed)),
       orderNumber,
     }),
   ];

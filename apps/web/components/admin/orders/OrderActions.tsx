@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { formatPrice } from '@/components/price/Price';
+import { formatIls } from '@/lib/shared/price/vat';
 import type { AdminOrderAction, AdminOrdersApiErrorBody } from '@/lib/shared/contracts/admin-orders';
 import type { OrderStatus } from '@/lib/shared/types';
 
@@ -81,7 +81,7 @@ export function OrderActions({
           <p className="admin-expected">
             <span>{t('expected_amount')}</span>
             <span className="admin-expected-amount num" data-testid="expected-amount">
-              {formatPrice(total)}
+              {formatIls(total)}
             </span>
           </p>
           <p className="admin-hint">{t.rich('mark_paid_check', { number: orderNumber, ltr })}</p>
