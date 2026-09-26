@@ -225,6 +225,8 @@ never reported as passed.
 
 ## 4. Change log
 
+- 2026-09-26 docs-001: `docs/guide-yuval/README.md`, a short Hebrew guide for Yuval (login with the code, products (screen not built: send to Ran), day capacity, weekly pattern, orders and WhatsApp, custom cakes, delivery list), with 12 screenshots from the local stack taken by `apps/web/qa/guide-screens.spec.js` (Playwright project `docs`, run by hand, synthetic data, never part of the regression run). No app behaviour change. The product section must be rewritten when client-006 ships the admin catalog.
+
 - 2026-09-26 client-009: admin orders screen `/admin/orders` (status and day filters, order cards with actions, WhatsApp click-to-send, unpaid holds per day with release, expired late-payment note). Migration `20260926060000_admin_orders_release_unpaid_day.sql`: `fn_admin_release_unpaid_for_day` (new, aal2, `authenticated` only) and route `POST /api/admin/orders/release-unpaid` with its handler `releaseUnpaidForDay`. It changes no existing function; it calls `fn_release_order_capacity` once per order.
 - 2026-09-26 api-004: `POST /api/admin/orders/[id]/mark-paid`, `/cancel`, `/mark-fulfilled` with Zod contract, same-Origin check and the Rule 27 handlers `markOrderPaid`, `cancelOrder`, `markOrderFulfilled` (`lib/server/ordering/admin-orders.ts`). No schema change: the three DB functions are unchanged. Recording the confirmation delivery (`fn_record_order_confirmation_delivered`, US-0c) is not exposed yet (wave 3).
 - 2026-09-26 client-011: `/admin/delivery?day=` printable delivery list (print CSS, PDF through the browser print dialog), link from the capacity day, calendar tab covers `/admin/delivery`. No schema change. No link for the courier to open (phase2-005).
