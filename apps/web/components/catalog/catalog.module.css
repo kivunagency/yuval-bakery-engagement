@@ -106,7 +106,8 @@
 .custom h3 { font-size: 16px; font-weight: 600; }
 .custom p { margin: 2px 0 6px; font-size: 14px; color: var(--ink-2); line-height: 1.4; }
 .custom a {
-  font-size: 15px; font-weight: 600; color: var(--accent);
+  /* accent as TEXT: --accent is 3.0:1 on the dark surface (qa-006, axe color-contrast); the soft ink is AA in both schemes */
+  font-size: 15px; font-weight: 600; color: var(--accent-soft-ink);
   text-decoration: underline; text-underline-offset: 3px;
   min-block-size: 44px; display: inline-flex; align-items: center;
 }
