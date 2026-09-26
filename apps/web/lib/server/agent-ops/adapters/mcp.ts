@@ -14,7 +14,7 @@ import type { Result } from '../result';
  * between requests, which is what Netlify's serverless functions need.
  *
  * Deviation from the template, on purpose: the template's tool callback
- * called op.handler() directly, a second path next to runOne. Here every
+ * called the operation's handler directly, a second path next to runOne. Here every
  * tools/call goes through runOne(), so it is audited, rate limited, RBAC
  * checked, validated and confirmation checked like any other call.
  *

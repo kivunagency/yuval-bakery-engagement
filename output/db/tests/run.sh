@@ -64,5 +64,13 @@ expect "T12b zone creation is audited" 1 "T12b_zone_audited=1"
 expect "T14 admin with aal2 gets the delivery list" 1 "T14_admin_delivery_list=0"
 expect "T14b anon cannot call fn_admin_delivery_list" 1 "permission denied for function fn_admin_delivery_list"
 expect "T14c each generation is audited, the refused ones are not" 1 "T14c_list_audited=1"
+expect "T15 registry audit refuses an aal1 admin and a customer" 2 "refused=admin_aal2_required"
+expect "T16 per-token rate limit: 2 calls, then limited" 1 "T16_calls=[0-9]*,[0-9]*,limited"
+expect "T16b a call id that is not this token's cannot be closed" 1 "T16b_foreign_call_refused=ops_registry_invalid_argument"
+expect "T16c an agent token over one hour is not recorded" 1 "T16c_long_token_refused=ops_registry_invalid_argument"
+expect "T16d the app role cannot update audit_log" 1 "permission denied for table audit_log"
+expect "T16e not even the owner can delete a registry audit row" 1 "ERROR:  append_only_table: DELETE on audit_log"
+expect "T17 anon cannot call fn_ops_registry_call_begin" 1 "permission denied for function fn_ops_registry_call_begin"
+expect "T17b two calls and one refusal recorded for the delegating admin" 1 "T17b_agent_rows=2/1"
 [ $fail = 0 ] && echo PASSED || echo FAILED
 exit $fail

@@ -11,6 +11,8 @@ You define your business operations once. You get, for free:
 * **progressive disclosure**, so `tools/list` stays tiny no matter how many operations exist
 * optionally, **composite tools** that collapse a multi-step business process into one agent call
 
+In this project it is installed at `apps/web/lib/server/agent-ops/` (ops-registry-001), with this system's filled-in gate in `apps/web/lib/server/agent-ops/SECURITY.md`. This folder stays the untouched template.
+
 Status: internal template. Derived from a security-gated external reference implementation. See `ATTRIBUTION.md`.
 
 ---
