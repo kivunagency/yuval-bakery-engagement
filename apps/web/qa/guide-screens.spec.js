@@ -105,19 +105,29 @@ test('guide screenshots', async ({ page, request }) => {
   await page.getByRole('button', { name: 'אישור' }).click();
   await page.waitForURL('**/admin/orders');
 
-  // 2. products: the list, then the new-product form
+  // 2. first-time settings: the hub, business details, payment links, hours and rules
+  await page.goto('/admin/settings');
+  await shot(page, '02a-settings');
+  await page.goto('/admin/settings/business');
+  await shot(page, '02b-settings-business');
+  await page.goto('/admin/settings/payment');
+  await shot(page, '02c-settings-payment');
+  await page.goto('/admin/settings/hours');
+  await shot(page, '02d-settings-hours');
+
+  // 3. products: the list, then the new-product form
   await page.goto('/admin/catalog');
   await shot(page, '03-products');
   await page.goto('/admin/catalog/new');
   await shot(page, '03b-product-new');
 
-  // 3. capacity of one day, 4. weekly pattern
+  // 4. capacity of one day, 5. weekly pattern
   await page.goto(`/admin/capacity?day=${setup.day}`);
   await shot(page, '04-day');
   await top(page, page.getByRole('heading', { name: 'דפוס שבועי' }), 20);
   await shot(page, '05-weekly-pattern');
 
-  // 5. orders: the list, mark paid, WhatsApp
+  // 6. orders: the list, mark paid, WhatsApp
   await page.goto('/admin/orders');
   const card = page.locator('article, li').filter({ hasText: delivery.order_number }).first();
   await top(page, card, 20);
@@ -131,7 +141,7 @@ test('guide screenshots', async ({ page, request }) => {
   await top(page, done, 120);
   await shot(page, '08-paid');
 
-  // 6. custom cake request: price and minutes, approve, WhatsApp
+  // 7. custom cake request: price and minutes, approve, WhatsApp
   await page.goto('/admin/custom-cakes');
   const cakeCard = page.locator('article').filter({ hasText: 'מיכל אברהם' }).first();
   await shot(page, '09-cake-request');
@@ -146,7 +156,7 @@ test('guide screenshots', async ({ page, request }) => {
   await top(page, page.getByText('אושר.').first(), 60);
   await shot(page, '11-cake-approved');
 
-  // 7. delivery list of the day and printing
+  // 8. delivery list of the day and printing
   await page.goto(`/admin/delivery?day=${setup.day}`);
   await shot(page, '12-delivery-list');
 
