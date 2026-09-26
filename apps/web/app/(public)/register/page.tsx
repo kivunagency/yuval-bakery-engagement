@@ -9,7 +9,11 @@ import { RegisterForm } from '@/components/account/RegisterForm';
 import { TEXT_VERSIONS } from '@/lib/shared/compliance/versions';
 import styles from '@/components/account/account.module.css';
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+// qa-006/compliance-005: every page has a title of its own (WCAG 2.4.2)
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('registration');
+  return { title: t('title'), robots: { index: false, follow: false } };
+}
 
 // client-005: optional registration, separate from checkout (PRD US-4). The
 // privacy notice (s.11) comes before the first personal-data field.

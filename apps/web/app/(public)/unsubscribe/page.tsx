@@ -3,7 +3,11 @@ import { getTranslations } from 'next-intl/server';
 import { unsubscribeToken } from '@/lib/shared/contracts/registration';
 import styles from '@/components/account/account.module.css';
 
-export const metadata: Metadata = { robots: { index: false, follow: false }, referrer: 'no-referrer' };
+// qa-006/compliance-005: every page has a title of its own (WCAG 2.4.2)
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('account');
+  return { title: t('unsubscribe_title'), robots: { index: false, follow: false }, referrer: 'no-referrer' };
+}
 
 // One-click unsubscribe (compliance-spec section 5): the link in a marketing
 // mail opens this page; one button, no sign-in. GET changes nothing (mail

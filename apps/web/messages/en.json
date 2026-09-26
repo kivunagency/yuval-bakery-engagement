@@ -228,7 +228,7 @@
       },
       "limits": {
         "title": "Known limitations",
-        "not_audited": "Screen reader use and <ltr>200%</ltr> zoom have not been fully tested yet.",
+        "not_audited": "Screen reader use has not been tested yet. Keyboard-only use and a layout at <ltr>200%</ltr> zoom were tested automatically in a browser on 2026-09-26; a check on real phones is still to come.",
         "external": "Payment happens in Bit or PayBox and contact in WhatsApp: those apps are not under our control.",
         "content": "Product photos and descriptions are added by the business; if one is missing a description, please tell us."
       },
