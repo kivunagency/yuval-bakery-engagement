@@ -10,7 +10,6 @@ const { localEnv } = require('./helpers/env');
 const ANON_EXECUTE_ALLOWLIST = [
   'fn_business_date', // blindspot-002: day floor for the day picker
   'fn_earliest_delivery_date', // blindspot-002
-  'fn_lookup_order_by_phone_and_number', // US-0d, rate limited in the DB
   'fn_public_day_availability', // api-002, states only
   'fn_public_site_settings', // compliance-002, whitelisted fields
   'has_aal2', 'is_admin', 'is_admin_aal2', // called by RLS policies

@@ -65,7 +65,8 @@
       "accessibility": "Accessibility statement",
       "terms": "Terms of use",
       "returns": "Cancellation policy",
-      "account": "My account"
+      "account": "My account",
+      "find_order": "Find my order"
     }
   },
   "returns_policy": {
@@ -1070,5 +1071,38 @@
       "error": "Could not record that the confirmation was sent. Try again.",
       "done": "Recorded that the confirmation of order <ltr>{number}</ltr> was sent. It can now be marked delivered."
     }
+  },
+  "find_order": {
+    "meta_title": "Find my order",
+    "back": "Back to the shop",
+    "title": "Find my order",
+    "intro": "Type the phone number you gave with the order and the order number. The two together find the order.",
+    "privacy": "The phone and order number you type are used only to find the order, and are kept for 90 days to prevent guessing.",
+    "privacy_link": "Privacy notice",
+    "phone_label": "Mobile phone number",
+    "phone_invalid": "An Israeli mobile number is needed, for example 050-1234567.",
+    "number_label": "Order number",
+    "number_hint": "Shown on the order page and on the order confirmation, for example A2Y7-YCP.",
+    "number_invalid": "The order number does not look right. Check that it is typed as shown.",
+    "submit": "Find the order",
+    "not_found": "We found no order with this phone and order number. Check both and try again, or contact us by phone or WhatsApp.",
+    "too_many": "Too many attempts. Try again in an hour, or contact us by phone or WhatsApp.",
+    "error": "Something went wrong. Try again in a moment.",
+    "result_title": "Order <ltr>{number}</ltr>",
+    "status_label": "Status",
+    "status": {
+      "payment_pending": "Waiting for payment",
+      "paid": "Paid",
+      "fulfilled": "Delivered",
+      "expired": "Expired, not paid",
+      "cancelled": "Cancelled"
+    },
+    "day_label": "For",
+    "how_label": "How",
+    "delivery": "Delivery",
+    "pickup": "Pickup",
+    "address_label": "Address (partial)",
+    "download": "Download the order confirmation (PDF)",
+    "payment_page_hint": "For payment and full details use the order page link you received. If it is lost, contact us."
   }
 }

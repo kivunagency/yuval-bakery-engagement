@@ -5,29 +5,36 @@ import { renderConfirmationPdf } from '@/lib/server/confirmation/pdf';
 import { buildConfirmationDocument, confirmationFilename } from '@/lib/server/confirmation/content';
 import { EMPTY_SITE_SETTINGS } from '@/lib/shared/contracts/site-settings';
 import type { PublicOrder } from '@/lib/server/ordering/order-by-token';
+import he from '@/messages/he.json';
 
 // US-0c: the confirmation PDF's line order, its link token and its renderer.
 // The rendered PDF itself is looked at as PNG in qa/regression.confirmation.spec.js.
 
-// What a reader sees, left to right, for an RTL line (UAX #9, as a browser shows it).
+// What a reader sees, left to right, for an RTL line (UAX #9, as a browser
+// shows it). Hebrew comes from messages/he.json (no Hebrew literals in code).
+const W = he.confirmation.pdf.title; // two Hebrew words
+const B = he.business.labels.name; // two Hebrew words
+const UNIT = he.payment.line.split(' ').pop()!; // the units word after the quantity
+const R = (s: string) => [...s].reverse().join('');
+
 describe('visualString (UAX #9 for the PDF)', () => {
   it.each([
-    ['הזמנה A7K-29QX', 'A7K-29QX הנמזה'],
-    ['סה״כ: 145.50 ₪', '₪ 145.50 :כ״הס'],
-    ['עוגה (שוקולד)', '(דלוקוש) הגוע'],
-    ['[שם העסק]', '[קסעה םש]'],
-    ['טלפון: ⁦050-123-4567⁩', '050-123-4567 :ןופלט'],
+    [`${W} A7K-29QX`, `A7K-29QX ${R(W)}`],
+    [`${W}: 145.50 ₪`, `₪ 145.50 :${R(W)}`],
+    [`${W} (${B})`, `(${R(B)}) ${R(W)}`],
+    [`[${B}]`, `[${R(B)}]`],
+    [`${W}: ⁦050-123-4567⁩`, `050-123-4567 :${R(W)}`],
     // W7: a number after Latin joins it; this is why names are isolated (lib/shared/text/bidi.ts).
-    ['Brownie, 3 יח׳', '׳חי Brownie, 3'],
-    ['⁨Brownie⁩, 3 יח׳', '׳חי 3 ,Brownie'],
+    [`Brownie, 3 ${UNIT}`, `${R(UNIT)} Brownie, 3`],
+    [`⁨Brownie⁩, 3 ${UNIT}`, `${R(UNIT)} 3 ,Brownie`],
   ])('%s', (logical, visual) => {
     expect(visualString(logical)).toBe(visual);
   });
 
   it('drops bidi controls (no glyph in the font) but keeps every other character', () => {
-    const out = visualString('מספר ⁦A7K⁩ ‏ok');
+    const out = visualString(`${W} ⁦A7K⁩ ‏ok`);
     expect(out).not.toMatch(/[‎‏⁦-⁩]/);
-    expect([...out].sort().join('')).toBe([...'מספר A7K ok'].sort().join(''));
+    expect([...out].sort().join('')).toBe([...`${W} A7K ok`].sort().join(''));
   });
 });
 
@@ -86,7 +93,7 @@ describe('confirmation document', () => {
       day: '2026-10-14',
       slotStart: '10:00',
       slotEnd: '12:00',
-      city: 'תל אביב',
+      city: 'Tel Aviv',
       subtotal: 120,
       deliveryFee: 25.5,
       total: 145.5,
@@ -101,15 +108,15 @@ describe('confirmation document', () => {
     expect(text).toContain('A7K29QX');
     expect(text).toContain('Brownie');
     expect(text).toContain('145.50');
-    expect(text).toContain('[שם העסק]');
-    expect(text).toContain('[סוג ומספר עוסק]');
+    expect(text).toContain(he.business.details.name);
+    expect(text).toContain(he.business.details.registration_number);
     expect(text).toContain('https://example.test/business');
-    expect(text).toContain('לא ניתן לבטל');
+    expect(text).toContain(he.returns_policy.exemption_notice.catalog);
   });
 
   it('custom cake wording for a custom cake order', () => {
     const doc = buildConfirmationDocument({ ...order, view: { ...order.view, source: 'custom_cake' } }, EMPTY_SITE_SETTINGS, 'https://example.test');
-    expect(doc.blocks.some((b) => b.kind === 'text' && b.text.includes('מיוצרת במיוחד'))).toBe(true);
+    expect(doc.blocks.some((b) => b.kind === 'text' && b.text === he.returns_policy.exemption_notice.custom_cake)).toBe(true);
   });
 
   it('renders a PDF with the font embedded, and the same content gives the same bytes', async () => {

@@ -12,6 +12,7 @@ export const CLIENT_SCOPES = {
   public: CORE,
   checkout: [...CORE, 'checkout'],
   order: [...CORE, 'payment'],
+  find_order: [...CORE, 'find_order'],
   custom_cake: [...CORE, 'custom_cake'],
   account: [...CORE, 'registration', 'account'],
   admin: [...CORE, 'admin', 'push', 'confirmation'],

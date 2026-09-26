@@ -39,6 +39,8 @@ const nextConfig: NextConfig = {
       { source: '/order/:path*', headers: orderHeaders },
       { source: '/api/orders/:path*', headers: orderHeaders },
       { source: '/confirmation/:path*', headers: orderHeaders },
+      { source: '/find-order', headers: orderHeaders },
+      { source: '/api/find-order', headers: orderHeaders },
     ];
   },
 };

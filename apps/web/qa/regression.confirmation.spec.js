@@ -100,6 +100,22 @@ async function capturedMailTo(address) {
 }
 
 test.describe('US-0c: order confirmation PDF', () => {
+  // Every checkout emails every admin (job-002), and other specs leave many
+  // admins in this shared DB, so the daily email cap would refuse the
+  // customer's confirmation mail. Lift it here and put the seeded values back,
+  // as regression.notifications does.
+  const CAP_KEYS = ['email_daily_hard_cap', 'email_daily_alert_at', 'email_daily_customer_cap'];
+  let savedCaps = [];
+  test.beforeAll(async () => {
+    savedCaps = await db('SELECT key, value FROM app_settings WHERE key = ANY($1)', [CAP_KEYS]);
+    for (const [k, v] of [['email_daily_hard_cap', 100000], ['email_daily_alert_at', 99999], ['email_daily_customer_cap', 100000]]) {
+      await db('UPDATE app_settings SET value = $2::jsonb WHERE key = $1', [k, JSON.stringify(v)]);
+    }
+  });
+  test.afterAll(async () => {
+    for (const r of savedCaps) await db('UPDATE app_settings SET value = $2::jsonb WHERE key = $1', [r.key, JSON.stringify(r.value)]);
+  });
+
   test('checkout with an email: the PDF is issued once, emailed with its link, and the delivery is recorded (channel email)', async ({ request }) => {
     const email = `guest-${crypto.randomUUID()}@example.test`;
     const { row } = await checkout(request, { email });
@@ -323,5 +339,116 @@ test.describe('US-0c: order confirmation PDF', () => {
     await card.getByTestId('mark-fulfilled').click();
     await expect(page.getByTestId('orders-done')).toBeVisible();
     expect((await orderRow(row.id)).status).toBe('fulfilled');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// US-0d: find my order by phone + order number
+// ---------------------------------------------------------------------------
+function lookup(request, data, { from = dbh.randomIp(), origin = 'http://localhost:3100' } = {}) {
+  const headers = { 'content-type': 'application/json', 'x-nf-client-connection-ip': from };
+  if (origin) headers.origin = origin;
+  return request.post('/api/find-order', { data, headers });
+}
+
+test.describe('US-0d: find my order', () => {
+  test('baseline: /find-order renders RTL with the form first, no Referer and no indexing, linked from the footer', async ({ page }) => {
+    const res = await checkPublicBaseline(page, '/find-order', 'find-order');
+    expect(res.headers()['referrer-policy']).toBe('no-referrer');
+    expect(res.headers()['x-robots-tag']).toContain('noindex');
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+    await expect(page.getByTestId('find-order-form')).toBeVisible();
+    await expect(page.getByTestId('site-footer').locator('a[href="/find-order"]')).toBeVisible();
+    // the privacy line comes before the first field
+    const order = await page.evaluate(() => {
+      const note = document.querySelector('[data-testid="find-order-privacy"]');
+      const phone = document.getElementById('fo-phone');
+      return note && phone ? note.compareDocumentPosition(phone) & Node.DOCUMENT_POSITION_FOLLOWING : 0;
+    });
+    expect(order).toBeTruthy();
+  });
+
+  test('phone + order number (typed loosely) show only the masked view and the confirmation link; the PDF downloads', async ({ page, request }) => {
+    const o = await checkout(request, { delivery: true, name: 'QA Secret Name', address: 'QA Hidden Street 7' });
+    await page.setExtraHTTPHeaders({ 'x-nf-client-connection-ip': dbh.randomIp() });
+    await page.goto('/find-order');
+    const local = o.tel; // "050xxxxxxx", typed with a dash
+    await page.getByLabel('מספר טלפון נייד').fill(`${local.slice(0, 3)}-${local.slice(3)}`);
+    await page.getByLabel('מספר הזמנה').fill(` ${o.row.order_number.toLowerCase()} `);
+    await page.getByTestId('find-order-submit').click();
+    const result = page.getByTestId('find-order-result');
+    await expect(result).toBeVisible();
+    await expect(result).toContainText(o.row.order_number);
+    await expect(page.getByTestId('find-order-status')).toHaveText('ממתינה לתשלום');
+    await expect(page.getByTestId('find-order-address')).toHaveText(`${o.city}, Q***`);
+    const text = await page.locator('main').innerText();
+    for (const secret of ['QA Secret Name', 'Hidden Street', 'gate code', o.tel.slice(4)]) expect(text).not.toContain(secret);
+    const link = page.getByTestId('find-order-confirmation');
+    await expect(link).toHaveAttribute('href', `/confirmation/${linkToken(o.row.id)}`);
+    await page.screenshot({ path: join(SCREENS, 'find-order-result.png'), fullPage: true });
+    const [download] = await Promise.all([page.waitForEvent('download'), link.click()]);
+    expect(download.suggestedFilename()).toBe(`order-${o.row.order_number}.pdf`);
+    expect(sha256(readFileSync(/** @type {string} */ (await download.path())))).toBe((await orderRow(o.row.id)).confirmation_pdf_sha256);
+    // the internal id never reaches the browser except inside the signed link
+    const api = await (await lookup(request, { phone: o.tel, orderNumber: o.row.order_number })).json();
+    expect(Object.keys(api.order).sort()).toEqual(['confirmationPath', 'day', 'fulfillment', 'maskedAddress', 'orderNumber', 'status']);
+  });
+
+  test('every miss is the same answer: wrong phone, wrong number, both, an anonymized order; phone or number alone is not even looked up', async ({ page, request }) => {
+    const a = await checkout(request);
+    const b = await checkout(request);
+    const gone = await checkout(request);
+    expect((await service().rpc('fn_anonymize_order', { p_order_id: gone.row.id })).data).toBe(true);
+    const answers = [];
+    for (const data of [
+      { phone: b.tel, orderNumber: a.row.order_number }, // right number, another customer's phone
+      { phone: a.tel, orderNumber: b.row.order_number }, // right phone, another order's number
+      { phone: phone(), orderNumber: 'AZZZ-ZZZ' },
+      { phone: gone.tel, orderNumber: gone.row.order_number },
+    ]) {
+      const r = await lookup(request, data);
+      answers.push({ status: r.status(), body: await r.text() });
+    }
+    for (const x of answers) expect(x).toEqual({ status: 200, body: JSON.stringify({ result: 'not_found' }) });
+    const before = (await db('SELECT count(*)::int n FROM order_lookup_attempts WHERE phone_e164 = $1', [a.tel]))[0].n;
+    expect((await lookup(request, { phone: a.tel })).status()).toBe(400);
+    expect((await lookup(request, { orderNumber: a.row.order_number })).status()).toBe(400);
+    expect((await lookup(request, { phone: a.tel, orderNumber: a.row.order_number, id: a.row.id })).status()).toBe(400);
+    expect((await db('SELECT count(*)::int n FROM order_lookup_attempts WHERE phone_e164 = $1', [a.tel]))[0].n).toBe(before);
+    expect((await lookup(request, { phone: a.tel, orderNumber: a.row.order_number }, { origin: 'https://evil.example' })).status()).toBe(403);
+    // the screen says the same thing for every miss
+    await page.setExtraHTTPHeaders({ 'x-nf-client-connection-ip': dbh.randomIp() });
+    await page.goto('/find-order');
+    await page.getByLabel('מספר טלפון נייד').fill(b.tel);
+    await page.getByLabel('מספר הזמנה').fill(a.row.order_number);
+    await page.getByTestId('find-order-submit').click();
+    await expect(page.getByTestId('find-order-not-found')).toBeVisible();
+    await page.screenshot({ path: join(SCREENS, 'find-order-not-found.png'), fullPage: true });
+  });
+
+  test('rate limited in the DB per phone (5/hour) and per IP (10/hour), whether or not the phone exists; the real client IP is recorded', async ({ request }) => {
+    const o = await checkout(request);
+    for (let i = 0; i < 5; i++) expect((await lookup(request, { phone: o.tel, orderNumber: `AQQQ-Q${i}Q` })).status()).toBe(200);
+    // sixth from a fresh IP, with the RIGHT number: still refused
+    const limited = await lookup(request, { phone: o.tel, orderNumber: o.row.order_number });
+    expect(limited.status()).toBe(429);
+    expect(await limited.json()).toEqual({ error: 'too_many_attempts' });
+
+    const ip = dbh.randomIp();
+    for (let i = 0; i < 10; i++) expect((await lookup(request, { phone: phone(), orderNumber: 'AQQQ-QQQ' }, { from: ip })).status()).toBe(200);
+    expect((await lookup(request, { phone: phone(), orderNumber: 'AQQQ-QQQ' }, { from: ip })).status()).toBe(429);
+    const rows = await db('SELECT count(*)::int n FROM order_lookup_attempts WHERE ip_address = $1', [ip]);
+    expect(rows[0].n).toBe(10);
+  });
+
+  test('DB: the lookup is service-role only now (the IP comes from the server), anon and a signed-in user are refused', async ({ request }) => {
+    const o = await checkout(request);
+    for (const role of ['anon', 'authenticated']) {
+      const err = await dbh.withClient((c) => dbh.asRole(c, role, { sub: crypto.randomUUID() }, 'SELECT * FROM fn_lookup_order_by_phone_and_number($1, $2, $3)', ['1.2.3.4', `+972${o.tel.slice(1)}`, o.row.order_number])).then(() => 'ok', (e) => e.message);
+      expect(err).toMatch(/permission denied/);
+    }
+    const anon = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+    const { error } = await anon.rpc('fn_lookup_order_by_phone_and_number', { p_ip_address: '1.2.3.4', p_phone: o.tel, p_order_number: o.row.order_number });
+    expect(error).not.toBeNull();
   });
 });
