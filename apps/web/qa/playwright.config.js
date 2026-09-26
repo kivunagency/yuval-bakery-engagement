@@ -27,6 +27,8 @@ module.exports = defineConfig({
   projects: [
     { name: 'mobile', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } }, testMatch: /regression(\.[a-z0-9-]+)?\.spec\.js/ },
     { name: 'smoke', use: { ...devices['Desktop Chrome'] }, testMatch: /smoke\.spec\.js/ },
+    // docs-001: screenshots for docs/guide-yuval, run by hand (never part of the regression run)
+    { name: 'docs', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } }, testMatch: /guide-screens\.spec\.js/ },
   ],
   webServer: process.env.SKIP_WEBSERVER
     ? undefined
