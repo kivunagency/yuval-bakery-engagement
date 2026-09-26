@@ -118,5 +118,5 @@ creates the account (infra-003).
 | What | Where | Notes |
 |---|---|---|
 | Delivery/pickup time slots | table `time_slots` (start, end, Asia/Jerusalem) | None ship in the migration (Yuval's hours are open); `seed.sql` has synthetic ones. The first active start is copied into `app_settings.earliest_slot_time` by a trigger: do not edit that key by hand. |
-| Bit / PayBox links | `app_settings` `payment_link_bit`, `payment_link_paybox` | JSON null until set; shown only if https on the host allowlist in `lib/shared/payment/links.ts` (UNVERIFIED hosts). Read through `fn_payment_link_settings()` (service role). |
+| Bit / PayBox links | `app_settings` `payment_link_bit`, `payment_link_paybox` | JSON null until set; shown only if https on the host allowlist in `lib/shared/payment/links.ts` (UNVERIFIED hosts; `fn_payment_link_valid` repeats it). Read through `fn_payment_link_settings()` (service role). Edited in `/admin/settings/payment` with a fresh TOTP code (SEC-009), audited, emailed to every admin. |
 | Order creation | `POST /api/orders` -> `fn_create_standard_order` (service role only) | The client never sends an amount; the DB prices, reserves and checks the slot lead time. |

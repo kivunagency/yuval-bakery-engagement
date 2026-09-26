@@ -742,6 +742,39 @@
           "whatsapp": "An Israeli phone number, for example 050-123-4567.",
           "email": "An email address, for example name@example.com."
         }
+      },
+      "payment": {
+        "title": "Payment links",
+        "intro": "Customers pay through these links after ordering. Because a change here decides where money goes, saving needs a fresh code from the authenticator app even when already signed in, is recorded, and is emailed to every admin.",
+        "status_missing": "{count, plural, one {One link is not shown to customers} other {# links are not shown to customers}}, a placeholder appears instead of a button.",
+        "status_done": "Both links are shown to customers.",
+        "field": {
+          "bit": "Bit link",
+          "paybox": "PayBox link"
+        },
+        "state": {
+          "unset": "Not set: the order page shows a placeholder instead of a button.",
+          "shown": "Shown to customers on the order page.",
+          "refused": "The saved link does not pass the check, so customers do not see it. Save a correct link."
+        },
+        "last_changed": "Last changed {when}.",
+        "hosts_hint": "Only secure (https) links of Bit (bitpay.co.il) or PayBox (payboxapp.com) are accepted. An empty field removes the link.",
+        "code_label": "Code from the authenticator app",
+        "code_hint": "6 digits. Needed for every change of the payment links, even when already signed in.",
+        "save": "Save links",
+        "saved": "Saved. An email about the change was sent to every admin.",
+        "nothing_changed": "The links did not change, nothing to save.",
+        "error_fields": "A link is not valid. The marked field says what to fix.",
+        "error_code_format": "Type the 6-digit code from the authenticator app.",
+        "error_code": "The code is wrong or has expired. Try again with the next code.",
+        "error_step_up": "The code check has expired. Type a new code and save again.",
+        "error_rate_limited": "Too many attempts. Wait 15 minutes and try again.",
+        "error_session": "The session has ended. Please sign in again.",
+        "error_generic": "Saving did not work. Please try again.",
+        "error_link": {
+          "bit": "A Bit link starts with https://bitpay.co.il or https://www.bitpay.co.il.",
+          "paybox": "A PayBox link starts with https:// and one of payboxapp.com, links.payboxapp.com or payboxapp.page.link."
+        }
       }
     }
   },
@@ -981,7 +1014,19 @@
       "new_custom_cake_title": "New custom cake request",
       "new_custom_cake_body": "Tap to review the request.",
       "quota_title": "Emails today: {count} of {cap}",
-      "quota_body": "Above {cap} emails a day, emails stop until tomorrow. Push notifications continue."
+      "quota_body": "Above {cap} emails a day, emails stop until tomorrow. Push notifications continue.",
+      "payment_links_title": "Payment links changed",
+      "payment_links_body": "Details in the email and in Settings."
+    },
+    "payment_links_changed": {
+      "subject": "Payment links changed",
+      "body": "The Bit/PayBox links on the site were changed on {time} by the admin user {admin}.",
+      "bit_set": "Bit: customers are now sent to {link}",
+      "bit_removed": "Bit: the link was removed; customers see a placeholder instead of a button.",
+      "paybox_set": "PayBox: customers are now sent to {link}",
+      "paybox_removed": "PayBox: the link was removed; customers see a placeholder instead of a button.",
+      "not_you": "If you did not make this change, sign in to the management area now, put the right links back, and check who has access to the account.",
+      "cta": "Open payment settings"
     }
   },
   "push": {

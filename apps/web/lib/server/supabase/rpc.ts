@@ -68,6 +68,7 @@ export const DB_ERROR_CODES = [
   'settings_invalid_input',
   'settings_invalid_value',
   'single_order_capacity_cap_exceeded',
+  'step_up_required',
   'unpaid_holds_capacity_cap_exceeded',
   'unsubscribe_link_source_is_service_role_only_via_fn_unsubscribe_by_token',
   'upload_rights_not_confirmed',

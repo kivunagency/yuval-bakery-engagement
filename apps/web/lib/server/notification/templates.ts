@@ -206,3 +206,34 @@ export function quotaAlertPush(count: number, cap: number, settingsUrl: string):
     tag: 'email-quota',
   };
 }
+
+// ---------------------------------------------------------------- payment links changed (SEC-009)
+
+export type PaymentLinksFacts = {
+  changed_at: string;
+  admin_name: string | null;
+  bit_changed: boolean;
+  paybox_changed: boolean;
+  bit_link: string | null;
+  paybox_link: string | null;
+};
+
+const LINK_MAX = 500;
+
+/** To every admin. The new links as text (never as clickable links), from the audit row. */
+export function paymentLinksChangedEmail(f: PaymentLinksFacts, settingsUrl: string): Omit<EmailMessage, 'to'> {
+  const blocks: Block[] = [
+    msg('payment_links_changed.body', { time: jerusalemDateTime(f.changed_at), admin: cleanText(f.admin_name, NAME_MAX) || t('common.name_missing') }),
+  ];
+  for (const [method, changed, value] of [['bit', f.bit_changed, f.bit_link], ['paybox', f.paybox_changed, f.paybox_link]] as const) {
+    if (!changed) continue;
+    const link = cleanText(value, LINK_MAX);
+    blocks.push(link ? msg(`payment_links_changed.${method}_set`, { link }) : msg(`payment_links_changed.${method}_removed`, {}));
+  }
+  blocks.push(msg('payment_links_changed.not_you', {}), { kind: 'cta', href: settingsUrl, label: t('payment_links_changed.cta') });
+  return layout(t('payment_links_changed.subject'), blocks, t('common.footer_admin'));
+}
+
+export function paymentLinksChangedPush(_f: PaymentLinksFacts, settingsUrl: string): PushPayload {
+  return { title: t('push.payment_links_title'), body: t('push.payment_links_body'), url: settingsUrl, tag: 'payment-links' };
+}

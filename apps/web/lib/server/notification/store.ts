@@ -41,6 +41,18 @@ const customCakeFactsRow = z.object({
 });
 export type CustomCakeFactsRow = CustomCakeFacts & z.infer<typeof customCakeFactsRow>;
 
+const jsonText = z.unknown().transform((v) => (typeof v === 'string' ? v : null));
+const paymentLinksFactsRow = z.object({
+  change_id: z.guid(),
+  changed_at: z.string(),
+  admin_name: z.string().nullable(),
+  bit_changed: z.boolean(),
+  paybox_changed: z.boolean(),
+  bit_link: jsonText,
+  paybox_link: jsonText,
+});
+export type PaymentLinksFactsRow = z.infer<typeof paymentLinksFactsRow>;
+
 const beginResult = z.object({
   attempt_id: z.guid().nullable(),
   allowed: z.boolean(),
@@ -51,11 +63,12 @@ const beginResult = z.object({
 });
 export type BeginResult = z.infer<typeof beginResult>;
 
-export type AttemptKey = { event: NotificationEvent; channel: Channel; audience: Audience; entityType: 'order' | 'custom_cake_request' | 'quota'; entityId: string };
+export type AttemptKey = { event: NotificationEvent; channel: Channel; audience: Audience; entityType: 'order' | 'custom_cake_request' | 'quota' | 'setting_change'; entityId: string };
 
 export interface NotificationStore {
   orderFacts(orderId: string): Promise<OrderFactsRow | null>;
   customCakeFacts(requestId: string): Promise<CustomCakeFactsRow | null>;
+  paymentLinksFacts(changeId: string): Promise<PaymentLinksFactsRow | null>;
   adminEmails(): Promise<string[]>;
   business(): Promise<BusinessFacts>;
   activePushSubscriptions(): Promise<PushTarget[]>;
@@ -75,6 +88,10 @@ export function dbStore(service: SupabaseClient, anon: SupabaseClient): Notifica
     },
     async customCakeFacts(requestId) {
       const rows = await callRpc(service, 'fn_notification_custom_cake_facts', { p_request_id: requestId }, z.array(customCakeFactsRow));
+      return rows[0] ?? null;
+    },
+    async paymentLinksFacts(changeId) {
+      const rows = await callRpc(service, 'fn_notification_payment_links_facts', { p_change_id: changeId }, z.array(paymentLinksFactsRow));
       return rows[0] ?? null;
     },
     async adminEmails() {

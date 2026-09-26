@@ -6,6 +6,7 @@ export const NOTIFICATION_EVENTS = [
   'custom_cake_approved',
   'custom_cake_declined',
   'email_quota_alert',
+  'payment_links_changed',
 ] as const;
 export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];
 

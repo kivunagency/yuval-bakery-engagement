@@ -542,3 +542,6 @@
   border: 2px solid var(--line-strong); background: var(--surface);
 }
 .admin-radio input:checked::before { border: 7px solid var(--accent); }
+/* Payment links (SEC-009): the fresh-code step stands apart from the links. */
+.admin-step-up { padding: var(--s4); border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow-1); border-inline-start: 4px solid var(--accent); }
+.admin-field input[inputmode='url'] { font-size: 15px; }

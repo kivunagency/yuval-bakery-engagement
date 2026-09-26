@@ -10,15 +10,18 @@
 const { test, expect } = require('@playwright/test');
 const { join } = require('node:path');
 const { createClient } = require('@supabase/supabase-js');
-const { createUser, db, uiLogin } = require('./helpers/admin-ui');
+const { createUser, db, randomIp, uiLogin } = require('./helpers/admin-ui');
 const { createAdmin } = require('./helpers/admin');
 const { localEnv } = require('./helpers/env');
 const { SCREENS } = require('./helpers/baseline');
+const { capturedTo } = require('./helpers/notification');
+const { totp } = require('./helpers/admin');
 
 const BUSINESS_KEYS = ['business_name', 'business_owner_name', 'business_registration_number', 'business_address', 'business_phone', 'business_whatsapp', 'business_email'];
 
 /** Everything this spec changes, back to what a fresh database has. */
 async function resetSettings() {
+  await db(`UPDATE app_settings SET value = 'null'::jsonb, updated_by = NULL WHERE key IN ('payment_link_bit', 'payment_link_paybox')`);
   for (const k of BUSINESS_KEYS) await db(`UPDATE app_settings SET value = 'null'::jsonb, updated_by = NULL WHERE key = $1`, [k]);
   await db(`UPDATE app_settings SET value = '"exempt"'::jsonb, updated_by = NULL WHERE key = 'vat_status'`);
 }
@@ -276,6 +279,193 @@ test.describe('business details screen (settings-business)', () => {
       await page.goto('/admin/settings');
       await expect(page.getByTestId('settings-link-business')).toContainText('3 פרטים עוד לא מולאו');
       await expect(page.getByTestId('settings-link-business')).not.toContainText('סוג העוסק');
+    } finally {
+      await resetSettings();
+    }
+  });
+});
+
+// ---------------------------------------------------------------- payment links (SEC-009)
+
+/** A TOTP code from a 30-second step later than `after` (Auth may refuse a code already used in its step). */
+async function freshCode(secret, after = Date.now()) {
+  const step = (t) => Math.floor(t / 30000);
+  while (step(Date.now()) === step(after)) await new Promise((r) => setTimeout(r, 500));
+  return totp(secret);
+}
+
+/** An HS256 access token for `sub` signed with the local stack's JWT secret, with a TOTP step `totpAgeSeconds` ago. */
+function signedAdminToken(sub, totpAgeSeconds) {
+  const now = Math.floor(Date.now() / 1000);
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const body = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({
+    sub, role: 'authenticated', aud: 'authenticated', aal: 'aal2', iat: now, exp: now + 600,
+    amr: [{ method: 'totp', timestamp: now - totpAgeSeconds }, { method: 'password', timestamp: now - totpAgeSeconds }],
+  })}`;
+  const sig = require('node:crypto').createHmac('sha256', localEnv().SUPABASE_JWT_SECRET).update(body).digest('base64url');
+  return `${body}.${sig}`;
+}
+
+const BIT = 'https://www.bitpay.co.il/app/me/QA-TEST-LINK';
+const PAYBOX = 'https://links.payboxapp.com/QA-TEST-LINK';
+const paymentRows = async () =>
+  Object.fromEntries((await db(`SELECT key, value, updated_by::text AS by FROM app_settings WHERE key LIKE 'payment\\_link\\_%'`)).map((r) => [r.key, r]));
+
+test.describe('payment links (settings-payment, SEC-009)', () => {
+  // freshCode() may wait up to 30 s for the next TOTP step; a killed test would skip its reset.
+  test.describe.configure({ timeout: 120_000 });
+  test.beforeEach(resetSettings);
+  test('the DB itself refuses a change without a TOTP step from the last 5 minutes; allowlist in the DB too', async () => {
+    const { userId } = await createAdmin();
+    const env = localEnv();
+    const as = (token) => createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${token}` } } });
+    try {
+      const stale = as(signedAdminToken(userId, 301));
+      expect((await stale.rpc('fn_admin_set_payment_links', { p_values: { payment_link_bit: BIT } })).error?.message).toBe('step_up_required');
+      expect((await paymentRows()).payment_link_bit.value).toBeNull();
+
+      const fresh = as(signedAdminToken(userId, 10));
+      for (const [values, code] of [
+        [{ payment_link_bit: 'http://www.bitpay.co.il/x' }, 'settings_invalid_value: payment_link_bit'],
+        [{ payment_link_bit: 'https://evil.example/x' }, 'settings_invalid_value: payment_link_bit'],
+        [{ payment_link_bit: 'https://www.bitpay.co.il.evil.example/x' }, 'settings_invalid_value: payment_link_bit'],
+        [{ payment_link_bit: 'https://user@www.bitpay.co.il/x' }, 'settings_invalid_value: payment_link_bit'],
+        [{ payment_link_paybox: BIT }, 'settings_invalid_value: payment_link_paybox'],
+        [{ business_name: 'x' }, 'settings_invalid_input'],
+      ]) {
+        expect((await fresh.rpc('fn_admin_set_payment_links', { p_values: values })).error?.message, JSON.stringify(values)).toBe(code);
+      }
+      const ok = await fresh.rpc('fn_admin_set_payment_links', { p_values: { payment_link_bit: BIT } });
+      expect(ok.error).toBeNull();
+      expect(ok.data).toMatchObject({ changed: ['payment_link_bit'], bit: BIT, paybox: null, change_id: expect.any(String) });
+      const [audit] = await db(`SELECT actor_id, entity_id, metadata FROM audit_log WHERE action = 'settings.payment_links_updated' ORDER BY id DESC LIMIT 1`);
+      expect(audit.actor_id).toBe(userId);
+      expect(audit.entity_id).toBe(ok.data.change_id);
+      expect(audit.metadata.changed).toEqual({ payment_link_bit: { from: null, to: BIT } });
+      expect(audit.metadata.totp_verified_at).toBeTruthy();
+      // The business-details function cannot write payment links.
+      expect((await fresh.rpc('fn_admin_set_business_details', { p_values: { payment_link_bit: null } })).error?.message).toBe('settings_invalid_input');
+      // anon cannot call it, nor read the facts function.
+      const anon = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+      expect((await anon.rpc('fn_admin_set_payment_links', { p_values: { payment_link_bit: null } })).error?.message ?? '').toContain('permission denied');
+      expect((await fresh.rpc('fn_notification_payment_links_facts', { p_change_id: ok.data.change_id })).error?.message ?? '').toContain('permission denied');
+    } finally {
+      await resetSettings();
+    }
+  });
+
+  test('API: 401 anon; 403 Origin; 400 names the field (http, other host, missing code); wrong code 401 and nothing written; fresh code saves, audits and emails every admin', async ({ page, request, baseURL }) => {
+    expect((await request.put('/api/admin/settings/payment-links', { data: { bit: BIT, code: '123456' } })).status()).toBe(401);
+    const other = await createUser({ admin: true, withTotp: false }); // a second admin: must get the email too
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const loggedInAt = Date.now();
+    const api = page.request;
+    const headers = { origin: baseURL ?? '', 'x-nf-client-connection-ip': randomIp() }; // own IP: the step-up shares the TOTP rate limit
+    try {
+      expect((await api.put('/api/admin/settings/payment-links', { data: { bit: BIT, code: '123456' } })).status()).toBe(403);
+      for (const [data, fields] of [
+        [{ bit: BIT }, ['code']],
+        [{ bit: BIT, code: '12345' }, ['code']],
+        [{ bit: 'http://www.bitpay.co.il/x', code: '123456' }, ['bit']],
+        [{ bit: 'https://evil.example/pay', code: '123456' }, ['bit']],
+        [{ paybox: BIT, code: '123456' }, ['paybox']],
+        [{ code: '123456' }, []],
+        [{ bit: BIT, code: '123456', actor: 'x' }, []],
+      ]) {
+        const r = await api.put('/api/admin/settings/payment-links', { headers, data });
+        expect(r.status(), JSON.stringify(data)).toBe(400);
+        const body = await r.json();
+        expect(body.error).toBe('invalid_input');
+        expect(body.fields ?? []).toEqual(fields);
+      }
+      const wrong = String((Number(totp(admin.secret)) + 1) % 1_000_000).padStart(6, '0');
+      const bad = await api.put('/api/admin/settings/payment-links', { headers, data: { bit: BIT, code: wrong } });
+      expect(bad.status()).toBe(401);
+      expect(await bad.json()).toEqual({ error: 'invalid_code' });
+      expect((await paymentRows()).payment_link_bit.value).toBeNull();
+
+      const res = await api.put('/api/admin/settings/payment-links', { headers, data: { bit: ` ${BIT} `, paybox: PAYBOX, code: await freshCode(admin.secret, loggedInAt) } });
+      expect(res.status()).toBe(200);
+      const body = await res.json();
+      expect(body.changed).toEqual(['bit', 'paybox']);
+      expect(body.bit).toMatchObject({ value: BIT, shownToCustomers: true });
+      expect(body.paybox).toMatchObject({ value: PAYBOX, shownToCustomers: true });
+      const rows = await paymentRows();
+      expect(rows.payment_link_bit).toMatchObject({ value: BIT, by: admin.userId });
+      expect(rows.payment_link_paybox.value).toBe(PAYBOX);
+
+      // Every admin is emailed (after the response: poll), with the new links as text.
+      for (const to of [admin.email, other.email]) {
+        await expect.poll(() => capturedTo(to).filter((m) => m.subject === 'קישורי התשלום שונו').length, { timeout: 10_000 }).toBe(1);
+        const [mail] = capturedTo(to).filter((m) => m.subject === 'קישורי התשלום שונו');
+        expect(mail.text).toContain(BIT);
+        expect(mail.text).toContain(PAYBOX);
+        expect(mail.text).toContain('/admin/settings/payment');
+      }
+      const [attempt] = await db(`SELECT count(*)::int AS n FROM notification_attempts WHERE event = 'payment_links_changed' AND entity_type = 'setting_change' AND channel = 'email' AND status = 'sent'`);
+      expect(attempt.n).toBeGreaterThanOrEqual(2);
+
+      // The order page's read path (service role, allowlist) now returns them.
+      const service = createClient(localEnv().NEXT_PUBLIC_SUPABASE_URL, localEnv().SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+      expect((await service.rpc('fn_payment_link_settings')).data).toEqual({ bit: BIT, paybox: PAYBOX });
+
+      // Unset one: null; audited; the same code step is still fresh (within 5 minutes).
+      const unset = await api.put('/api/admin/settings/payment-links', { headers, data: { paybox: '', code: await freshCode(admin.secret) } });
+      expect(unset.status()).toBe(200);
+      expect((await unset.json()).paybox).toEqual({ value: null, shownToCustomers: false, updatedAt: expect.any(String) });
+      const [last] = await db(`SELECT metadata FROM audit_log WHERE action = 'settings.payment_links_updated' ORDER BY id DESC LIMIT 1`);
+      expect(last.metadata.changed).toEqual({ payment_link_paybox: { from: PAYBOX, to: null } });
+    } finally {
+      await resetSettings();
+    }
+  });
+
+  test('screen: arrives with its data, asks for the code, wrong code says so, right code saves and says every admin was emailed', async ({ page }) => {
+    const admin = await createUser({ admin: true, withTotp: true });
+    try {
+      await db(`UPDATE app_settings SET value = '"https://evil.example/pay"'::jsonb WHERE key = 'payment_link_paybox'`); // a value the order page refuses
+      await uiLogin(page, admin);
+      const loggedInAt = Date.now();
+      const errors = collectErrors(page);
+      await page.goto('/admin/settings');
+      const link = page.getByTestId('settings-link-payment');
+      await expect(link).toContainText('קישורי תשלום');
+      await expect(link).toContainText('2 קישורים לא מוצגים ללקוחות');
+      const requests = [];
+      page.on('request', (r) => r.resourceType() === 'fetch' && requests.push(r.url()));
+      await link.click();
+      await page.waitForURL('**/admin/settings/payment');
+      expect(requests.filter((u) => u.includes('/api/'))).toEqual([]);
+      await expect(page.getByTestId('payment-bit-state')).toHaveAttribute('data-state', 'unset');
+      await expect(page.getByTestId('payment-paybox-state')).toHaveAttribute('data-state', 'refused');
+      await expect(page.getByTestId('payment-paybox')).toHaveValue('https://evil.example/pay');
+      await expect(page.getByTestId('payment-bit')).toHaveAttribute('dir', 'ltr');
+      await adminBaseline(page, 'settings-payment', errors);
+
+      await page.getByTestId('payment-bit').fill(BIT);
+      await page.getByRole('button', { name: 'שמירת הקישורים' }).click();
+      await expect(page.getByTestId('payment-message')).toHaveText('צריך להקליד את הקוד בן 6 הספרות מאפליקציית האימות.');
+      await expect(page.getByTestId('payment-code')).toBeFocused();
+
+      const wrong = String((Number(totp(admin.secret)) + 1) % 1_000_000).padStart(6, '0');
+      await page.getByTestId('payment-code').fill(wrong);
+      await page.getByRole('button', { name: 'שמירת הקישורים' }).click();
+      await expect(page.getByTestId('payment-message')).toHaveText('הקוד שגוי או שפג תוקפו. אפשר לנסות שוב עם הקוד הבא.');
+      await expect(page.getByTestId('payment-code')).toHaveValue('');
+      // Chrome logs the intended 401 of the wrong code as a console error; that one is expected.
+      errors.splice(0, errors.length, ...errors.filter((e) => !e.includes('status of 401')));
+      await page.screenshot({ path: join(SCREENS, 'admin-settings-payment-wrong-code.png'), fullPage: true });
+      expect((await paymentRows()).payment_link_bit.value).toBeNull();
+
+      await page.getByTestId('payment-code').fill(await freshCode(admin.secret, loggedInAt));
+      await page.getByRole('button', { name: 'שמירת הקישורים' }).click();
+      await expect(page.getByTestId('payment-message')).toHaveText('נשמר. מייל על השינוי נשלח לכל המנהלים.');
+      await expect(page.getByTestId('payment-bit-state')).toHaveAttribute('data-state', 'shown');
+      await expect(page.getByTestId('payment-bit-state')).toContainText('שונה לאחרונה ב־');
+      expect((await paymentRows()).payment_link_bit).toMatchObject({ value: BIT, by: admin.userId });
+      expect((await paymentRows()).payment_link_paybox.value).toBe('https://evil.example/pay'); // untouched: not sent
+      await adminBaseline(page, 'settings-payment-saved', errors);
     } finally {
       await resetSettings();
     }

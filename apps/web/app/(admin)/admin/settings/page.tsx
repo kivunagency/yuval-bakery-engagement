@@ -3,6 +3,7 @@ import { requireAdminPage } from '@/lib/server/auth/admin';
 import { createUserClient } from '@/lib/server/supabase/server';
 import { listZonesForAdmin } from '@/lib/server/delivery/admin-zones';
 import { loadBusinessSettings } from '@/lib/server/settings/business';
+import { loadPaymentLinkSettings } from '@/lib/server/settings/payment-links';
 import { vapidPublicKey } from '@/lib/server/notification/config';
 import { countAdminPushDevices } from '@/lib/server/notification/subscriptions';
 import { DeliveryZonesEditor } from '@/components/admin/delivery/DeliveryZonesEditor';
@@ -11,7 +12,7 @@ import { SettingsNav } from '@/components/admin/settings/SettingsNav';
 import { BUSINESS_FIELDS } from '@/lib/shared/contracts/business-settings';
 
 // Admin settings. Links to the sections with their own screen (business
-// details), delivery zones by city with a flat fee (client-010, US-6) and
+// details, payment links), delivery zones by city with a flat fee (client-010, US-6) and
 // this admin's push devices (client-012). Arrives with its data, read
 // server-side as the admin's own JWT; only edits go through the admin APIs.
 export default async function AdminSettingsPage() {
@@ -22,12 +23,14 @@ export default async function AdminSettingsPage() {
     getTranslations('admin.settings'),
   ]);
   const supabase = await createUserClient();
-  const [zones, deviceCount, business] = await Promise.all([
+  const [zones, deviceCount, business, payment] = await Promise.all([
     listZonesForAdmin(supabase),
     countAdminPushDevices(supabase, session.userId),
     loadBusinessSettings(supabase),
+    loadPaymentLinkSettings(supabase),
   ]);
   const missing = BUSINESS_FIELDS.filter((f) => !business[f]).length;
+  const linksHidden = [payment.bit, payment.paybox].filter((l) => !l.shownToCustomers).length;
   return (
     <>
       <h1 className="admin-page-title">{tPages('settings')}</h1>
@@ -45,6 +48,13 @@ export default async function AdminSettingsPage() {
               .join(' '),
             attention: missing > 0 || !business.vatStatusConfirmed,
             testId: 'settings-link-business',
+          },
+          {
+            href: '/admin/settings/payment',
+            title: tSettings('payment.title'),
+            status: linksHidden > 0 ? tSettings('payment.status_missing', { count: linksHidden }) : tSettings('payment.status_done'),
+            attention: linksHidden > 0,
+            testId: 'settings-link-payment',
           },
         ]}
       />
