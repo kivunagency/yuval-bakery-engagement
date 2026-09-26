@@ -496,3 +496,28 @@ test.describe('client-001: catalog screen', () => {
     }
   });
 });
+
+// catalog-price-unify: the catalog uses the app's one money formatter
+// (formatIls via PriceAmount) and the shared VAT wording (VatLabel), not a
+// formatter of its own. Seed: croissant 14.00, vat_status exempt.
+test.describe('catalog-price-unify', () => {
+  test('card price is formatIls output; the note above the grid is VatLabel "note"; the sign renders to the left of the number', async ({ page }) => {
+    await page.goto('/');
+    const card = page.locator('[data-testid="product-card"]').filter({ hasText: 'קרואסון חמאה (דמו)' });
+    const price = card.locator('.num').first();
+    expect(await price.textContent()).toBe('14 ₪');
+    await expect(page.getByTestId('catalog-vat-note')).toHaveText('המחירים סופיים');
+    // RTL: the shekel sign is drawn to the LEFT of the digits (design-tokens.md "Price").
+    const [signX, digitsX] = await price.evaluate((el) => {
+      const text = el.firstChild;
+      const r = document.createRange();
+      r.setStart(text, text.textContent.length - 1);
+      r.setEnd(text, text.textContent.length);
+      const sign = r.getBoundingClientRect().x;
+      r.setStart(text, 0);
+      r.setEnd(text, 2);
+      return [sign, r.getBoundingClientRect().x];
+    });
+    expect(signX).toBeLessThan(digitsX);
+  });
+});

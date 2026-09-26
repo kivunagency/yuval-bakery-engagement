@@ -19,10 +19,21 @@ export function vatLabelKey(status: string | null | undefined): 'price.incl_vat'
   return status === 'licensed' ? 'price.incl_vat' : 'price.final_price';
 }
 
-const whole = new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
-const cents = new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+/** Message key (under "business") for the one-line note above a list of prices, e.g. the catalog grid. */
+export function vatNoteKey(status: string | null | undefined): 'price.all_incl_vat' | 'price.all_final' {
+  return status === 'licensed' ? 'price.all_incl_vat' : 'price.all_final';
+}
 
-/** 120 -> "120 ₪", 12.5 -> "12.50 ₪", as he-IL formats them (number first, then the sign). */
+// The ONE money formatter of the app (screens, WhatsApp texts, emails). Digits
+// and grouping are fixed (en-US), not the runtime's he-IL currency pattern, so
+// the server render, the browser hydration and a plain-text message produce
+// the same string whatever ICU data each has. A no-break space keeps the
+// number and the sign together; in an RTL paragraph the sign renders to the
+// left of the number, the Israeli convention (design-tokens.md "Price").
+const whole = new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0, useGrouping: true });
+const cents = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: true });
+
+/** 120 -> "120\u00a0₪", 12.5 -> "12.50\u00a0₪", 1200 -> "1,200\u00a0₪". */
 export function formatIls(amount: number): string {
-  return Number.isInteger(amount) ? whole.format(amount) : cents.format(amount);
+  return `${(Number.isInteger(amount) ? whole : cents).format(amount)}\u00a0₪`;
 }
