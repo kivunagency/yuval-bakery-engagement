@@ -775,6 +775,51 @@
           "bit": "A Bit link starts with https://bitpay.co.il or https://www.bitpay.co.il.",
           "paybox": "A PayBox link starts with https:// and one of payboxapp.com, links.payboxapp.com or payboxapp.page.link."
         }
+      },
+      "hours": {
+        "title": "Hours and order rules",
+        "status_slots": "{count, plural, one {One time slot} other {# time slots}}, the first at {time}.",
+        "status_no_slots": "No time slots yet, so no order can be placed.",
+        "status_rules_unconfirmed": "Some order rules are still defaults.",
+        "slots_title": "Time slots",
+        "slots_intro": "Customers pick one of these slots for delivery or pickup. The same slots apply to every day.",
+        "earliest": "A day can be ordered only while its first slot ({time}) is at least 24 hours away. That time follows the earliest slot.",
+        "earliest_none": "With no slot, no day can be ordered.",
+        "slots_empty": "No time slots yet. Until one is saved, customers see that the hours are not set and cannot order.",
+        "slot_start": "From",
+        "slot_end": "Until",
+        "remove_slot": "Remove the slot {start} to {end}",
+        "add_slot": "+ Add a slot",
+        "slots_hint": "Times as HH:MM, for example 10:00. Each slot is 30 minutes to 12 hours, and slots do not overlap. A removed slot stays on orders that already chose it.",
+        "save_slots": "Save slots",
+        "slots_saved": "Saved. Checkout shows these slots.",
+        "error_count": "Between 1 and {max} slots.",
+        "error_slot": "A marked slot is not valid: times as HH:MM, 30 minutes to 12 hours long.",
+        "error_overlap": "Two slots overlap. Each moment belongs to one slot at most.",
+        "rules_title": "Order rules",
+        "rules_intro": "Changes apply to orders placed from now on. Existing orders keep their own time.",
+        "rule": {
+          "expiryHoursStandard": "Time to pay for a regular order",
+          "expiryHoursCustomCake": "Time to pay for an approved custom cake",
+          "limitedThresholdPct": "A day shows as \"little left\" below"
+        },
+        "unit": {
+          "expiryHoursStandard": "hours",
+          "expiryHoursCustomCake": "hours",
+          "limitedThresholdPct": "percent"
+        },
+        "rule_hint": {
+          "expiryHoursStandard": "An unpaid order frees its oven and work time after this many hours. Shorter frees a busy day sooner; longer is kinder to a slow payment. {min} to {max}.",
+          "expiryHoursCustomCake": "Counted from the approval, because the customer first sees the price then. {min} to {max}.",
+          "limitedThresholdPct": "On the day strip, when less than this share of the oven or work time is left. {min} to {max}."
+        },
+        "default_note": "Default from the specification, not confirmed yet. Saving confirms it.",
+        "save_rules": "Save rules",
+        "rules_saved": "Saved. New orders follow these rules.",
+        "error_rules": "A marked value is out of range.",
+        "error_range": "A whole number from {min} to {max}.",
+        "error_session": "The session has ended. Please sign in again.",
+        "error_generic": "Saving did not work. Please try again."
       }
     }
   },

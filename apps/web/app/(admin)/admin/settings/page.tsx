@@ -4,6 +4,8 @@ import { createUserClient } from '@/lib/server/supabase/server';
 import { listZonesForAdmin } from '@/lib/server/delivery/admin-zones';
 import { loadBusinessSettings } from '@/lib/server/settings/business';
 import { loadPaymentLinkSettings } from '@/lib/server/settings/payment-links';
+import { loadOrderSettings } from '@/lib/server/settings/order-settings';
+import { ORDER_RULE_NAMES } from '@/lib/shared/contracts/order-settings';
 import { vapidPublicKey } from '@/lib/server/notification/config';
 import { countAdminPushDevices } from '@/lib/server/notification/subscriptions';
 import { DeliveryZonesEditor } from '@/components/admin/delivery/DeliveryZonesEditor';
@@ -12,7 +14,7 @@ import { SettingsNav } from '@/components/admin/settings/SettingsNav';
 import { BUSINESS_FIELDS } from '@/lib/shared/contracts/business-settings';
 
 // Admin settings. Links to the sections with their own screen (business
-// details, payment links), delivery zones by city with a flat fee (client-010, US-6) and
+// details, payment links, hours and order rules), delivery zones by city with a flat fee (client-010, US-6) and
 // this admin's push devices (client-012). Arrives with its data, read
 // server-side as the admin's own JWT; only edits go through the admin APIs.
 export default async function AdminSettingsPage() {
@@ -23,12 +25,15 @@ export default async function AdminSettingsPage() {
     getTranslations('admin.settings'),
   ]);
   const supabase = await createUserClient();
-  const [zones, deviceCount, business, payment] = await Promise.all([
+  const [zones, deviceCount, business, payment, order] = await Promise.all([
     listZonesForAdmin(supabase),
     countAdminPushDevices(supabase, session.userId),
     loadBusinessSettings(supabase),
     loadPaymentLinkSettings(supabase),
+    loadOrderSettings(supabase),
   ]);
+  const rulesUnconfirmed = ORDER_RULE_NAMES.some((r) => !order.rules[r].confirmed);
+  const firstSlot = order.slots[0]?.start;
   const missing = BUSINESS_FIELDS.filter((f) => !business[f]).length;
   const linksHidden = [payment.bit, payment.paybox].filter((l) => !l.shownToCustomers).length;
   return (
@@ -55,6 +60,18 @@ export default async function AdminSettingsPage() {
             status: linksHidden > 0 ? tSettings('payment.status_missing', { count: linksHidden }) : tSettings('payment.status_done'),
             attention: linksHidden > 0,
             testId: 'settings-link-payment',
+          },
+          {
+            href: '/admin/settings/hours',
+            title: tSettings('hours.title'),
+            status: [
+              firstSlot ? tSettings('hours.status_slots', { count: order.slots.length, time: `\u2066${firstSlot}\u2069` }) : tSettings('hours.status_no_slots'),
+              rulesUnconfirmed ? tSettings('hours.status_rules_unconfirmed') : null,
+            ]
+              .filter(Boolean)
+              .join(' '),
+            attention: !firstSlot || rulesUnconfirmed,
+            testId: 'settings-link-hours',
           },
         ]}
       />

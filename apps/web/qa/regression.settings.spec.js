@@ -476,3 +476,204 @@ test.describe('payment links (settings-payment, SEC-009)', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------- time slots and order rules (settings-slots)
+
+const RULE_KEYS = ['payment_pending_expiry_hours_standard', 'payment_pending_expiry_hours_custom_cake', 'day_limited_threshold_pct'];
+const activeSlots = async () =>
+  (await db(`SELECT id::text, to_char(start_time, 'HH24:MI') AS start, to_char(end_time, 'HH24:MI') AS "end" FROM time_slots WHERE is_active ORDER BY start_time`));
+const earliest = async () => (await db(`SELECT value #>> '{}' AS v FROM app_settings WHERE key = 'earliest_slot_time'`))[0].v;
+
+/** Snapshot the global slots and rules; the returned function puts them back exactly. */
+async function snapshotOrderSettings() {
+  const slots = await activeSlots();
+  const rules = await db(`SELECT key, value, updated_by FROM app_settings WHERE key = ANY($1)`, [RULE_KEYS]);
+  return async () => {
+    await db(`UPDATE time_slots SET is_active = (id = ANY($1::uuid[]))`, [slots.map((s) => s.id)]);
+    for (const r of rules) await db(`UPDATE app_settings SET value = $2::jsonb, updated_by = $3 WHERE key = $1`, [r.key, JSON.stringify(r.value), r.updated_by]);
+  };
+}
+
+test.describe('time slots and order rules API (settings-slots)', () => {
+  test('slots: 401 anon, 403 Origin, 400 per bad list (overlap named), whole list replaced keeping ids, removed ones off not deleted, earliest_slot_time follows, audited; no direct writes', async ({ page, request, baseURL }) => {
+    for (const r of [await request.put('/api/admin/settings/time-slots', { data: { slots: [] } }), await request.put('/api/admin/settings/order-rules', { data: { limitedThresholdPct: 30 } })]) {
+      expect(r.status()).toBe(401);
+    }
+    const restore = await snapshotOrderSettings();
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const api = page.request;
+    const headers = { origin: baseURL ?? '' };
+    try {
+      expect((await api.put('/api/admin/settings/time-slots', { data: { slots: [{ start: '10:00', end: '12:00' }] } })).status()).toBe(403);
+      for (const [data, error] of [
+        [{ slots: [] }, 'invalid_input'],
+        [{ slots: [{ start: '9:00', end: '12:00' }] }, 'invalid_input'],
+        [{ slots: [{ start: '12:00', end: '12:00' }] }, 'invalid_input'],
+        [{ slots: [{ start: '12:00', end: '12:20' }] }, 'invalid_input'],
+        [{ slots: [{ start: '06:00', end: '18:01' }] }, 'invalid_input'],
+        [{ slots: [{ start: '24:00', end: '25:00' }] }, 'invalid_input'],
+        [{ slots: [{ start: '10:00', end: '12:00', id: 'x' }] }, 'invalid_input'],
+        [{ slots: Array.from({ length: 13 }, (_, i) => ({ start: `${String(i + 6).padStart(2, '0')}:00`, end: `${String(i + 6).padStart(2, '0')}:30` })) }, 'invalid_input'],
+        [{ slots: [{ start: '10:00', end: '12:00' }, { start: '11:30', end: '13:00' }] }, 'overlap'],
+        [{ slots: [{ start: '10:00', end: '12:00' }, { start: '10:00', end: '12:00' }] }, 'overlap'],
+      ]) {
+        const r = await api.put('/api/admin/settings/time-slots', { headers, data });
+        expect(r.status(), JSON.stringify(data)).toBe(400);
+        expect((await r.json()).error, JSON.stringify(data)).toBe(error);
+      }
+      // The DB repeats the rules for a caller that skips the API.
+      const { client } = await createAdmin();
+      expect((await client.rpc('fn_admin_set_time_slots', { p_slots: [{ start: '10:00', end: '12:00' }, { start: '11:00', end: '13:00' }] })).error?.message).toBe('time_slots_overlap');
+      expect((await client.rpc('fn_admin_set_time_slots', { p_slots: [] })).error?.message).toBe('time_slots_invalid');
+      expect((await client.from('time_slots').insert({ start_time: '05:00', end_time: '06:00' }).select()).error?.message ?? '').toContain('permission denied');
+      expect((await client.from('time_slots').update({ is_active: false }).neq('start_time', '00:00').select()).error?.message ?? '').toContain('permission denied');
+
+      const before = await activeSlots();
+      const kept = before.find((s) => s.start === '12:00' && s.end === '14:00');
+      const res = await api.put('/api/admin/settings/time-slots', { headers, data: { slots: [{ start: '12:00', end: '14:00' }, { start: '08:30', end: '10:00' }] } });
+      expect(res.status()).toBe(200);
+      const body = await res.json();
+      expect(body.slots.map((s) => [s.start, s.end])).toEqual([['08:30', '10:00'], ['12:00', '14:00']]);
+      expect(body.earliestSlotTime).toBe('08:30');
+      expect(await earliest()).toBe('08:30');
+      if (kept) expect(body.slots.find((s) => s.start === '12:00').id).toBe(kept.id); // same slot, same id
+      // Removed ones are off, not deleted.
+      for (const s of before.filter((x) => x.start !== '12:00')) expect((await db(`SELECT is_active FROM time_slots WHERE id = $1`, [s.id]))[0]).toEqual({ is_active: false });
+      // The public read (anon, what checkout renders) sees only the new list.
+      const anon = createClient(localEnv().NEXT_PUBLIC_SUPABASE_URL, localEnv().NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+      expect(((await anon.from('time_slots').select('start_time').order('start_time')).data ?? []).map((r) => r.start_time)).toEqual(['08:30:00', '12:00:00']);
+      const [audit] = await db(`SELECT actor_id, metadata FROM audit_log WHERE action = 'settings.time_slots_updated' ORDER BY id DESC LIMIT 1`);
+      expect(audit.actor_id).toBe(admin.userId);
+      expect(audit.metadata.to).toEqual([{ start: '08:30', end: '10:00' }, { start: '12:00', end: '14:00' }]);
+
+      // A removed slot comes back with its old id when saved again.
+      const old = before.find((s) => s.start === '10:00');
+      if (old) {
+        const again = await (await api.put('/api/admin/settings/time-slots', { headers, data: { slots: [{ start: '10:00', end: old.end }] } })).json();
+        expect(again.slots).toEqual([{ id: old.id, start: '10:00', end: old.end }]);
+        expect(await earliest()).toBe('10:00');
+      }
+    } finally {
+      await restore();
+      await db(`UPDATE app_settings SET value = to_jsonb(to_char((SELECT min(start_time) FROM time_slots WHERE is_active), 'HH24:MI')) WHERE key = 'earliest_slot_time'`);
+    }
+  });
+
+  test('order rules: 400 names the field, bounds, a default is confirmed by saving it, audited; a new order uses the new expiry hours', async ({ page, baseURL }) => {
+    const restore = await snapshotOrderSettings();
+    const admin = await createUser({ admin: true, withTotp: true });
+    await uiLogin(page, admin);
+    const api = page.request;
+    const headers = { origin: baseURL ?? '' };
+    try {
+      for (const [data, fields] of [
+        [{ expiryHoursStandard: 0 }, ['expiryHoursStandard']],
+        [{ expiryHoursStandard: 73 }, ['expiryHoursStandard']],
+        [{ expiryHoursCustomCake: 169 }, ['expiryHoursCustomCake']],
+        [{ limitedThresholdPct: 100 }, ['limitedThresholdPct']],
+        [{ limitedThresholdPct: 12.5 }, ['limitedThresholdPct']],
+        [{ expiryHoursStandard: '6' }, ['expiryHoursStandard']],
+        [{}, []],
+        [{ lead_time_hours: 1 }, []],
+      ]) {
+        const r = await api.put('/api/admin/settings/order-rules', { headers, data });
+        expect(r.status(), JSON.stringify(data)).toBe(400);
+        expect((await r.json()).fields ?? []).toEqual(fields);
+      }
+      const { client } = await createAdmin();
+      expect((await client.rpc('fn_admin_set_order_rules', { p_values: { payment_pending_expiry_hours_standard: 500 } })).error?.message).toBe('setting_out_of_range: payment_pending_expiry_hours_standard');
+      expect((await client.rpc('fn_admin_set_order_rules', { p_values: { lead_time_hours: 1 } })).error?.message).toBe('settings_invalid_input');
+
+      await db(`UPDATE app_settings SET updated_by = NULL WHERE key = ANY($1)`, [RULE_KEYS]);
+      const current = Object.fromEntries((await db(`SELECT key, value FROM app_settings WHERE key = ANY($1)`, [RULE_KEYS])).map((r) => [r.key, r.value]));
+      const res = await api.put('/api/admin/settings/order-rules', {
+        headers,
+        data: { expiryHoursStandard: 6, expiryHoursCustomCake: current.payment_pending_expiry_hours_custom_cake, limitedThresholdPct: 30 },
+      });
+      expect(res.status()).toBe(200);
+      const body = await res.json();
+      expect(body.rules).toEqual({
+        expiryHoursStandard: { value: 6, confirmed: true },
+        expiryHoursCustomCake: { value: current.payment_pending_expiry_hours_custom_cake, confirmed: true }, // same value: still recorded as her decision
+        limitedThresholdPct: { value: 30, confirmed: true },
+      });
+      const [audit] = await db(`SELECT actor_id, metadata FROM audit_log WHERE action = 'settings.order_rules_updated' ORDER BY id DESC LIMIT 1`);
+      expect(audit.actor_id).toBe(admin.userId);
+      expect(audit.metadata.changed.payment_pending_expiry_hours_standard).toEqual({ from: current.payment_pending_expiry_hours_standard, to: 6 });
+
+      // A standard order created now holds its time for 6 hours.
+      const helpers = require('./helpers/db');
+      await helpers.withClient(async (c) => {
+        const day = await helpers.freshDay(c, { oven: 500, work: 500 });
+        const product = await helpers.freshProduct(c, { oven: 10, work: 10 });
+        const order = await helpers.createOrder(c, day, product);
+        const { rows } = await c.query(`SELECT round(extract(epoch FROM payment_pending_expires_at - created_at) / 3600)::int AS h FROM orders WHERE id = $1`, [order.id]);
+        expect(rows[0].h).toBe(6);
+      });
+    } finally {
+      await restore();
+    }
+  });
+});
+
+test.describe('hours and order rules screen (settings-slots)', () => {
+  test('arrives with its data, earliest slot shown, overlap refused in words, add/remove/save, defaults marked until saved', async ({ page }) => {
+    const restore = await snapshotOrderSettings();
+    const admin = await createUser({ admin: true, withTotp: true });
+    try {
+      await db(`UPDATE app_settings SET updated_by = NULL WHERE key = ANY($1)`, [RULE_KEYS]);
+      await uiLogin(page, admin);
+      const errors = collectErrors(page);
+      const before = await activeSlots();
+      await page.goto('/admin/settings');
+      const link = page.getByTestId('settings-link-hours');
+      await expect(link).toContainText(`הראשון ב־\u2066${before[0].start}\u2069`); // the time is LTR-isolated in the Hebrew line
+      await expect(link).toContainText('חלק מכללי ההזמנה עדיין ברירת מחדל.');
+      const requests = [];
+      page.on('request', (r) => r.resourceType() === 'fetch' && requests.push(r.url()));
+      await link.click();
+      await page.waitForURL('**/admin/settings/hours');
+      expect(requests.filter((u) => u.includes('/api/'))).toEqual([]);
+      await expect(page.getByTestId('earliest-slot')).toContainText(before[0].start);
+      for (let i = 0; i < before.length; i++) await expect(page.getByTestId(`slot-${i}-start`)).toHaveValue(before[i].start);
+      await expect(page.getByTestId('rule-expiryHoursStandard-default')).toBeVisible();
+      await adminBaseline(page, 'settings-hours', errors);
+
+      // Add an overlapping slot: refused in words, nothing sent.
+      await page.getByTestId('slot-add').click();
+      const n = before.length;
+      await page.getByTestId(`slot-${n}-start`).fill(before[0].start);
+      await page.getByTestId(`slot-${n}-end`).fill(before[0].end);
+      await page.getByRole('button', { name: 'שמירת החלונות' }).click();
+      await expect(page.getByTestId('slots-message')).toHaveText('שני חלונות חופפים. כל רגע שייך לחלון אחד לכל היותר.');
+      await page.getByTestId(`slot-${n}-start`).fill('07:00');
+      await page.getByTestId(`slot-${n}-end`).fill('7:45');
+      await page.getByRole('button', { name: 'שמירת החלונות' }).click();
+      await expect(page.getByTestId(`slot-${n}`)).toHaveAttribute('data-invalid', 'true');
+      await page.screenshot({ path: join(SCREENS, 'admin-settings-hours-invalid.png'), fullPage: true });
+      await page.getByTestId(`slot-${n}-end`).fill('08:00');
+      await page.getByTestId('slot-0-remove').click(); // remove the first existing slot
+      await page.getByRole('button', { name: 'שמירת החלונות' }).click();
+      await expect(page.getByTestId('slots-message')).toHaveText('נשמר. בקופה מופיעים החלונות האלה.');
+      expect((await activeSlots()).map((s) => s.start)).toEqual(['07:00', ...before.slice(1).map((s) => s.start)]);
+      expect(await earliest()).toBe('07:00');
+      await expect(page.getByTestId('earliest-slot')).toContainText('07:00');
+
+      // Rules: an out-of-range value is marked; saving confirms the defaults.
+      await page.getByTestId('rule-expiryHoursStandard').fill('100');
+      await page.getByRole('button', { name: 'שמירת הכללים' }).click();
+      await expect(page.getByTestId('rules-message')).toHaveText('ערך מסומן מחוץ לטווח.');
+      await expect(page.getByText('מספר שלם בין 1 ל־72.')).toBeVisible();
+      await page.getByTestId('rule-expiryHoursStandard').fill('5');
+      await page.getByRole('button', { name: 'שמירת הכללים' }).click();
+      await expect(page.getByTestId('rules-message')).toHaveText('נשמר. הזמנות חדשות פועלות לפי הכללים האלה.');
+      await expect(page.getByTestId('rule-expiryHoursStandard-default')).toHaveCount(0);
+      expect((await db(`SELECT value, updated_by::text AS by FROM app_settings WHERE key = 'payment_pending_expiry_hours_standard'`))[0]).toEqual({ value: 5, by: admin.userId });
+      await adminBaseline(page, 'settings-hours-saved', errors);
+    } finally {
+      await restore();
+      await db(`UPDATE app_settings SET value = to_jsonb(to_char((SELECT min(start_time) FROM time_slots WHERE is_active), 'HH24:MI')) WHERE key = 'earliest_slot_time'`);
+    }
+  });
+});
