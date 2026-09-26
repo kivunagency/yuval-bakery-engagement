@@ -15,6 +15,13 @@ export type OrderCardLabels = {
   expiry: { date: string; time: string } | null;
   /** Expired for a day that has not passed yet: may have been paid late (blindspot-005). */
   checkLatePayment: boolean;
+  /**
+   * US-0c, only for a paid order with no email whose written confirmation was
+   * not delivered yet: the WhatsApp link carrying the confirmation PDF link
+   * (null without a valid phone), or linkAvailable false when the link could
+   * not be built (secret missing).
+   */
+  confirmation: { whatsappHref: string | null; linkAvailable: boolean } | null;
 };
 
 // One order in the admin list (client-009). Server-rendered; only the
@@ -113,6 +120,7 @@ export function OrderCard({ order, labels, listQuery }: { order: AdminOrderView;
         total={order.total}
         dayLabel={labels.day}
         confirmationMissing={order.confirmationMissing}
+        confirmation={labels.confirmation}
         listQuery={listQuery}
       />
     </article>

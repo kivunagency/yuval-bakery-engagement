@@ -19,6 +19,7 @@ import type { PushPayload } from '@/lib/shared/contracts/push';
 
 const t = createTranslator({ locale: 'he', messages: he, namespace: 'notification' });
 const tBusiness = createTranslator({ locale: 'he', messages: he, namespace: 'business' });
+const tConfirmation = createTranslator({ locale: 'he', messages: he, namespace: 'confirmation.email' });
 
 const NAME_MAX = 60;
 const REASON_MAX = 500;
@@ -148,12 +149,20 @@ export function newCustomCakeEmail(r: CustomCakeFacts, links: Links): Omit<Email
 
 // ---------------------------------------------------------------- customer emails (no customer text)
 
-export function orderConfirmationEmail(o: OrderFacts, b: BusinessFacts): Omit<EmailMessage, 'to'> {
+/** confirmationUrl: the 24-month link to the same PDF (US-0c), built by the server from the order id, never from customer input. */
+export function orderConfirmationEmail(o: OrderFacts, b: BusinessFacts, confirmationUrl?: string): Omit<EmailMessage, 'to'> {
+  const link: Block[] = confirmationUrl
+    ? [
+        { kind: 'p', text: tConfirmation('link_intro'), html: escapeHtml(tConfirmation('link_intro')) },
+        { kind: 'cta', href: confirmationUrl, label: tConfirmation('link_cta') },
+      ]
+    : [];
   return layout(
     t('order_confirmation.subject', { orderNumber: o.order_number }),
     [
       msg('order_confirmation.body', { orderNumber: o.order_number, date: isolatedDate(o.delivery_date) }),
       msg('order_confirmation.payment', {}),
+      ...link,
       contactLine(b),
     ],
     t('common.footer_customer', { businessName: businessName(b) }),

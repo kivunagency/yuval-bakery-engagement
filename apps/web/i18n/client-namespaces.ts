@@ -14,7 +14,7 @@ export const CLIENT_SCOPES = {
   order: [...CORE, 'payment'],
   custom_cake: [...CORE, 'custom_cake'],
   account: [...CORE, 'registration', 'account'],
-  admin: [...CORE, 'admin', 'push'],
+  admin: [...CORE, 'admin', 'push', 'confirmation'],
 } as const;
 
 export type ClientScope = keyof typeof CLIENT_SCOPES;

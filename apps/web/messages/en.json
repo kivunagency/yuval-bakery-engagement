@@ -532,8 +532,6 @@
       "cancel_paid_note": "This order is paid. The refund is done outside the app.",
       "confirm_cancel": "Yes, cancel it",
       "mark_fulfilled": "Delivered or picked up",
-      "fulfil_blocked": "There is no email on this order. Before it can be marked delivered, the customer must receive the written order confirmation (by WhatsApp).",
-      "fulfil_blocked_next": "Recording that the confirmation was sent comes in the next version. Until then the order stays paid.",
       "done": {
         "paid": "Order <ltr>{number}</ltr> was marked paid.",
         "cancelled": "Order <ltr>{number}</ltr> was cancelled.",
@@ -1038,7 +1036,39 @@
       "fulfilled": "The order was fulfilled.",
       "expired": "The payment time ran out and the place was released. You can order again.",
       "cancelled": "The order was cancelled."
+    }
+  },
+  "confirmation": {
+    "pdf": {
+      "title": "Order confirmation",
+      "order_number": "Order number: {orderNumber}",
+      "ordered_on": "Order received on {date}",
+      "total_with_label": "Total ({label})",
+      "payment_heading": "Payment",
+      "payment_note": "Write the order number in the payment note: {orderNumber}",
+      "business_link": "All business details: {url}",
+      "footer": "This document was created on {date} and is kept unchanged. It can be downloaded again from the same link for at least 24 months."
     },
-    "confirmation_pending": "A confirmation you can download will be added here."
+    "page": {
+      "heading": "Written order confirmation",
+      "download": "Download the order confirmation (PDF)",
+      "kept": "The file does not change, and its link is kept for at least 24 months."
+    },
+    "email": {
+      "link_intro": "The order confirmation is attached. You can download it again from this link for at least 24 months:",
+      "link_cta": "Download the order confirmation"
+    },
+    "admin": {
+      "needed": "This order has no email. Before it can be marked delivered, the customer must receive the written order confirmation on WhatsApp.",
+      "send_whatsapp": "Send the order confirmation on WhatsApp",
+      "send_whatsapp_label": "Send the confirmation of order {number} on WhatsApp",
+      "whatsapp_text": "Hello, here is the written confirmation of order {number} (PDF file): {url}",
+      "then_mark": "Once the message is sent, press \"I sent it\".",
+      "mark_sent": "I sent it",
+      "no_phone": "The order has no valid phone number, so WhatsApp is not possible. Send the confirmation another way, then mark it.",
+      "link_unavailable": "The order confirmation link is not available right now. Try reloading the page.",
+      "error": "Could not record that the confirmation was sent. Try again.",
+      "done": "Recorded that the confirmation of order <ltr>{number}</ltr> was sent. It can now be marked delivered."
+    }
   }
 }

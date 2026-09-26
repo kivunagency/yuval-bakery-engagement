@@ -121,6 +121,11 @@ read -r VAPID_PUBLIC VAPID_PRIVATE < <(node -e '
   const e=require("crypto").createECDH("prime256v1");e.generateKeys();
   console.log(e.getPublicKey().toString("base64url")+" "+e.getPrivateKey().toString("base64url"))')
 
+# US-0c: key of the confirmation-link HMAC, minted per run. DEV/PROD: a
+# random 32+ character value in Netlify env, set once and kept (changing it
+# stops new links for already-issued orders; links already sent keep working).
+CONFIRMATION_LINK_SECRET=$(node -e 'console.log(require("crypto").randomBytes(32).toString("base64url"))')
+
 cat > "$APP/.env.local" <<ENV
 # Written by scripts/local-stack/up.sh. Local stack only, regenerated every run.
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:$GW_PORT
@@ -136,5 +141,6 @@ VAPID_SUBJECT=mailto:qa@example.test
 EMAIL_PROVIDER=capture
 EMAIL_CAPTURE_DIR=$STATE/outbox
 PUSH_ALLOW_LOCAL_ENDPOINTS=1
+CONFIRMATION_LINK_SECRET=$CONFIRMATION_LINK_SECRET
 ENV
 echo "local stack up: api http://127.0.0.1:$GW_PORT  db 127.0.0.1:$PG_PORT  (.env.local written)"
