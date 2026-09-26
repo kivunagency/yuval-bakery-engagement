@@ -21,7 +21,7 @@ export function newLookupToken(): string {
 
 const createdOrder = z.object({ id: z.string(), order_number: z.string(), status: z.literal('payment_pending') });
 
-export type CreateOrderResult = { ok: true; token: string } | { ok: false; error: CheckoutError; pickAnotherDay?: true };
+export type CreateOrderResult = { ok: true; token: string; orderId: string } | { ok: false; error: CheckoutError; pickAnotherDay?: true };
 
 // Every DB refusal the checkout can meet, as the screen needs it. Capacity or
 // day gone: back to the day picker. Anything unknown is a generic error.
@@ -50,7 +50,7 @@ export async function createStandardOrder(input: CreateOrderRequest, ip: string)
   const token = newLookupToken();
   const delivery = input.fulfillment === 'delivery';
   try {
-    await callRpc(
+    const created = await callRpc(
       serviceClient(),
       'fn_create_standard_order',
       {
@@ -73,7 +73,7 @@ export async function createStandardOrder(input: CreateOrderRequest, ip: string)
       },
       createdOrder,
     );
-    return { ok: true, token };
+    return { ok: true, token, orderId: created.id };
   } catch (e) {
     if (e instanceof DbError) {
       const mapped = mapOrderDbError(e.code);

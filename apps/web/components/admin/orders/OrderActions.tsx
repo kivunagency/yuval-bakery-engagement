@@ -6,9 +6,11 @@ import { useTranslations } from 'next-intl';
 import { formatIls } from '@/lib/shared/price/vat';
 import type { AdminOrderAction, AdminOrdersApiErrorBody } from '@/lib/shared/contracts/admin-orders';
 import type { OrderStatus } from '@/lib/shared/types';
+import type { OrderCardLabels } from './OrderCard';
 
 type Step = 'idle' | 'confirm-paid' | 'confirm-cancel';
-const DONE: Record<AdminOrderAction, string> = { 'mark-paid': 'paid', cancel: 'cancelled', 'mark-fulfilled': 'fulfilled' };
+type Action = AdminOrderAction | 'confirmation-sent';
+const DONE: Record<Action, string> = { 'mark-paid': 'paid', cancel: 'cancelled', 'mark-fulfilled': 'fulfilled', 'confirmation-sent': 'confirmation_sent' };
 
 // The actions of one order (client-009). Whether a transition is allowed is
 // the DB's answer (api-004 routes); this only shows the buttons that make
@@ -22,6 +24,7 @@ export function OrderActions({
   total,
   dayLabel,
   confirmationMissing,
+  confirmation,
   listQuery,
 }: {
   id: string;
@@ -30,10 +33,12 @@ export function OrderActions({
   total: number;
   dayLabel: string;
   confirmationMissing: boolean;
+  confirmation: OrderCardLabels['confirmation'];
   /** The list's own query (status, day), kept when the page reloads after an action. */
   listQuery: string;
 }) {
   const t = useTranslations('admin.orders');
+  const tc = useTranslations('confirmation.admin');
   const router = useRouter();
   const [step, setStep] = useState<Step>('idle');
   const [busy, setBusy] = useState(false);
@@ -42,7 +47,7 @@ export function OrderActions({
 
   if (status !== 'payment_pending' && status !== 'paid') return null;
 
-  async function run(action: AdminOrderAction) {
+  async function run(action: Action) {
     setBusy(true);
     setError(null);
     try {
@@ -60,6 +65,7 @@ export function OrderActions({
         setError(t('error_transition', { status: t(`status.${body.status}`) }));
         router.refresh();
       } else if (body?.error === 'confirmation_required') setError(t('error_confirmation'));
+      else if (action === 'confirmation-sent' && body?.error !== 'unauthorized') setError(tc('error'));
       else if (body?.error === 'unauthorized') setError(t('error_session'));
       else if (body?.error === 'not_found') setError(t('error_not_found'));
       else setError(t('error_generic'));
@@ -117,9 +123,29 @@ export function OrderActions({
               {t('mark_paid')}
             </button>
           ) : confirmationMissing ? (
-            <div className="admin-warn" data-testid="fulfil-blocked">
-              <p>{t('fulfil_blocked')}</p>
-              <p>{t('fulfil_blocked_next')}</p>
+            // US-0c: the written confirmation must reach a guest with no email before "delivered".
+            <div className="admin-warn admin-confirmation" data-testid="fulfil-blocked">
+              <p>{tc('needed')}</p>
+              {confirmation && !confirmation.linkAvailable ? (
+                <p data-testid="confirmation-link-unavailable">{tc('link_unavailable')}</p>
+              ) : confirmation?.whatsappHref ? (
+                <a
+                  className="btn btn-secondary"
+                  href={confirmation.whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={tc('send_whatsapp_label', { number: orderNumber })}
+                  data-testid="confirmation-whatsapp"
+                >
+                  {tc('send_whatsapp')}
+                </a>
+              ) : (
+                <p data-testid="confirmation-no-phone">{tc('no_phone')}</p>
+              )}
+              <p>{tc('then_mark')}</p>
+              <button type="button" className="btn btn-primary" disabled={busy} onClick={() => run('confirmation-sent')} data-testid="confirmation-sent">
+                {tc('mark_sent')}
+              </button>
             </div>
           ) : (
             <button type="button" className="btn btn-primary" disabled={busy} onClick={() => run('mark-fulfilled')} data-testid="mark-fulfilled">

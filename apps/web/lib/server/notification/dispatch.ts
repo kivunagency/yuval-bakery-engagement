@@ -95,7 +95,8 @@ async function run(input: DispatchInput, d: NotifierDeps, report: NotificationRe
     await sendToAdmins(d, key('email', 'admin'), tpl.newOrderEmail(o, links), out, skip);
     if (!plausibleEmail(o.customer_email)) return skip(key('email', 'customer'), 'no_customer_email');
     if (!input.confirmationPdf) return skip(key('email', 'customer'), 'confirmation_pdf_pending');
-    const message = { ...tpl.orderConfirmationEmail(o, await d.store.business()), to: o.customer_email.trim(), attachments: [input.confirmationPdf] };
+    const { url, ...attachment } = input.confirmationPdf;
+    const message = { ...tpl.orderConfirmationEmail(o, await d.store.business(), url), to: o.customer_email.trim(), attachments: [attachment] };
     await sendEmail(d, key('email', 'customer'), message, out, skip);
     return;
   }

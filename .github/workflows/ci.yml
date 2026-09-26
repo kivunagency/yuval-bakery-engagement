@@ -42,6 +42,8 @@ jobs:
       - run: npm run build
       - run: npm run build:functions
       - run: npx playwright install --with-deps chromium
+      # US-0c: regression.confirmation renders the PDF to PNG and reads its fonts and text.
+      - run: sudo apt-get install -y --no-install-recommends poppler-utils
       - run: bash scripts/local-stack/up.sh
       - name: qa-001 capacity race (N concurrent pg connections)
         run: npm run test:race

@@ -73,6 +73,9 @@ record "compliance-005 IS 5568 on DEV before PROD" "DID NOT RUN (no DEV yet; run
 record "job-001 scheduled on Netlify" "DID NOT RUN (no Netlify site yet, infra-002)"
 record "api-010 hosted Auth mail (custom SMTP + template)" "DID NOT RUN (Yuval's Supabase + Resend accounts, infra)"
 record "job-002 real email via Resend" "DID NOT RUN (no Resend account yet, Yuval's; capture adapter used)"
+record "US-0c CONFIRMATION_LINK_SECRET in Netlify env" "DID NOT RUN (no Netlify site yet; Yuval sets it, DEV and PROD)"
+record "US-0c PDF opened on a real phone (iOS/Android viewer)" "DID NOT RUN (rendered with poppler only)"
+command -v pdftoppm >/dev/null || record "US-0c PDF rendered to PNG in regression.confirmation" "DID NOT RUN (poppler-utils not installed: that test skips)"
 record "job-002 real web push to a device" "DID NOT RUN (stand-in push service on 127.0.0.1 only)"
 record "ops registry live probe + real MCP client" "DID NOT RUN (nothing deployed; SECURITY.md Pre-OPERATE gate)"
 

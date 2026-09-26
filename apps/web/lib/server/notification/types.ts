@@ -32,10 +32,12 @@ export type NotificationReport = {
 };
 
 /**
- * Seam for the order-confirmation PDF (wave 3, not built here). Until a caller
- * passes it, the customer's confirmation email is recorded as `skipped`
+ * The order-confirmation PDF (US-0c, lib/server/confirmation). Without it the
+ * customer's confirmation email is recorded as `skipped`
  * (`confirmation_pdf_pending`) and not sent: that email exists to deliver the
- * s.14C written confirmation, which is the PDF. Recording the delivery on the
- * order (`fn_record_order_confirmation_delivered`) belongs to the PDF task.
+ * s.14C written confirmation, which is the PDF. `url` is its 24-month link,
+ * shown in the email. Recording the delivery on the order
+ * (`fn_record_order_confirmation_delivered`, channel email) is done by the
+ * caller, lib/server/confirmation/on-order-created.ts, once the email was sent.
  */
-export type ConfirmationPdf = { filename: string; content: Uint8Array };
+export type ConfirmationPdf = { filename: string; content: Uint8Array; url?: string };
