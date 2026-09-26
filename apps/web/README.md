@@ -63,7 +63,8 @@ styles/admin.css     admin-only styles
 
 ## Public business settings (compliance-002, US-0b)
 
-Yuval edits these `app_settings` keys (admin screen: a later task). Each is a
+Yuval edits these `app_settings` keys in `/admin/settings/business` (with `vat_status`,
+through `fn_admin_set_business_details`; `app_settings` has no direct write path). Each is a
 JSON string, or JSON `null` while unknown; the site then shows a visible
 placeholder such as `[שם העסק]`. anon reads them only via `fn_public_site_settings()`.
 
@@ -116,8 +117,9 @@ creates the account (infra-003).
 
 | What | Where | Notes |
 |---|---|---|
-| Delivery/pickup time slots | table `time_slots` (start, end, Asia/Jerusalem) | None ship in the migration (Yuval's hours are open); `seed.sql` has synthetic ones. The first active start is copied into `app_settings.earliest_slot_time` by a trigger: do not edit that key by hand. |
-| Bit / PayBox links | `app_settings` `payment_link_bit`, `payment_link_paybox` | JSON null until set; shown only if https on the host allowlist in `lib/shared/payment/links.ts` (UNVERIFIED hosts). Read through `fn_payment_link_settings()` (service role). |
+| Delivery/pickup time slots | table `time_slots` (start, end, Asia/Jerusalem) | None ship in the migration (Yuval's hours are open); `seed.sql` has synthetic ones. Edited in `/admin/settings/hours` through `fn_admin_set_time_slots` (no direct writes). The first active start is copied into `app_settings.earliest_slot_time` by a trigger: do not edit that key by hand. |
+| Payment expiry hours, "limited" threshold | `app_settings` `payment_pending_expiry_hours_*`, `day_limited_threshold_pct` | Edited in `/admin/settings/hours` through `fn_admin_set_order_rules`; bounds in `trg_app_settings_guard`. |
+| Bit / PayBox links | `app_settings` `payment_link_bit`, `payment_link_paybox` | JSON null until set; shown only if https on the host allowlist in `lib/shared/payment/links.ts` (UNVERIFIED hosts; `fn_payment_link_valid` repeats it). Read through `fn_payment_link_settings()` (service role). Edited in `/admin/settings/payment` with a fresh TOTP code (SEC-009), audited, emailed to every admin. |
 | Order creation | `POST /api/orders` -> `fn_create_standard_order` (service role only) | The client never sends an amount; the DB prices, reserves and checks the slot lead time. |
 
 ## Operations registry (ops-registry-001, Rule 27)

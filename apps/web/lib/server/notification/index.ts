@@ -10,6 +10,7 @@ import type { ConfirmationPdf, NotificationReport } from '@/lib/server/notificat
 //   after(() => CustomCakeRequested({ requestId })); // custom-cake submit
 //   after(() => CustomCakeApproved({ requestId }));  // after fn_approve_custom_cake_request
 //   after(() => CustomCakeDeclined({ requestId }));  // after the decline function
+//   after(() => PaymentLinksChanged({ changeId }));  // after fn_admin_set_payment_links (SEC-009)
 //
 // Contract:
 // - Call it AFTER the DB transaction that created the order / request has
@@ -44,4 +45,9 @@ export function CustomCakeApproved(input: { requestId: string }): Promise<Notifi
 /** Custom cake declined: email to the customer, if they gave one, with the admin's optional reason. */
 export function CustomCakeDeclined(input: { requestId: string }): Promise<NotificationReport> {
   return dispatch({ event: 'custom_cake_declined', entityId: input.requestId });
+}
+
+/** Bit/PayBox links changed (SEC-009): email (and push) to every admin, so a change nobody made is noticed. */
+export function PaymentLinksChanged(input: { changeId: string }): Promise<NotificationReport> {
+  return dispatch({ event: 'payment_links_changed', entityId: input.changeId });
 }

@@ -599,3 +599,50 @@
 .admin-prod-filepick:focus-within .btn { outline: 3px solid var(--focus); outline-offset: 2px; }
 .admin-prod-filename { color: var(--ink-2); font-size: 15px; overflow-wrap: anywhere; min-inline-size: 0; }
 .admin-prod-delete { box-shadow: none; background: transparent; padding: 0; }
+/* Settings sections with their own screen (settings-business and later). */
+.admin-settings-nav { list-style: none; margin: var(--s4) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.admin-settings-nav a {
+  display: flex; flex-direction: column; gap: 2px; min-block-size: 56px; justify-content: center;
+  padding: var(--s3) var(--s4); border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow-1);
+  color: var(--ink); text-decoration: none; border-inline-start: 4px solid transparent;
+}
+.admin-settings-nav a[data-attention] { border-inline-start-color: var(--warn); }
+.admin-settings-nav-title { font-weight: 700; font-size: 17px; }
+.admin-settings-nav-status { font-size: 14px; color: var(--ink-2); }
+.admin-back-link { display: inline-flex; align-items: center; min-block-size: 44px; color: var(--ink-2); font-weight: 600; }
+.admin-settings-form { gap: var(--s5); }
+.admin-field-error { margin: 6px 0 0; font-size: 14px; font-weight: 600; color: var(--danger); }
+.admin-field input[aria-invalid='true'] { border-color: var(--danger); border-width: 2px; }
+.admin-radio-group { border: 0; margin: 0; padding: 0; min-inline-size: 0; display: flex; flex-direction: column; gap: var(--s2); }
+.admin-radio-group legend { padding: 0; margin-block-end: var(--s2); font-size: 14px; font-weight: 600; }
+.admin-radio-group .admin-hint, .admin-radio-group .admin-note { margin: 0; }
+.admin-radio {
+  display: flex; align-items: center; gap: var(--s2); min-block-size: 52px; padding-inline: var(--s1) var(--s3);
+  border: 1.5px solid var(--line-strong); border-radius: var(--r-control); background: var(--surface); cursor: pointer;
+}
+.admin-radio:has(input:checked) { border-color: var(--accent); border-width: 2px; }
+.admin-radio input {
+  appearance: none; -webkit-appearance: none; flex: none;
+  inline-size: 44px; block-size: 44px; margin: 0; display: grid; place-content: center; cursor: pointer;
+  background: transparent; border: 0; border-radius: 50%;
+}
+.admin-radio input::before {
+  content: ''; inline-size: 22px; block-size: 22px; box-sizing: border-box; border-radius: 50%;
+  border: 2px solid var(--line-strong); background: var(--surface);
+}
+.admin-radio input:checked::before { border: 7px solid var(--accent); }
+/* Payment links (SEC-009): the fresh-code step stands apart from the links. */
+.admin-step-up { padding: var(--s4); border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow-1); border-inline-start: 4px solid var(--accent); }
+.admin-field input[inputmode='url'] { font-size: 15px; }
+/* Time slots and order rules (settings-slots). */
+.admin-slots { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s3); }
+.admin-slot { display: grid; grid-template-columns: 1fr 1fr 44px; gap: var(--s2); align-items: end; }
+.admin-slot[data-invalid] input { border-color: var(--danger); border-width: 2px; }
+.admin-slot-remove {
+  inline-size: 44px; block-size: 52px; border-radius: var(--r-control); border: 1.5px solid var(--line-strong);
+  background: var(--surface); color: var(--ink); font-size: 24px; line-height: 1; cursor: pointer;
+}
+.admin-unit-row { display: flex; align-items: center; gap: var(--s2); }
+.admin-unit-row input { inline-size: 96px; }
+.admin-unit { font-weight: 600; color: var(--ink-2); }
+.admin-default-note { color: var(--warn); font-weight: 600; }
