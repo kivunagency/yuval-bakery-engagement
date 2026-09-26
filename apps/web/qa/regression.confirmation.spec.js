@@ -100,6 +100,22 @@ async function capturedMailTo(address) {
 }
 
 test.describe('US-0c: order confirmation PDF', () => {
+  // Every checkout emails every admin (job-002), and other specs leave many
+  // admins in this shared DB, so the daily email cap would refuse the
+  // customer's confirmation mail. Lift it here and put the seeded values back,
+  // as regression.notifications does.
+  const CAP_KEYS = ['email_daily_hard_cap', 'email_daily_alert_at', 'email_daily_customer_cap'];
+  let savedCaps = [];
+  test.beforeAll(async () => {
+    savedCaps = await db('SELECT key, value FROM app_settings WHERE key = ANY($1)', [CAP_KEYS]);
+    for (const [k, v] of [['email_daily_hard_cap', 100000], ['email_daily_alert_at', 99999], ['email_daily_customer_cap', 100000]]) {
+      await db('UPDATE app_settings SET value = $2::jsonb WHERE key = $1', [k, JSON.stringify(v)]);
+    }
+  });
+  test.afterAll(async () => {
+    for (const r of savedCaps) await db('UPDATE app_settings SET value = $2::jsonb WHERE key = $1', [r.key, JSON.stringify(r.value)]);
+  });
+
   test('checkout with an email: the PDF is issued once, emailed with its link, and the delivery is recorded (channel email)', async ({ request }) => {
     const email = `guest-${crypto.randomUUID()}@example.test`;
     const { row } = await checkout(request, { email });
