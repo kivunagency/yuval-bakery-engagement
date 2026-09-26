@@ -691,6 +691,58 @@
       "not_configured": "Notifications are not set up on the server yet. New orders reach you by email.",
       "unsubscribe_failed": "Could not turn off notifications. Try again in a moment.",
       "ios_note": "On iPhone and iPad, notifications work from ⁦iOS 16.4⁩, and only in the app added to the home screen: open this page in Safari, tap Share, then Add to Home Screen, and open the site from the new icon. Then turn notifications on there."
+    },
+    "settings": {
+      "nav_label": "Settings sections",
+      "back": "Back to settings",
+      "business": {
+        "title": "Business details",
+        "intro": "These details appear on the site: on the business details page, at the bottom of every page and before payment, as consumer protection law requires. A detail left empty appears on the site as a placeholder in square brackets until it is filled in.",
+        "status_missing": "{count, plural, one {One detail is not filled in yet} other {# details are not filled in yet}}, the site shows a placeholder in its place.",
+        "status_done": "All details are filled in.",
+        "status_vat_unconfirmed": "The osek type has not been confirmed yet.",
+        "field": {
+          "name": "Business name",
+          "ownerName": "Owner's full name",
+          "registrationNumber": "Osek number",
+          "address": "Business address",
+          "phone": "Phone for inquiries",
+          "whatsapp": "WhatsApp number",
+          "email": "Email for inquiries",
+          "vatStatus": "Osek type"
+        },
+        "hint": {
+          "name": "The name customers see at the top and bottom of the site.",
+          "ownerName": "Consumer protection law requires the name of the dealer.",
+          "registrationNumber": "9 digits, like an ID number.",
+          "address": "Whether to publish a home address or a PO box is still open for legal advice.",
+          "phone": "Appears on every page; tapping it calls.",
+          "whatsapp": "The WhatsApp button on every page opens a chat with this number.",
+          "email": "Appears on the business details page and in the privacy notice.",
+          "vatStatus": "Changes the price wording on the site: \"final price\" for an exempt dealer, \"incl. VAT\" for a licensed dealer. Worth checking with the accountant."
+        },
+        "empty_shows": "Empty: the site shows {placeholder}.",
+        "vat": {
+          "exempt": "Osek patur (exempt dealer)",
+          "licensed": "Osek murshe (licensed dealer)"
+        },
+        "vat_unconfirmed": "Not confirmed yet. Until a choice is saved here, the site uses the default: {current}.",
+        "save": "Save details",
+        "saved": "Saved. The site shows the new details.",
+        "nothing_changed": "Nothing changed, nothing to save.",
+        "error_fields": "Some details are not valid. The marked fields say what to fix.",
+        "error_session": "The session has ended. Please sign in again.",
+        "error_generic": "Saving did not work. Please try again.",
+        "error": {
+          "name": "Business name: 2 to 60 characters.",
+          "ownerName": "Owner's name: 2 to 60 characters.",
+          "registrationNumber": "An osek number has 9 digits and a valid check digit, like an ID number.",
+          "address": "Address: 5 to 150 characters.",
+          "phone": "An Israeli phone number, for example 050-123-4567.",
+          "whatsapp": "An Israeli phone number, for example 050-123-4567.",
+          "email": "An email address, for example name@example.com."
+        }
+      }
     }
   },
   "custom_cake": {

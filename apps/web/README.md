@@ -63,7 +63,8 @@ styles/admin.css     admin-only styles
 
 ## Public business settings (compliance-002, US-0b)
 
-Yuval edits these `app_settings` keys (admin screen: a later task). Each is a
+Yuval edits these `app_settings` keys in `/admin/settings/business` (with `vat_status`,
+through `fn_admin_set_business_details`; `app_settings` has no direct write path). Each is a
 JSON string, or JSON `null` while unknown; the site then shows a visible
 placeholder such as `[שם העסק]`. anon reads them only via `fn_public_site_settings()`.
 
