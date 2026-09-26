@@ -18,6 +18,30 @@ run() { # run <name> <command...>
 run "no em/en-dash in apps/, output/qa/, CLAUDE.md" python3 "$WEB/scripts/check-dashes.py" apps output/qa CLAUDE.md
 run "DB: migrations on postgres 17 + privilege test" bash "$ROOT/output/db/tests/run.sh"
 cd "$WEB" || exit 1
+
+# agency gates (.github/workflows/agency-gates.yml). Exit 2 from a gate is DID NOT RUN.
+gate() { # gate <name> <command...>: 0 PASSED, 1 FAILED, 2 DID NOT RUN
+  local name="$1"; shift
+  echo "::: $name"
+  "$@"; local rc=$?
+  case $rc in 0) record "$name" PASSED ;; 2) record "$name" "DID NOT RUN (gate printed why)" ;; *) record "$name" FAILED ;; esac
+}
+gate "gates: selftest, each gate refuses a planted violation" bash scripts/gates/selftest.sh
+gate "gate Rule 2 route boundaries (ratchet)" node scripts/gates/check-route-boundaries.mjs --ratchet --baseline qa/gates/route-boundaries.baseline.json
+gate "gate house shape (ratchet)" node scripts/gates/check-project-shape.mjs --ratchet --baseline qa/gates/project-shape.baseline.json
+gate "gate Rule 1 hardcoded Hebrew (ratchet)" node scripts/gates/check-hardcoded-hebrew.mjs --ratchet --baseline qa/gates/hardcoded-hebrew.baseline.json
+gate "gate Rule 20 swallowed catch (ratchet)" node scripts/gates/check-swallowed-catch.mjs --ratchet --baseline qa/gates/swallowed-catch.baseline.json
+gate "gate Rule 31 server waterfall (ratchet)" node scripts/gates/check-server-waterfall.mjs --ratchet --baseline qa/gates/server-waterfall.baseline.json
+gate "gate baselines reproducible from the tree" node scripts/gates/check-baselines-reproducible.mjs
+gate "gate Rule 18 system contract exists" node scripts/gates/check-system-contract.mjs --exist --root "$ROOT"
+if git -C "$ROOT" rev-parse -q --verify origin/develop >/dev/null; then
+  gate "gate Rule 18 contract fresh vs origin/develop" node scripts/gates/check-system-contract.mjs --fresh --base origin/develop --root "$ROOT"
+  gate "gate Rule 19 caller count vs origin/develop (report)" node scripts/gates/check-caller-count.mjs --base origin/develop --root "$ROOT"
+else
+  record "gate Rule 18 contract fresh" "DID NOT RUN (no origin/develop ref to diff against)"
+  record "gate Rule 19 caller count" "DID NOT RUN (no origin/develop ref to diff against)"
+fi
+record "gate Rule 26 Hebrew verified rendered (PR body)" "DID NOT RUN (reads the PR body; runs in CI on pull_request)"
 run "lint" npm run -s lint
 run "typecheck" npm run -s typecheck
 run "unit tests" npm run -s test

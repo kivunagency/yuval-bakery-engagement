@@ -1,0 +1,150 @@
+name: agency-gates
+
+# The agency gates, installed from agency-gates/ (INSTALL-HERE.md) on 2026-09-26, adapted
+# to this layout: the scripts live in apps/web/scripts/gates, the baselines in
+# apps/web/qa/gates, and every adaptation is marked "YuvalBakery adaptation" in the script.
+#
+# These were meant to be installed at birth with EMPTY baselines. They were not, so the
+# baselines record the code as it stood on develop at c9a63ae, and each gate refuses only
+# an INCREASE (the ratchet, scripts/gates/lib/ratchet.mjs). Lowering a baseline after a real
+# fix is a deliberate act:
+#   cd apps/web && node scripts/gates/<check>.mjs --write-baseline qa/gates/<name>.baseline.json
+# Raising one needs a commit message that says why, and somebody reads it.
+#
+# Exit code 2 from any gate is DID NOT RUN, with the reason printed. It is not a pass and
+# not a flake: fix the precondition, never delete the step.
+#
+# No npm install: every gate is plain Node with no dependencies.
+
+on:
+  pull_request:
+    # `edited`: the claims job reads the PR body, so fixing the body re-runs it
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agency-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  selftest:
+    name: gates refuse a planted violation (selftest)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: bash scripts/gates/selftest.sh
+
+  boundaries:
+    name: Rule 2, a route does not query the database
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/gates/check-route-boundaries.mjs --ratchet --baseline qa/gates/route-boundaries.baseline.json
+      - name: and every committed baseline is reproducible from the tree (no hand edits)
+        if: always()
+        run: node scripts/gates/check-baselines-reproducible.mjs
+
+  shape:
+    name: House shape, lib/server is server-only and named
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/gates/check-project-shape.mjs --ratchet --baseline qa/gates/project-shape.baseline.json
+
+  hebrew:
+    name: Rule 1, no Hebrew literal in code
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/gates/check-hardcoded-hebrew.mjs --ratchet --baseline qa/gates/hardcoded-hebrew.baseline.json
+
+  swallowed:
+    name: Rule 20, a catch block does not swallow
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/gates/check-swallowed-catch.mjs --ratchet --baseline qa/gates/swallowed-catch.baseline.json
+
+  waterfall:
+    name: Rule 31, the server does not wait on itself
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/gates/check-server-waterfall.mjs --ratchet --baseline qa/gates/server-waterfall.baseline.json
+
+  contract:
+    name: Rule 18, the system contract exists and moves with behaviour
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node apps/web/scripts/gates/check-system-contract.mjs --exist
+      - name: updated in the same change as the behaviour
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags origin "$BASE"
+          node apps/web/scripts/gates/check-system-contract.mjs --fresh --base "origin/$BASE"
+
+  callers:
+    name: Rule 19, count the callers of every changed function
+    # Reports, does not block (whether the callers were CHECKED is judgment). The count is
+    # in the job log for the reviewer; a function computing money or capacity needs every
+    # caller listed in the PR body (CLAUDE.md).
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags origin "$BASE"
+          node apps/web/scripts/gates/check-caller-count.mjs --base "origin/$BASE" --root .
+
+  claims:
+    name: Rule 26, Hebrew is verified rendered
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: the PR body, through the environment into a file (it is untrusted text)
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.txt"
+      - name: Hebrew beside a direction-neutral character needs a rendered check in the body
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags origin "$BASE"
+          node apps/web/scripts/gates/check-rtl-screenshot.mjs --base "origin/$BASE" --body-file "$RUNNER_TEMP/pr-body.txt"
