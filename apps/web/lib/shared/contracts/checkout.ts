@@ -12,14 +12,17 @@ export const MAX_ORDER_LINES = 30;
 
 const hhmm = z.string().regex(/^([01]\d|2[0-4]):[0-5]\d$/);
 
+/** The cart lines as the DB takes them: product ids and quantities, never an amount. */
+const orderItems = z
+  .array(z.object({ productId: z.guid(), quantity: z.number().int().min(1).max(MAX_LINE_QUANTITY) }).strict())
+  .min(1)
+  .max(MAX_ORDER_LINES)
+  .refine((items) => new Set(items.map((i) => i.productId.toLowerCase())).size === items.length, 'duplicate_product');
+
 // ---- POST /api/orders ----
 export const createOrderRequest = z
   .object({
-    items: z
-      .array(z.object({ productId: z.guid(), quantity: z.number().int().min(1).max(MAX_LINE_QUANTITY) }).strict())
-      .min(1)
-      .max(MAX_ORDER_LINES)
-      .refine((items) => new Set(items.map((i) => i.productId.toLowerCase())).size === items.length, 'duplicate_product'),
+    items: orderItems,
     day: isoDate,
     slotId: z.guid(),
     fulfillment: z.enum(FULFILLMENT_TYPES),
@@ -70,6 +73,19 @@ export const checkoutErrorBody = z.object({
   fields: z.array(z.string()).optional(),
 });
 export type CheckoutErrorBody = z.infer<typeof checkoutErrorBody>;
+
+// ---- POST /api/checkout/fit ----
+// The checkout's early warning: does this cart pass the single-order cap on
+// this day? The DB answers (fn_checkout_single_order_fit) with a state word
+// only, never minutes or totals (threat model: capacity numbers stay private).
+// fn_create_standard_order stays the authority when the order is placed.
+export const checkoutFitRequest = z.object({ day: isoDate, items: orderItems }).strict();
+export type CheckoutFitRequest = z.infer<typeof checkoutFitRequest>;
+
+export const CHECKOUT_FIT_STATES = ['fits', 'too_big', 'day_unavailable', 'product_unavailable'] as const;
+export type CheckoutFitState = (typeof CHECKOUT_FIT_STATES)[number];
+export const checkoutFitResponse = z.object({ fit: z.enum(CHECKOUT_FIT_STATES) }).strict();
+export type CheckoutFitResponse = z.infer<typeof checkoutFitResponse>;
 
 // ---- GET /api/delivery-zones ----
 export const publicZone = z.object({

@@ -92,11 +92,8 @@
 .add:hover:not(:disabled) { background: var(--surface-2); }
 .add:active:not(:disabled) { transform: translateY(1px); }
 .add:disabled { border-color: var(--line); color: var(--ink-2); cursor: not-allowed; }
-.inCart {
-  min-inline-size: 22px; block-size: 22px; border-radius: 999px; padding-inline: 4px;
-  background: var(--ink); color: var(--bg); font-size: 12px;
-  display: inline-flex; align-items: center; justify-content: center;
-}
+.stepperRow { margin-block-start: auto; display: flex; }
+.stepperRow > * { inline-size: 100%; justify-content: space-between; }
 
 .custom {
   grid-column: 1 / -1;

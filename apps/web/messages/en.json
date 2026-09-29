@@ -367,6 +367,15 @@
       "title": "Custom cake",
       "body": "Write what you would like on the cake and attach an inspiration photo. The price is set after Yuval sees the request.",
       "cta": "Send a request"
+    },
+    "quantity": {
+      "group": "{name} in the cart",
+      "decrease": "One less, {name}",
+      "increase": "One more, {name}",
+      "remove": "Remove from the cart, {name}",
+      "count": "{count} in the cart",
+      "removed": "{name} removed from the cart",
+      "lowered": "One less {name} in the cart"
     }
   },
   "admin": {
@@ -1236,7 +1245,10 @@
       "forbidden_origin": "We could not save the order. Reload the page and try again.",
       "server_error": "We could not save the order. Try again in a moment."
     },
-    "pick_another_day": "Choose another day"
+    "pick_another_day": "Choose another day",
+    "too_big_warning": "This order is too big for one day. Take off some items or choose another day, or contact us and we will arrange it.",
+    "remove_line": "Remove",
+    "line_unavailable": "{name}, no longer available"
   },
   "payment": {
     "page_title": "Payment",
