@@ -32,8 +32,8 @@ import styles from '@/components/order/order.module.css';
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations();
-  return { title: `${t('payment.page_title')} | ${t('business.details.name')}`, robots: { index: false, follow: false }, referrer: 'no-referrer' };
+  const [t, site] = await Promise.all([getTranslations(), getPublicSiteSettings()]);
+  return { title: `${t('payment.page_title')} | ${site.business_name ?? t('business.details.name')}`, robots: { index: false, follow: false }, referrer: 'no-referrer' };
 }
 
 export default async function OrderPage({ params }: { params: Promise<{ token: string }> }) {

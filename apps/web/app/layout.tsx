@@ -8,10 +8,11 @@ import '@fontsource/ibm-plex-sans-hebrew/700.css';
 import '@fontsource/karantina/700.css';
 import './globals.css';
 import { ScopedIntlProvider } from '@/components/i18n/ScopedIntlProvider';
+import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('business.details');
-  return { title: t('name') };
+  const [t, site] = await Promise.all([getTranslations('business.details'), getPublicSiteSettings()]);
+  return { title: site.business_name ?? t('name') };
 }
 
 export const viewport: Viewport = {
