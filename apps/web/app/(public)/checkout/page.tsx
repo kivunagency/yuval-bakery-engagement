@@ -16,8 +16,8 @@ import { readFeatures } from '@/lib/server/features';
 // when the DB said the chosen day is gone.
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations();
-  return { title: `${t('checkout.title')} | ${t('business.details.name')}` };
+  const [t, site] = await Promise.all([getTranslations(), getPublicSiteSettings()]);
+  return { title: `${t('checkout.title')} | ${site.business_name ?? t('business.details.name')}` };
 }
 
 export default async function CheckoutPage() {
