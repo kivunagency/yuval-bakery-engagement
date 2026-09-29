@@ -15,20 +15,9 @@
   --font-display: "Karantina", "IBM Plex Sans Hebrew", sans-serif;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1); --dur-1: 120ms; --dur-2: 220ms;
   --tap: 44px;
-  color-scheme: light dark;
+  color-scheme: light; /* Always light (Ran, 2026-09-29): no dark theme. */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #131418; --surface: #1c1e23; --surface-2: #22252b;
-    --ink: #ecedef; --ink-2: #a3a8b1; --line: #2e3138; --line-strong: #6b7079;
-    --accent: #c42a5a; --accent-press: #a3123f; --accent-soft: #3a1824; --accent-soft-ink: #f37a9e;
-    --ok: #6fd19c; --warn: #f2c274; --danger: #ff8a80;
-    --ok-bg: #16301f; --warn-bg: #33270f; --danger-bg: #3a1a18;
-    --day-full-bg: #33363d; --day-full-ink: #b7bbc3; --day-closed-bg: #1c1e23; --hatch: #3a3d44;
-    --focus: #ecedef;
-  }
-}
 
 *, *::before, *::after { box-sizing: border-box; }
 

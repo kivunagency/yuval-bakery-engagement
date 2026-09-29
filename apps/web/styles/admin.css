@@ -187,10 +187,6 @@
 .admin-submit:disabled { opacity: 0.7; cursor: progress; }
 .admin-signout-inline { margin-block-start: var(--s3); text-align: center; }
 
-@media (prefers-color-scheme: dark) {
-  .admin-form-error { background: color-mix(in srgb, var(--danger) 16%, transparent); }
-  .admin-badge { background: color-mix(in srgb, var(--warn) 18%, transparent); }
-}
 
 /* Capacity screen (client-007), after mockup.html section (d). */
 .admin-dayhead { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-block: var(--s2) var(--s3); }
@@ -285,10 +281,6 @@
   gap: var(--s2);
 }
 .admin-pattern-name { padding: 0; font-weight: 700; font-size: 16px; float: inline-start; inline-size: 100%; margin-block-end: var(--s1); }
-@media (prefers-color-scheme: dark) {
-  .admin-warn { background: color-mix(in srgb, var(--warn) 18%, transparent); }
-  .admin-ok { background: color-mix(in srgb, var(--ok) 16%, transparent); }
-}
 
 /* ---- orders (client-009) ---- */
 .admin-orders-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; }
