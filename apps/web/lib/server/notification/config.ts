@@ -1,6 +1,8 @@
 import 'server-only';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { z } from 'zod';
+import { readFeatures } from '@/lib/server/features';
 
 // Notification settings from the environment (secrets only from env, never
 // committed). Read on first use, like serverEnv().
@@ -12,6 +14,12 @@ import { z } from 'zod';
 //                           (local stack and tests only; refused when APP_ENV=prod)
 //   EMAIL_PROVIDER=none     sends nothing; every email is recorded as skipped
 // Default: capture on the local stack, resend when a key exists, else none.
+//
+// EMAIL_RECIPIENT_ALLOWLIST: comma-separated addresses; when set, email goes
+// only to these (anyone else is recorded as skipped, recipient_not_allowlisted).
+// Without a verified domain Resend refuses every recipient but the account
+// owner, so DEV/PROD set it to that address. Held as sha256 only.
+// Customer email on/off: CUSTOMER_EMAIL_ENABLED, see lib/server/features.ts.
 //
 // Web push (VAPID): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
 // (mailto: or https:). Missing keys: push is recorded as skipped. The private
@@ -28,6 +36,7 @@ const schema = z.object({
   VAPID_PRIVATE_KEY: z.string().regex(/^[A-Za-z0-9_-]{40,50}$/).optional(),
   VAPID_SUBJECT: z.string().regex(/^(mailto:|https:)/).optional(),
   PUSH_ALLOW_LOCAL_ENDPOINTS: z.enum(['0', '1']).optional(),
+  EMAIL_RECIPIENT_ALLOWLIST: z.string().max(2000).optional(),
 });
 
 export type EmailConfig =
@@ -39,7 +48,17 @@ export type PushConfig =
   | { enabled: true; publicKey: string; privateKey: string; subject: string; allowLocalEndpoints: boolean }
   | { enabled: false; reason: string; allowLocalEndpoints: boolean };
 
-export type NotificationConfig = { appEnv: 'local' | 'dev' | 'prod'; siteUrl: string; email: EmailConfig; push: PushConfig };
+export type NotificationConfig = {
+  appEnv: 'local' | 'dev' | 'prod';
+  siteUrl: string;
+  email: EmailConfig;
+  push: PushConfig;
+  customerEmail: boolean;
+  /** sha256 of each allowed address (trimmed, lower-cased); null = no restriction. */
+  recipientAllowlist: ReadonlySet<string> | null;
+};
+
+const addressHash = (address: string) => createHash('sha256').update(address.trim().toLowerCase()).digest('hex');
 
 export function readNotificationConfig(env: Record<string, string | undefined> = process.env): NotificationConfig {
   // Blank values count as unset (Netlify UI can hold empty variables).
@@ -70,7 +89,10 @@ export function readNotificationConfig(env: Record<string, string | undefined> =
       ? { enabled: true, publicKey: e.VAPID_PUBLIC_KEY, privateKey: e.VAPID_PRIVATE_KEY, subject: e.VAPID_SUBJECT, allowLocalEndpoints }
       : { enabled: false, reason: 'push_not_configured', allowLocalEndpoints };
 
-  return { appEnv: e.APP_ENV, siteUrl, email, push };
+  const allowed = (e.EMAIL_RECIPIENT_ALLOWLIST ?? '').split(',').map((a) => a.trim()).filter(Boolean);
+  const recipientAllowlist = allowed.length > 0 ? new Set(allowed.map(addressHash)) : null;
+
+  return { appEnv: e.APP_ENV, siteUrl, email, push, customerEmail: readFeatures(env).customerEmail, recipientAllowlist };
 }
 
 /** The VAPID public key for the admin settings page, or null when push is not configured. */

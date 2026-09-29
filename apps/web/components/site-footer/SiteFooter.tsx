@@ -18,7 +18,8 @@ export const FOOTER_LINKS = [
   { href: '/find-order', key: 'find_order' },
 ] as const;
 
-export function SiteFooter({ settings }: { settings: PublicSiteSettings }) {
+// showAccount: false while customer accounts are off (lib/server/features.ts).
+export function SiteFooter({ settings, showAccount }: { settings: PublicSiteSettings; showAccount: boolean }) {
   const t = useTranslations('footer');
   const tb = useTranslations('business');
   return (
@@ -30,7 +31,7 @@ export function SiteFooter({ settings }: { settings: PublicSiteSettings }) {
         <ContactBlock phone={settings.business_phone} whatsapp={settings.business_whatsapp} headingId="footer-contact-heading" />
         <nav aria-label={t('nav_label')}>
           <ul className={styles.links}>
-            {FOOTER_LINKS.map((l) => (
+            {FOOTER_LINKS.filter((l) => showAccount || l.key !== 'account').map((l) => (
               <li key={l.href}>
                 <Link href={l.href}>{t(`links.${l.key}`)}</Link>
               </li>

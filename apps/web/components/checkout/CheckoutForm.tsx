@@ -43,6 +43,8 @@ type Props = {
   slots: TimeSlot[];
   settings: PublicSiteSettings;
   now: string;
+  /** false while customer email is off (no verified sending domain): no email field. */
+  collectEmail: boolean;
 };
 
 const NOT_LISTED = '__not_listed__';
@@ -75,7 +77,7 @@ function CheckoutHeader() {
   );
 }
 
-export function CheckoutForm({ products, days: initialDays, range, zones, slots, settings, now }: Props) {
+export function CheckoutForm({ products, days: initialDays, range, zones, slots, settings, now, collectEmail }: Props) {
   const t = useTranslations('checkout');
   const router = useRouter();
   const [cart, updateCart] = useCart();
@@ -376,16 +378,18 @@ export function CheckoutForm({ products, days: initialDays, range, zones, slots,
             </p>
             {errorText('phone')}
           </div>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">
-              {t('guest_fields.email')}
-            </label>
-            <input id="email" className={`${styles.input} ${styles.ltrInput}`} type="email" inputMode="email" autoComplete="email" dir="ltr" maxLength={254} value={values.email} onChange={set('email')} {...fieldProps('email')} />
-            <p id="email-hint" className={styles.hint}>
-              {t('guest_fields.email_hint')}
-            </p>
-            {errorText('email')}
-          </div>
+          {collectEmail ? (
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="email">
+                {t('guest_fields.email')}
+              </label>
+              <input id="email" className={`${styles.input} ${styles.ltrInput}`} type="email" inputMode="email" autoComplete="email" dir="ltr" maxLength={254} value={values.email} onChange={set('email')} {...fieldProps('email')} />
+              <p id="email-hint" className={styles.hint}>
+                {t('guest_fields.email_hint')}
+              </p>
+              {errorText('email')}
+            </div>
+          ) : null}
           <div className={styles.field}>
             <label className={styles.label} htmlFor="notes">
               {t('guest_fields.notes')}

@@ -20,6 +20,10 @@ export type NotifierDeps = {
   /** null: push not configured (no VAPID keys). */
   push: PushSender | null;
   siteUrl: string;
+  /** false: customer emails are recorded as skipped, never sent (lib/server/features.ts). Default true. */
+  customerEmail?: boolean;
+  /** sha256 of the only addresses email may go to; null or absent = anyone. */
+  recipientAllowlist?: ReadonlySet<string> | null;
 };
 
 function defaultDeps(): NotifierDeps {
@@ -30,6 +34,8 @@ function defaultDeps(): NotifierDeps {
     emailOffReason: config.email.provider === 'none' ? config.email.reason : '',
     push: config.push.enabled ? webPushSender(config.push) : null,
     siteUrl: config.siteUrl,
+    customerEmail: config.customerEmail,
+    recipientAllowlist: config.recipientAllowlist,
   };
 }
 
@@ -153,7 +159,12 @@ async function sendEmail(d: NotifierDeps, k: AttemptKey, message: EmailMessage, 
 
 async function sendEmailUnguarded(d: NotifierDeps, k: AttemptKey, message: EmailMessage, out: Out, skip: Skip) {
   if (!d.email) return skip(k, d.emailOffReason || 'email_provider_not_configured');
-  const begun = await d.store.begin(k, emailHash(message.to));
+  // Both checks come before begin(): a mail that cannot be delivered must not
+  // spend the daily cap or the recipient's cap.
+  if (k.audience === 'customer' && d.customerEmail === false) return skip(k, 'customer_email_disabled');
+  const recipient = emailHash(message.to);
+  if (d.recipientAllowlist && !d.recipientAllowlist.has(recipient)) return skip(k, 'recipient_not_allowlisted');
+  const begun = await d.store.begin(k, recipient);
   if (!begun.allowed || !begun.attempt_id) {
     out({ channel: 'email', audience: k.audience, status: begun.reason === 'duplicate' ? 'duplicate' : 'refused', reason: begun.reason });
     return;

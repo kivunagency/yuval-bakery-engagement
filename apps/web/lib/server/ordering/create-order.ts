@@ -1,6 +1,7 @@
 import 'server-only';
 import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
+import { readFeatures } from '@/lib/server/features';
 import { serviceClient } from '@/lib/server/supabase/service';
 import { callRpc, DbError, type DbErrorCode } from '@/lib/server/supabase/rpc';
 import { TEXT_VERSIONS } from '@/lib/shared/compliance/versions';
@@ -58,7 +59,8 @@ export async function createStandardOrder(input: CreateOrderRequest, ip: string)
         p_customer_id: null,
         p_guest_name: input.name,
         p_guest_phone: input.phone,
-        p_guest_email: input.email ?? null,
+        // Not kept while customer email is off: nothing would ever be sent to it.
+        p_guest_email: readFeatures().customerEmail ? (input.email ?? null) : null,
         p_fulfillment_type: input.fulfillment,
         p_delivery_date: input.day,
         p_delivery_slot_id: input.slotId,

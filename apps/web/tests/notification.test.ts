@@ -247,6 +247,41 @@ describe('templates', () => {
   });
 });
 
+describe('without a verified sending domain', () => {
+  const pdf = { filename: 'order-K7Q2M.pdf', content: new Uint8Array([37, 80, 68, 70]) };
+
+  it('customer email off: skipped before begin(), so no cap is spent; the admin still gets hers', async () => {
+    const f = fakes();
+    f.deps.customerEmail = false;
+    const begin = vi.spyOn(f.deps.store, 'begin');
+    const report = await dispatch({ event: 'order_created', entityId: ORDER_ID, confirmationPdf: pdf }, f.deps);
+    expect(report.outcomes.at(-1)).toEqual({ channel: 'email', audience: 'customer', status: 'skipped', reason: 'customer_email_disabled' });
+    expect(f.emails.map((m) => m.to)).toEqual(['yuval@example.test']);
+    expect(begin).toHaveBeenCalledTimes(2); // admin push + admin email, nothing for the customer
+  });
+
+  it('customer email off: custom-cake approval is skipped too', async () => {
+    const f = fakes({ cake: cake({ status: 'approved', order_number: 'C1234', order_id: ORDER_ID }) });
+    f.deps.customerEmail = false;
+    const report = await dispatch({ event: 'custom_cake_approved', entityId: REQ_ID }, f.deps);
+    expect(report.outcomes).toEqual([{ channel: 'email', audience: 'customer', status: 'skipped', reason: 'customer_email_disabled' }]);
+    expect(f.emails).toHaveLength(0);
+  });
+
+  it('allowlist: only listed addresses get mail, the rest are skipped before begin()', async () => {
+    const f = fakes();
+    f.deps.store.adminEmails = async () => ['yuval@example.test', 'qa-admin@example.test'];
+    f.deps.recipientAllowlist = new Set([emailHash('Yuval@Example.test')]);
+    const report = await dispatch({ event: 'order_created', entityId: ORDER_ID, confirmationPdf: pdf }, f.deps);
+    expect(f.emails.map((m) => m.to)).toEqual(['yuval@example.test']);
+    expect(f.skipped).toEqual([
+      { channel: 'email', audience: 'admin', reason: 'recipient_not_allowlisted' },
+      { channel: 'email', audience: 'customer', reason: 'recipient_not_allowlisted' },
+    ]);
+    expect(report.outcomes.filter((o) => o.status === 'sent').map((o) => o.channel)).toEqual(['push', 'email']);
+  });
+});
+
 describe('config', () => {
   it('local defaults to capture; prod never captures; resend needs key and from', () => {
     expect(readNotificationConfig({ APP_ENV: 'local' }).email.provider).toBe('capture');
@@ -260,6 +295,20 @@ describe('config', () => {
     expect(readNotificationConfig({ APP_ENV: 'prod' }).push).toEqual({ enabled: false, reason: 'push_not_configured', allowLocalEndpoints: false });
     expect(readNotificationConfig({ APP_ENV: 'prod', PUSH_ALLOW_LOCAL_ENDPOINTS: '1' }).push.allowLocalEndpoints).toBe(false);
     expect(readNotificationConfig({ APP_ENV: 'local', PUSH_ALLOW_LOCAL_ENDPOINTS: '1' }).push.allowLocalEndpoints).toBe(true);
+  });
+
+  it('recipient allowlist: hashed, trimmed, case-insensitive; unset means no restriction', () => {
+    expect(readNotificationConfig({ APP_ENV: 'dev' }).recipientAllowlist).toBeNull();
+    expect(readNotificationConfig({ APP_ENV: 'dev', EMAIL_RECIPIENT_ALLOWLIST: ' , ' }).recipientAllowlist).toBeNull();
+    const list = readNotificationConfig({ APP_ENV: 'dev', EMAIL_RECIPIENT_ALLOWLIST: ' Owner@Example.test , b@x.test' }).recipientAllowlist!;
+    expect([...list].sort()).toEqual([emailHash('owner@example.test'), emailHash('b@x.test')].sort());
+    expect([...list].join()).not.toContain('@');
+  });
+
+  it('customer email follows CUSTOMER_EMAIL_ENABLED (lib/server/features.ts)', () => {
+    expect(readNotificationConfig({ APP_ENV: 'local' }).customerEmail).toBe(true);
+    expect(readNotificationConfig({ APP_ENV: 'dev' }).customerEmail).toBe(false);
+    expect(readNotificationConfig({ APP_ENV: 'prod', CUSTOMER_EMAIL_ENABLED: 'true' }).customerEmail).toBe(true);
   });
 });
 

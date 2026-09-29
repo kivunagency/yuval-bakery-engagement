@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import type { NextRequest } from 'next/server';
 import { confirmEmail } from '@/lib/server/identity/customer-auth';
+import { requireCustomerAccounts } from '@/lib/server/identity/accounts-gate';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +9,7 @@ export const dynamic = 'force-dynamic';
 // sign-up mail (supabase/templates/confirmation.html). Verifies the token on
 // the server, so it works on any device, then creates the profile.
 export async function GET(request: NextRequest) {
+  requireCustomerAccounts();
   const q = request.nextUrl.searchParams;
   const result = await confirmEmail(q.get('token_hash'), q.get('type'));
   switch (result) {

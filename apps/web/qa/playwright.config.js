@@ -6,6 +6,9 @@ const { defineConfig, devices } = require('@playwright/test');
 // (npm run stack:up first). smoke.spec.js runs against a LIVE url only
 // (SMOKE_BASE_URL); without it every smoke test is skipped, i.e. DID NOT RUN.
 const PORT = Number(process.env.PORT || 3100);
+// E2E_BASE_URL: run a spec that needs no local DB (regression.is5568.spec.js)
+// against a live site instead; no local server is started then.
+const BASE_URL = process.env.E2E_BASE_URL?.replace(/\/+$/, '');
 
 module.exports = defineConfig({
   testDir: '.',
@@ -19,7 +22,7 @@ module.exports = defineConfig({
   retries: 0,
   reporter: [['list']],
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: BASE_URL || `http://localhost:${PORT}`,
     locale: 'he-IL',
     timezoneId: 'Asia/Jerusalem',
     trace: 'retain-on-failure',
@@ -30,7 +33,7 @@ module.exports = defineConfig({
     // docs-001: screenshots for docs/guide-yuval, run by hand (never part of the regression run)
     { name: 'docs', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } }, testMatch: /guide-screens\.spec\.js/ },
   ],
-  webServer: process.env.SKIP_WEBSERVER
+  webServer: process.env.SKIP_WEBSERVER || BASE_URL
     ? undefined
     : { command: `npx next start -p ${PORT}`, cwd: require('node:path').join(__dirname, '..'), port: PORT, reuseExistingServer: !process.env.CI, timeout: 120_000 },
 });
