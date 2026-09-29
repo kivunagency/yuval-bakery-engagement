@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { completeRegistration, signInCustomer, signOutCustomer, type SignInError } from '@/lib/server/identity/customer-auth';
 import { loadMyAccount, setMyMarketingConsent, updateMyProfile, type AccountWriteError } from '@/lib/server/identity/account';
+import { requireCustomerAccounts } from '@/lib/server/identity/accounts-gate';
 import { TEXT_VERSIONS } from '@/lib/shared/compliance/versions';
 
 // Server actions for the customer account screens (client-005). Next.js
@@ -27,18 +28,21 @@ function dayMonth(form: FormData, prefix: string): { day: number; month: number 
 }
 
 export async function signInAction(_prev: SignInState, form: FormData): Promise<SignInState> {
+  requireCustomerAccounts();
   const result = await signInCustomer({ email: text(form, 'email'), password: text(form, 'password') });
   if (!result.ok) return { error: result.error };
   redirect('/account');
 }
 
 export async function signOutAction(): Promise<void> {
+  requireCustomerAccounts();
   await signOutCustomer();
   redirect('/account/login?notice=signed_out');
 }
 
 /** "Complete your details" for a confirmed user without a profile (phone taken, or nothing parked). */
 export async function completeDetailsAction(_prev: AccountFormState, form: FormData): Promise<AccountFormState> {
+  requireCustomerAccounts();
   const status = await completeRegistration({
     name: text(form, 'name'),
     phone: text(form, 'phone'),
@@ -53,6 +57,7 @@ export async function completeDetailsAction(_prev: AccountFormState, form: FormD
 }
 
 export async function saveProfileAction(_prev: AccountFormState, form: FormData): Promise<AccountFormState> {
+  requireCustomerAccounts();
   const account = await loadMyAccount();
   if (!account?.profile) return { error: 'signed_out' };
   const p = account.profile;
@@ -75,6 +80,7 @@ export async function saveProfileAction(_prev: AccountFormState, form: FormData)
  * consent, which erases the dates in the DB.
  */
 export async function savePreferencesAction(_prev: AccountFormState, form: FormData): Promise<AccountFormState> {
+  requireCustomerAccounts();
   const source = text(form, 'source') === 'registration' ? 'registration' : 'profile';
   const account = await loadMyAccount();
   if (!account?.profile) return { error: 'signed_out' };

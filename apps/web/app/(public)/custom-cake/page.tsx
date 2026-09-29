@@ -5,6 +5,7 @@ import { PrivacyNoticeAtCollection } from '@/components/compliance';
 import { CustomCakeForm } from '@/components/custom-cake/CustomCakeForm';
 import styles from '@/components/custom-cake/custom-cake.module.css';
 import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
+import { readFeatures } from '@/lib/server/features';
 import { earliestDeliveryDate } from '@/lib/shared/time/jerusalem';
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +34,7 @@ export default async function CustomCakePage() {
       </header>
       <div className={styles.stack}>
         <PrivacyNoticeAtCollection context="custom_cake" businessName={settings.business_name} />
-        <CustomCakeForm earliestDate={earliestDeliveryDate(new Date())} />
+        <CustomCakeForm earliestDate={earliestDeliveryDate(new Date())} collectEmail={readFeatures().customerEmail} />
       </div>
     </main>
   );

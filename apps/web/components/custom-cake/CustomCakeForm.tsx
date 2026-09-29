@@ -29,7 +29,8 @@ const FIELD_OF: Record<string, Field> = {
   notes: 'notes', photos: 'photos', uploadRightsConfirmed: 'uploadRightsConfirmed',
 };
 
-export function CustomCakeForm({ earliestDate }: { earliestDate: string }) {
+// collectEmail false while customer email is off (no verified sending domain): no email field.
+export function CustomCakeForm({ earliestDate, collectEmail }: { earliestDate: string; collectEmail: boolean }) {
   const t = useTranslations('custom_cake.form');
   const router = useRouter();
   const ids = useId();
@@ -117,7 +118,9 @@ export function CustomCakeForm({ earliestDate }: { earliestDate: string }) {
         <legend>{t('contact_legend')}</legend>
         <TextField id={id('name')} name="name" label={t('name')} autoComplete="name" maxLength={CUSTOM_CAKE_LIMITS.name} error={errors.name} errorId={id('name-error')} describedBy={describedBy('name')} required />
         <TextField id={id('phone')} name="phone" label={t('phone')} hint={t('phone_hint')} hintId={id('phone-hint')} type="tel" inputMode="tel" autoComplete="tel" dir="ltr" maxLength={20} error={errors.phone} errorId={id('phone-error')} describedBy={describedBy('phone', id('phone-hint'))} required />
-        <TextField id={id('email')} name="email" label={t('email')} hint={t('email_hint')} hintId={id('email-hint')} type="email" autoComplete="email" dir="ltr" maxLength={254} error={errors.email} errorId={id('email-error')} describedBy={describedBy('email', id('email-hint'))} />
+        {collectEmail ? (
+          <TextField id={id('email')} name="email" label={t('email')} hint={t('email_hint')} hintId={id('email-hint')} type="email" autoComplete="email" dir="ltr" maxLength={254} error={errors.email} errorId={id('email-error')} describedBy={describedBy('email', id('email-hint'))} />
+        ) : null}
         <label className={styles.check}>
           <input type="checkbox" name="whatsappFollowupOk" />
           <span>{t('whatsapp_ok')}</span>

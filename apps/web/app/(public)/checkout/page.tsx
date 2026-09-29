@@ -6,6 +6,7 @@ import { getPublicZones } from '@/lib/server/delivery/public-zones';
 import { getActiveTimeSlots } from '@/lib/server/ordering/time-slots';
 import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
 import { CheckoutForm } from '@/components/checkout/CheckoutForm';
+import { readFeatures } from '@/lib/server/features';
 
 // Checkout (client-003). Server component: products and prices, day states,
 // delivery zones, time slots and business details are all read here, so the
@@ -38,6 +39,7 @@ export default async function CheckoutPage() {
       slots={slots}
       settings={settings}
       now={new Date().toISOString()}
+      collectEmail={readFeatures().customerEmail}
     />
   );
 }

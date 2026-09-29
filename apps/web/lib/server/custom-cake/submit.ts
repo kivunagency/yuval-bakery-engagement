@@ -1,5 +1,6 @@
 import 'server-only';
 import { z } from 'zod';
+import { readFeatures } from '@/lib/server/features';
 import { serviceClient } from '@/lib/server/supabase/service';
 import { callRpc, DbError } from '@/lib/server/supabase/rpc';
 import { createUploadUrls, processIncomingPhotos, type ProcessResult } from '@/lib/server/custom-cake/photos';
@@ -23,7 +24,8 @@ export async function submitCustomCakeRequest(input: CustomCakeSubmit, ip: strin
         p_ip_address: ip,
         p_name: input.name,
         p_phone: input.phone,
-        p_email: input.email ?? null,
+        // Not kept while customer email is off: nothing would ever be sent to it.
+        p_email: readFeatures().customerEmail ? (input.email ?? null) : null,
         p_whatsapp_followup_ok: input.whatsappFollowupOk,
         p_inscription: input.inscription,
         p_notes: input.notes,

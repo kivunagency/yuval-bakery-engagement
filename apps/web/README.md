@@ -105,6 +105,11 @@ the DB and `messages/he.json`, never from the caller.
 | `EMAIL_CAPTURE_DIR` | where the capture adapter writes one JSON file per email (`.local-stack/outbox`) |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | web push keys (P-256, base64url) and contact (`mailto:`). Generate once per environment: `npx web-push generate-vapid-keys`. The private key stays server-side |
 | `PUSH_ALLOW_LOCAL_ENDPOINTS` | `1` lets tests use a push endpoint on 127.0.0.1; ignored unless `APP_ENV=local` |
+| `EMAIL_RECIPIENT_ALLOWLIST` | comma-separated addresses; when set, email goes only to them and every other recipient is recorded as `skipped` (`recipient_not_allowlisted`). Without a verified domain Resend delivers only to the account owner, so DEV and PROD set it to that address. Held as sha256 in memory |
+| `CUSTOMER_EMAIL_ENABLED` | `true` / `false`. Off: no email field in checkout or the custom-cake form, an email is not stored, customer mail is `skipped` (`customer_email_disabled`). Unset: on locally, off in dev and prod (`lib/server/features/index.ts`) |
+| `CUSTOMER_ACCOUNTS_ENABLED` | `true` / `false`. Off: `/register`, `/account/*`, `POST /api/customers` answer 404 and the footer has no account link. Unset: on locally, off in dev and prod. Needs a domain first: Supabase's built-in mail reaches only the project team |
+
+Until a domain is verified: `EMAIL_FROM=onboarding@resend.dev`, `EMAIL_RECIPIENT_ALLOWLIST=<the Resend account owner's address>`, both customer flags unset (off). Yuval gets her admin mail only if that address is also her admin login address.
 
 Email spend cap (Rule 30, Resend free tier 100/day), counted in the DB per
 Asia/Jerusalem day, all in `app_settings`: `email_daily_hard_cap` (100, the
