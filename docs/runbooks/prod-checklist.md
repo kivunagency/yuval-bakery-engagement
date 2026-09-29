@@ -54,7 +54,7 @@
 
 | Variable | PROD value | Secret | Note |
 |---|---|---|---|
-| `APP_ENV` | `prod` | no | **Must be set.** Unset means `local`, which turns customer email and customer accounts ON (`lib/server/features.ts`) |
+| `APP_ENV` | `prod` | no | **Must be set.** Unset means `local`, which turns customer email and customer accounts ON (`lib/server/features/index.ts`) |
 | `SITE_URL` | `https://yuval-bakery.netlify.app` | no | |
 | `NEXT_PUBLIC_SUPABASE_URL` | PROD project URL | no | |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | PROD anon key | no | public by design |
