@@ -13,9 +13,6 @@
 .notice p { margin: 0; }
 .noticeTitle { font-size: 16px; }
 .version { font-size: 13px; color: var(--ink-2); }
-@media (prefers-color-scheme: dark) {
-  .notice { background: var(--surface-2); }
-}
 .privacyNotice {
   display: grid; gap: var(--s2);
   padding: var(--s4);

@@ -67,6 +67,3 @@
 .list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s2); padding-block: var(--s2); border-block-end: 1px solid var(--line); }
 .list li:last-child { border-block-end: 0; }
 .muted { color: var(--ink-2); }
-@media (prefers-color-scheme: dark) {
-  .error { background: color-mix(in srgb, var(--danger) 16%, transparent); }
-}
