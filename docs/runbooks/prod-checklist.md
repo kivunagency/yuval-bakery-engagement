@@ -51,6 +51,8 @@
 - [ ] Deploy previews ו-branch deploys כבויים באתר הזה (SEC-020).
 - [ ] תוכנית Free בלי שדרוג אוטומטי, התראת שימוש ב-80%.
 - [ ] משתני סביבה (הטבלה למטה), מוקלדים על ידי יובל ב-Netlify UI. אף ערך סודי לא נכנס ל-git או לצ'אט.
+- [ ] לקח מ-DEV: משתנים ציבוריים (<bdi dir="ltr">`NEXT_PUBLIC_*`</bdi>, <bdi dir="ltr">`APP_ENV`</bdi>, <bdi dir="ltr">`SITE_URL`</bdi>) מייבאים **בלי** הסימון Contains secret values. ב-DEV ה-anon key נשמר כנקודות מוסתרות, וכל דף נפל בשגיאת ByteString. אחרי הייבוא בודקים כל ערך אחד אחד.
+- [ ] לקח מ-DEV: אם האתר נוצר דרך ה-API, מוסיפים את ה-plugin של Next.js, ובחיבור ה-repo מוודאים Base directory <bdi dir="ltr">`apps/web`</bdi> ו-branch <bdi dir="ltr">`main`</bdi> (ברירת המחדל הייתה בלי Base directory).
 
 </div>
 
