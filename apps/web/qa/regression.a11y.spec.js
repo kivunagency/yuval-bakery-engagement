@@ -50,12 +50,12 @@ async function focusShown(page) {
  * Tab (or Shift+Tab) until `match(activeElement)` is true, checking the focus
  * indicator at every stop. Throws if it is not reached in `max` presses.
  */
-async function tabTo(page, match, { back = false, max = 80, noFocus = [] } = {}) {
+async function tabTo(page, match, { back = false, max = 80, noFocus = [], arg } = {}) {
   for (let i = 0; i < max; i++) {
     await page.keyboard.press(back ? 'Shift+Tab' : 'Tab');
     const f = await focusShown(page);
     if (!f.ok) noFocus.push(f.what);
-    if (await page.evaluate(match)) return;
+    if (await page.evaluate(match, arg)) return;
   }
   throw new Error(`keyboard: target not reached in ${max} presses (${match})`);
 }
@@ -226,7 +226,11 @@ test.describe('qa-006 keyboard only, focus always visible', () => {
       await expect(page.locator('[role=radio][aria-checked=true]')).toHaveCount(1);
 
       const name = p.name;
-      await tabTo(page, `(() => { const el = document.activeElement; const h = el && el.getAttribute('aria-describedby'); return el?.tagName === 'BUTTON' && !!h && document.getElementById(h)?.textContent?.includes(${JSON.stringify(name)}); })()`, { noFocus, max: 200 });
+      await tabTo(page, (productName) => {
+        const el = document.activeElement;
+        const h = el && el.getAttribute('aria-describedby');
+        return el?.tagName === 'BUTTON' && !!h && !!document.getElementById(h)?.textContent?.includes(productName);
+      }, { noFocus, max: 200, arg: name });
       await page.keyboard.press('Enter');
       await expect(page.getByTestId('cart-button')).toContainText('1');
 

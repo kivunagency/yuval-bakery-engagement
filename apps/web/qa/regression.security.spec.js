@@ -132,7 +132,7 @@ test.describe('DB privileges', () => {
     const env = localEnv();
     const service = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
     const email = `sec-customer-${Date.now()}@example.test`;
-    const password = `pw-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const password = `pw-${crypto.randomUUID()}`;
     const created = await service.auth.admin.createUser({ email, password, email_confirm: true });
     expect(created.error).toBeNull();
     const customer = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
