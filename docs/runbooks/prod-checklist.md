@@ -2,30 +2,32 @@
 
 # PROD מ-main: רשימת הכנה לאישור של רן
 
-מבוסס על <bdi dir="ltr">`docs/runbooks/environments.md`</bdi> ו-<bdi dir="ltr">`docs/runbooks/first-admin.md`</bdi> (ב-PR #55). המסמך הזה לא מפרס כלום. כל שלב שמסומן **שער** מחכה לאישור מפורש של רן בכתב.
+מבוסס על <bdi dir="ltr">`docs/runbooks/environments.md`</bdi> ו-<bdi dir="ltr">`docs/runbooks/first-admin.md`</bdi> (מוזגו ל-<bdi dir="ltr">`develop`</bdi> ב-PR #55). המסמך הזה לא מפרס כלום. כל שלב שמסומן **שער** מחכה לאישור מפורש של רן בכתב.
 
 ## מצב נכון ל-2026-09-29
 
 - ב-<bdi dir="ltr">`main`</bdi> יש רק מסמכים. אין בו <bdi dir="ltr">`apps/web`</bdi>, אין <bdi dir="ltr">`netlify.toml`</bdi> ואין מיגרציות. אתר PROD שיחובר ל-<bdi dir="ltr">`main`</bdi> היום ייכשל ב-build.
 - <bdi dir="ltr">`develop`</bdi> מקדים את <bdi dir="ltr">`main`</bdi> ב-114 commits (כל הקוד).
-- PR #55 (עבודה בלי דומיין, ו-<bdi dir="ltr">`environments.md`</bdi>) עדיין פתוח מול <bdi dir="ltr">`develop`</bdi>.
+- PR #55 (עבודה בלי דומיין, ו-<bdi dir="ltr">`environments.md`</bdi>) מוזג ל-<bdi dir="ltr">`develop`</bdi>.
+- רן אישר את שני השערים בכתב ב-2026-09-29. הביצוע עדיין לפי הסדר שבמסמך.
+- ב-Free של Supabase מותרים שני פרויקטים פעילים. DEV בפרנקפורט, ולכן את הפרויקט הריק במומבאי צריך להשהות או למחוק לפני PROD (החלטה של רן או של יובל).
 
 לכן הסדר הוא: PR #55 נכנס ל-<bdi dir="ltr">`develop`</bdi>, DEV עולה ונבדק, ורק אז קידום <bdi dir="ltr">`develop`</bdi> ל-<bdi dir="ltr">`main`</bdi>.
 
 ## שלב א: תנאים מוקדמים
 
-- [ ] PR #55 מוזג ל-<bdi dir="ltr">`develop`</bdi>.
+- [x] PR #55 מוזג ל-<bdi dir="ltr">`develop`</bdi>.
 - [ ] DEV חי, smoke ו-IS 5568 עברו על הכתובת החיה (environments.md, סעיף 4). תוצאה שלא רצה נרשמת DID NOT RUN.
 - [ ] מיובל: שם העסק, סטטוס ומספר עוסק, ימי עבודה, אלרגנים לכל מוצר, תמונות, חלונות תוקף לתשלום. בלעדיהם אין פרטי עסק (s.14C) ואלרגנים באתר הציבורי.
 - [ ] **שער 1:** רן מאשר קידום <bdi dir="ltr">`develop`</bdi> ל-<bdi dir="ltr">`main`</bdi> (PR מ-<bdi dir="ltr">`develop`</bdi> אל <bdi dir="ltr">`main`</bdi>).
 
-## שלב ב: Supabase PROD (יובל יוצרת, בחשבון שלה)
+## שלב ב: Supabase PROD (רן או יובל יוצרים ביד בדשבורד)
 
-- [ ] פרויקט <bdi dir="ltr">`yuval-bakery-prod`</bdi>, אזור <bdi dir="ltr">`eu-central-1`</bdi>, תוכנית Free, בארגון של יובל.
+- [ ] פרויקט <bdi dir="ltr">`yuval-bakery-prod`</bdi>, אזור <bdi dir="ltr">`eu-central-1`</bdi>, תוכנית Free, בארגון של יובל. סשן של Claude לא יכול ליצור פרויקט; מכאן והלאה הוא עובד עם הטוקן של יובל.
 - [ ] כל הקבצים ב-<bdi dir="ltr">`apps/web/supabase/migrations/`</bdi> מ-<bdi dir="ltr">`main`</bdi>, לפי סדר השמות. **בלי** <bdi dir="ltr">`seed.sql`</bdi>.
 - [ ] Security Advisor ו-Performance Advisor: כל ממצא מתוקן או נרשם ב-SYSTEM-CONTRACT.
 - [ ] הגדרות Auth (הטבלה למטה).
-- [ ] Spend cap פעיל, מייל שימוש ליובל ולרן.
+- [ ] Spend cap פעיל, מייל שימוש ליובל (רן כבר לא חבר בארגון).
 
 </div>
 
