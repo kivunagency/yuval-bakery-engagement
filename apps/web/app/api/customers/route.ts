@@ -27,7 +27,7 @@ const STATUS: Record<ErrorBody['error'], number> = {
 // waiting for confirmation (SEC-014: no enumeration). The account exists
 // only after the mail link is opened (/account/confirm). Marketing consent is
 // not accepted here (s.30A: its own act, after sign-in).
-// 404 while customer accounts are off (lib/server/features.ts).
+// 404 while customer accounts are off (lib/server/features/index.ts).
 export async function POST(request: Request) {
   if (!readFeatures().customerAccounts) return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
   if (!isSameOrigin(request)) return json({ error: 'forbidden_origin' }, STATUS.forbidden_origin);

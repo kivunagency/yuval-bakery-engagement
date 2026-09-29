@@ -2,7 +2,7 @@ import 'server-only';
 import { notFound } from 'next/navigation';
 import { readFeatures } from '@/lib/server/features';
 
-// Kept apart from lib/server/features.ts: that file is also loaded by the
+// Kept apart from lib/server/features/index.ts: that file is also loaded by the
 // notification code outside Next (scheduled functions, tests), where
 // next/navigation cannot load.
 

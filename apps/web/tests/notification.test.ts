@@ -305,7 +305,7 @@ describe('config', () => {
     expect([...list].join()).not.toContain('@');
   });
 
-  it('customer email follows CUSTOMER_EMAIL_ENABLED (lib/server/features.ts)', () => {
+  it('customer email follows CUSTOMER_EMAIL_ENABLED (lib/server/features/index.ts)', () => {
     expect(readNotificationConfig({ APP_ENV: 'local' }).customerEmail).toBe(true);
     expect(readNotificationConfig({ APP_ENV: 'dev' }).customerEmail).toBe(false);
     expect(readNotificationConfig({ APP_ENV: 'prod', CUSTOMER_EMAIL_ENABLED: 'true' }).customerEmail).toBe(true);

@@ -18,7 +18,7 @@ export const FOOTER_LINKS = [
   { href: '/find-order', key: 'find_order' },
 ] as const;
 
-// showAccount: false while customer accounts are off (lib/server/features.ts).
+// showAccount: false while customer accounts are off (lib/server/features/index.ts).
 export function SiteFooter({ settings, showAccount }: { settings: PublicSiteSettings; showAccount: boolean }) {
   const t = useTranslations('footer');
   const tb = useTranslations('business');

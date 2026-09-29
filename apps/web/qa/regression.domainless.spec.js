@@ -1,7 +1,7 @@
 // @ts-check
 // Regression: running without a verified sending domain (DEV and PROD until
 // Yuval has a domain). CUSTOMER_EMAIL_ENABLED=false and
-// CUSTOMER_ACCOUNTS_ENABLED=false, see lib/server/features.ts. The rest of the
+// CUSTOMER_ACCOUNTS_ENABLED=false, see lib/server/features/index.ts. The rest of the
 // suite runs with both on (local default), so this file starts a second
 // production server of the same build with both off, on its own port.
 const { test, expect } = require('@playwright/test');
@@ -26,15 +26,16 @@ test.beforeAll(async () => {
     stdio: 'ignore',
     detached: true,
   });
+  let lastError;
   for (let i = 0; i < 100; i += 1) {
     try {
       if ((await fetch(`${BASE}/api/health`)).status < 500) return;
-    } catch {
-      // not listening yet
+    } catch (err) {
+      lastError = err; // not listening yet; reported below if it never starts
     }
     await new Promise((r) => setTimeout(r, 1000));
   }
-  throw new Error(`server on ${PORT} did not start`);
+  throw new Error(`server on ${PORT} did not start`, { cause: lastError });
 });
 
 test.afterAll(() => {

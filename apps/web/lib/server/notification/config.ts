@@ -19,7 +19,7 @@ import { readFeatures } from '@/lib/server/features';
 // only to these (anyone else is recorded as skipped, recipient_not_allowlisted).
 // Without a verified domain Resend refuses every recipient but the account
 // owner, so DEV/PROD set it to that address. Held as sha256 only.
-// Customer email on/off: CUSTOMER_EMAIL_ENABLED, see lib/server/features.ts.
+// Customer email on/off: CUSTOMER_EMAIL_ENABLED, see lib/server/features/index.ts.
 //
 // Web push (VAPID): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
 // (mailto: or https:). Missing keys: push is recorded as skipped. The private

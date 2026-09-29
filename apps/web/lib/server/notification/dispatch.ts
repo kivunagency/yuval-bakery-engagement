@@ -20,7 +20,7 @@ export type NotifierDeps = {
   /** null: push not configured (no VAPID keys). */
   push: PushSender | null;
   siteUrl: string;
-  /** false: customer emails are recorded as skipped, never sent (lib/server/features.ts). Default true. */
+  /** false: customer emails are recorded as skipped, never sent (lib/server/features/index.ts). Default true. */
   customerEmail?: boolean;
   /** sha256 of the only addresses email may go to; null or absent = anyone. */
   recipientAllowlist?: ReadonlySet<string> | null;
