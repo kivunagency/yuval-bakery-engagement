@@ -71,7 +71,10 @@ links: "[[agents/shir]] [[yuval-bakery]] [[yuval-bakery/05-prds/PRD-01-ordering-
 | `--day-closed-bg` + `--hatch` | `#EDEDEA` + `#C9CAC4` | יום סגור: פסים באלכסון | טקסט 7.12 |
 | `--focus` | `#16181D` | טבעת פוקוס | 15.97 על bg |
 
-### מצב כהה (`prefers-color-scheme: dark`)
+### מצב כהה (`prefers-color-scheme: dark`): בוטל
+
+2026-09-29: רן החליט שהאתר תמיד בהיר, רקע נקי. האפליקציה לא עוברת למצב כהה גם כשהמכשיר מוגדר כהה. הטבלה נשארת לתיעוד בלבד.
+
 
 | טוקן | Hex | ניגודיות |
 |---|---|---|

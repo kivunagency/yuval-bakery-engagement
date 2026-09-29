@@ -1,0 +1,1344 @@
+{
+  "app": {
+    "skip_to_content": "Skip to main content",
+    "coming_soon": "Online ordering is being prepared. Meanwhile, order by phone or WhatsApp."
+  },
+  "business": {
+    "details": {
+      "name": "[Business name]",
+      "owner_name": "[Owner name]",
+      "registration_number": "[Osek type and number]",
+      "address": "[Business address]",
+      "phone": "[Business phone]",
+      "email": "[Business email]",
+      "contact": "Business and contact details"
+    },
+    "labels": {
+      "name": "Business name",
+      "owner_name": "Owner",
+      "registration": "Business registration",
+      "address": "Address",
+      "phone": "Phone",
+      "email": "Email"
+    },
+    "status": {
+      "exempt": "Osek patur (exempt dealer) no.",
+      "licensed": "Osek murshe (licensed dealer) no."
+    },
+    "price": {
+      "final_price": "final price",
+      "incl_vat": "incl. VAT",
+      "all_final": "Prices are final",
+      "all_incl_vat": "Prices include VAT"
+    },
+    "all_details_link": "All business details",
+    "legal_draft_notice": "Draft text, pending legal review. Details in square brackets are not set yet.",
+    "version_label": "Text version:",
+    "page": {
+      "title": "Business details",
+      "ordering_title": "Ordering, prices and delivery",
+      "ordering_body": "Orders are placed on this site at least 24 hours before the delivery or pickup time. Before payment you see the products, the date and time, and the final total.",
+      "prices_body": "The prices shown are final prices. The delivery fee depends on the delivery city and is shown before payment.",
+      "delivery_body": "Deliveries are made by the business's courier to the cities offered at checkout. You can also pick up the order yourself.",
+      "payment_body": "Payment is by Bit or PayBox, through a link shown after you order. Write the order number in the payment note. The order is confirmed once the payment is received."
+    }
+  },
+  "errors": {
+    "not_found_title": "Page not found",
+    "not_found_body": "The page you were looking for does not exist.",
+    "back_home": "Back to the home page",
+    "generic_title": "Something went wrong",
+    "retry": "Try again"
+  },
+  "contact": {
+    "title": "Contact us",
+    "call": "Call",
+    "whatsapp": "Message on WhatsApp",
+    "about_order": "About order",
+    "whatsapp_prefill_order": "Hi, I have a question about order {orderNumber}",
+    "phone_placeholder": "[Business phone]",
+    "whatsapp_placeholder": "[WhatsApp number]"
+  },
+  "footer": {
+    "nav_label": "Site information",
+    "links": {
+      "business": "Business details",
+      "privacy": "Privacy",
+      "accessibility": "Accessibility statement",
+      "terms": "Terms of use",
+      "returns": "Cancellation policy",
+      "account": "My account",
+      "find_order": "Find my order"
+    }
+  },
+  "returns_policy": {
+    "exemption_notice": {
+      "title": "Cancelling an order",
+      "catalog": "Fresh food product: the order cannot be cancelled after it is confirmed, under the Consumer Protection Law.",
+      "custom_cake": "Made especially for you: a custom cake cannot be cancelled after the order is confirmed, under the Consumer Protection Law.",
+      "before_payment": "Until you pay, you can still cancel the order: contact us by phone or WhatsApp.",
+      "defects": "This does not affect your rights if a product is defective.",
+      "version": "Text version:",
+      "policy_link": "Full cancellation policy"
+    },
+    "title": "Cancellation and returns policy",
+    "intro": "Our products are fresh food, and custom cakes are made especially for each customer. So the general right to cancel a distance purchase does not apply to them once the order is confirmed. This page explains what you can still do.",
+    "catalog_title": "Products from the catalog",
+    "custom_cake_title": "Custom cakes",
+    "sections": {
+      "before_payment": {
+        "title": "Before payment",
+        "body": "Until you pay, you can cancel the order at no cost: contact us by phone or WhatsApp with the order number. An unpaid order is also released automatically after the time shown on the payment screen."
+      },
+      "after_payment": {
+        "title": "After payment",
+        "body": "After payment the order is confirmed and preparation begins, so it cannot be cancelled under the Consumer Protection Law."
+      },
+      "goodwill": {
+        "title": "Beyond what the law requires",
+        "body": "[Cancellation policy beyond the law, if any (for example cancellation up to 48 hours before the date): pending the business's decision.]"
+      },
+      "defects": {
+        "title": "A defective product",
+        "body": "None of the above affects your rights if a product is defective or not what you ordered. Contact us as soon as possible."
+      },
+      "business_cancels": {
+        "title": "If the business cancels",
+        "body": "[What happens if the business has to cancel a paid order, and how the refund is made: pending the business's decision.]"
+      },
+      "how": {
+        "title": "How to contact us",
+        "body": "By phone or WhatsApp, using the contact details at the bottom of every page. Please have the order number ready."
+      }
+    }
+  },
+  "privacy": {
+    "notice": {
+      "title": "How we use your details",
+      "collected_data": "{businessName} uses the details you enter here (name, phone and, for delivery, address) and is the owner of the database.",
+      "purpose_checkout": "They are used to carry out your order and coordinate the handover.",
+      "purpose_registration": "They are used to manage your account and show your orders. Marketing messages are sent only if you tick the separate box.",
+      "purpose_custom_cake": "They are used to review your custom cake request, set a price and carry out the order.",
+      "recipients_uncle": "For a delivery, your name, phone, address, time window and delivery notes are passed to the business's courier. The data is stored with hosting providers outside Israel.",
+      "photos": "Inspiration photos are seen only by the baker, are never published, and are deleted after the order.",
+      "retention": "You are not legally required to give these details, but without them we cannot carry out the order. Retention periods and your rights:",
+      "full_notice_link": "full privacy notice"
+    },
+    "notes_hint": "No need to write medical information here. For allergy questions, call us.",
+    "page": {
+      "title": "Privacy notice",
+      "intro": "This notice explains which details we collect when you order, why, who receives them, how long we keep them and what your rights are.",
+      "unset_number": "[not set]",
+      "owner": {
+        "title": "Who owns the database",
+        "body": "The database is owned by the business below. You can contact us about your details by phone or email."
+      },
+      "collected": {
+        "title": "What we collect",
+        "name": "Name.",
+        "phone": "Phone number (required, to coordinate the order).",
+        "address": "Street address and city, for delivery only. Not collected for pickup.",
+        "email": "Email, optional, to send you the order confirmation in writing.",
+        "notes": "Order notes and delivery notes you choose to write.",
+        "inscription": "Cake inscription text (it sometimes includes a child's name and age).",
+        "photos": "Inspiration photos for a custom cake.",
+        "profile_dates": "For registered customers who want benefits: birthday and anniversary (day and month only, no year). Optional."
+      },
+      "not_collected": {
+        "title": "What we do not collect:",
+        "birth_year": "Year of birth.",
+        "id_number": "ID number.",
+        "payment": "Payment details (you pay directly in Bit or PayBox).",
+        "location": "GPS location. We do not use analytics or advertising tracking."
+      },
+      "obligation": {
+        "title": "Do you have to give these details?",
+        "body": "There is no legal obligation. Without a name, phone and (for delivery) an address we cannot carry out the order."
+      },
+      "purposes": {
+        "title": "What the details are used for",
+        "order": "Carrying out the order.",
+        "delivery": "Coordinating the delivery or pickup.",
+        "account": "Managing a registered account and its order history.",
+        "marketing": "Marketing messages (benefits, promotions, a birthday greeting with a benefit) only if you ticked the separate consent box. You can unsubscribe at any time."
+      },
+      "recipients": {
+        "title": "Who receives the details",
+        "courier": "The business's courier, for deliveries only: name, address, phone, time window and delivery notes. Not the items, prices or inscription.",
+        "hosting": "Infrastructure providers: Netlify (website hosting) and Supabase (database and photos).",
+        "email": "Resend (sending email), if you gave an email address.",
+        "whatsapp": "WhatsApp (Meta), when the business contacts you on WhatsApp.",
+        "receipts": "The business's receipts software, if your name is written on a receipt."
+      },
+      "abroad": {
+        "title": "Transfer abroad",
+        "body": "The providers above store the data on servers outside Israel."
+      },
+      "retention": {
+        "title": "How long we keep the details",
+        "orders": "Identifying details on an order (name, phone, address, email, notes, inscription): {months} months after the order is completed, then deleted and the order is anonymized.",
+        "financial": "Items, amounts and dates of an order, without identifying details: for the period required for accounting.",
+        "photos": "Inspiration photos: {days} days after the order is completed, declined or expired, then deleted.",
+        "profile": "A registered profile: until you delete it, or after {months} months without activity, with notice 30 days in advance.",
+        "consent": "Records of marketing consent and its withdrawal: kept as evidence of consent.",
+        "pending": "These periods are pending confirmation by the business's accountant."
+      },
+      "rights": {
+        "title": "Your rights",
+        "access": "To see the details we hold about you (answer within 30 days).",
+        "correction": "To ask us to correct details that are wrong.",
+        "marketing": "To be removed from marketing messages at any time, by the link in any message or by asking us.",
+        "registered": "Registered customers can also download their details and delete their account. To use any of these rights, contact us by phone or email."
+      },
+      "photos": {
+        "title": "Inspiration photos",
+        "body": "Photos you upload for a custom cake are seen only by the baker, for making your cake. They are never published and are deleted {days} days after the order."
+      },
+      "health": {
+        "title": "Health information",
+        "body": "No need to write medical information in the notes. For allergy questions, call us."
+      },
+      "cookies": {
+        "title": "Cookies",
+        "body": "The site uses only essential cookies (keeping you signed in). No analytics, advertising or third-party cookies, so there is no cookie banner."
+      }
+    }
+  },
+  "accessibility": {
+    "statement": {
+      "title": "Accessibility statement",
+      "updated": "Last updated: {date}",
+      "commitment": {
+        "title": "Our commitment",
+        "body": "We want everyone, including people with disabilities, to be able to browse and order on this site. The site is built to Israeli Standard 5568 (based on WCAG 2.0), level AA."
+      },
+      "status": {
+        "title": "Accessibility status",
+        "body": "The site was built with accessibility in mind from the first screen. A full audit of the site against the standard has not been completed yet, so we do not claim full conformance."
+      },
+      "done": {
+        "title": "What has been done",
+        "language": "The site is in Hebrew, laid out right to left, and declares its language to assistive technology.",
+        "contrast": "Text and background colours meet the AA contrast ratio.",
+        "keyboard": "The site is built so every action can be done with the keyboard, with a visible focus ring and a \"skip to main content\" link.",
+        "targets": "Buttons and links are at least 44 by 44 pixels.",
+        "motion": "Motion is limited to short button transitions, and turns off entirely with the \"reduce motion\" setting.",
+        "alt": "Every product photo has a text description, and a product cannot be published without one.",
+        "allergens": "Allergens are written as text on every product, not only as an icon or in a tooltip.",
+        "state": "Status (for example a full day) is never shown by colour alone."
+      },
+      "limits": {
+        "title": "Known limitations",
+        "not_audited": "Screen reader use has not been tested yet. Keyboard-only use and a layout at <ltr>200%</ltr> zoom were tested automatically in a browser on 2026-09-26; a check on real phones is still to come.",
+        "external": "Payment happens in Bit or PayBox and contact in WhatsApp: those apps are not under our control.",
+        "content": "Product photos and descriptions are added by the business; if one is missing a description, please tell us."
+      },
+      "exemption": {
+        "title": "Exemption",
+        "body": "[Pending check: a small business may be exempt from the accessibility regulations depending on its annual turnover. The exemption amount and whether it applies to this business have not been verified.] Either way, we build the site to the standard."
+      },
+      "contact_title": "Accessibility contact",
+      "contact": "Found something hard to use? Contact the business owner directly. Tell us which page, what the problem was and how to reach you, and we will get back to you.",
+      "email_label": "Email:",
+      "email_placeholder": "[Business email]"
+    }
+  },
+  "terms": {
+    "title": "Terms of use",
+    "sections": {
+      "about": {
+        "title": "About the site",
+        "body": "This site is operated by {businessName}, a home bakery."
+      },
+      "ordering": {
+        "title": "Ordering",
+        "body": "You can order up to the days shown as available, at least 24 hours before the delivery or pickup time. Each day's availability depends on the baking time left that day. An order is reserved when you place it and confirmed once the payment is received."
+      },
+      "custom_cakes": {
+        "title": "Custom cakes",
+        "body": "A custom cake request is not an order yet. The business reviews it, sets a price and confirms the date, and only then sends a payment link. Photos you upload must be yours or ones you have the right to share with the business, and they are used only for making the cake."
+      },
+      "prices": {
+        "title": "Prices and delivery fees",
+        "body": "The prices shown are final prices. The delivery fee depends on the delivery city and is shown before payment."
+      },
+      "payment": {
+        "title": "Payment",
+        "body": "Payment is by Bit or PayBox, through the link shown after the order, with the order number in the payment note. An unpaid order is released after the time shown on the payment screen."
+      },
+      "delivery": {
+        "title": "Delivery and pickup",
+        "body": "Delivery is made by the business's courier to the cities offered at checkout, within the time window you chose. [What happens if nobody is available to receive the order: pending the business's decision.]"
+      },
+      "allergens": {
+        "title": "Allergens",
+        "body": "Ingredients and allergens are listed on every product as entered by the business. The products are made in a home kitchen. [Trace wording: pending the business.] For allergy questions, call us before ordering."
+      },
+      "liability": {
+        "title": "Liability",
+        "body": "[Liability wording: pending legal review.]"
+      },
+      "law": {
+        "title": "Governing law and jurisdiction",
+        "body": "[Governing law and jurisdiction: pending legal review.]"
+      },
+      "changes": {
+        "title": "Changes and related policies",
+        "body": "The version of these terms is shown at the top of this page; an order records the version shown when it was placed."
+      }
+    },
+    "links": {
+      "business": "Business details",
+      "returns": "Cancellation policy",
+      "privacy": "Privacy notice"
+    }
+  },
+  "day_state": {
+    "weekday_short": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "weekday_long": {
+      "sun": "Sunday",
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday"
+    },
+    "word": {
+      "open": "Open",
+      "limited": "Few left",
+      "full": "Full",
+      "closed": "Closed",
+      "selected": "Selected"
+    },
+    "aria": {
+      "open": "room available",
+      "limited": "only a little room left",
+      "full": "full, no room left in the oven",
+      "closed": "closed, day off",
+      "too_soon": "too soon, order at least 24 hours ahead",
+      "selected": "selected"
+    },
+    "label": "{weekday} {date}, {state}",
+    "day_short": "{weekday} {date}",
+    "day_long": "{weekday} {date}"
+  },
+  "catalog": {
+    "title": "Catalog",
+    "products_heading": "Products",
+    "day_question": "Which day?",
+    "filter_none": "Pick a day to see what still fits in the oven that day.",
+    "filter_day": "Showing what fits in the oven on <b>{day}</b>",
+    "choose_day_first": "Pick a day first, then add to the cart.",
+    "add": "Add",
+    "unavailable": "Unavailable",
+    "out_of_stock": "Sold out this week",
+    "does_not_fit": "Does not fit on {day}",
+    "does_not_fit_until": "Does not fit on {day}, available from {next}",
+    "allergens_label": "Allergens",
+    "no_known_allergens": "No known allergens",
+    "may_contain": "May contain {allergen}",
+    "allergen": {
+      "gluten": "Gluten",
+      "eggs": "Eggs",
+      "dairy": "Milk",
+      "nuts": "Nuts",
+      "almonds": "Almonds",
+      "peanuts": "Peanuts",
+      "sesame": "Sesame",
+      "soy": "Soy"
+    },
+    "ingredients_label": "Ingredients",
+    "details_summary": "Ingredients and details",
+    "photo_placeholder": "Photo coming soon",
+    "cart_label": "Cart, {count, plural, =0 {empty} one {1 item} other {# items}}",
+    "added": "{name} added to the cart",
+    "empty": "No products in the catalog yet.",
+    "kitchen_notice": "[Home kitchen allergen statement, wording from Yuval]",
+    "custom_cake": {
+      "title": "Custom cake",
+      "body": "Write what you would like on the cake and attach an inspiration photo. The price is set after Yuval sees the request.",
+      "cta": "Send a request"
+    }
+  },
+  "admin": {
+    "shell": {
+      "title": "Management",
+      "sign_out": "Sign out",
+      "nav_label": "Management navigation",
+      "tabs": {
+        "orders": "Orders",
+        "capacity": "Calendar",
+        "catalog": "Products",
+        "settings": "Settings"
+      },
+      "pages": {
+        "orders": "Orders",
+        "custom_cakes": "Custom cake requests",
+        "capacity": "Calendar",
+        "catalog": "Products",
+        "settings": "Settings"
+      },
+      "placeholder": {
+        "badge": "Coming soon",
+        "body": "This screen is being built."
+      }
+    },
+    "login": {
+      "title": "Sign in to management",
+      "intro": "For the business owner only.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "code_label": "6-digit code",
+      "code_hint": "The code in the authenticator app changes every 30 seconds.",
+      "enrol_title": "Set up the authenticator app",
+      "enrol_intro": "Management needs a second step: a code from an authenticator app on your phone. This is done once.",
+      "enrol_step_install": "Install an authenticator app, for example Google Authenticator or Microsoft Authenticator.",
+      "enrol_step_scan": "In the app, add an account and scan this code.",
+      "enrol_step_code": "Type the 6 digits the app shows.",
+      "enrol_qr_alt": "QR code to add this account to the authenticator app",
+      "enrol_manual": "If scanning does not work, type this key into the app instead:",
+      "enrol_reload_note": "Opening this page again creates a new code. Use only the code shown now.",
+      "enrol_submit": "Finish setup",
+      "verify_title": "Code from the authenticator app",
+      "verify_intro": "Open the authenticator app on your phone and type the code it shows.",
+      "verify_submit": "Confirm",
+      "lost_phone": "Lost the phone with the app? Contact Ran to restore access.",
+      "other_account": "Sign out and sign in with another account",
+      "errors": {
+        "invalid": "The email or password is incorrect.",
+        "rate_limited": "Too many attempts. Try again in 15 minutes.",
+        "unavailable": "Sign-in is not available right now. Try again in a few minutes.",
+        "invalid_code": "The code is incorrect or has expired. Type the code the app shows now.",
+        "session_expired": "The session has ended. Sign in again."
+      }
+    },
+    "capacity": {
+      "title": "Calendar",
+      "day_title": "{weekday} {date}",
+      "day_nav": "Change day",
+      "previous_day": "Previous day",
+      "next_day": "Next day",
+      "back_to_today": "Back to today",
+      "day_section": "Capacity of the day",
+      "resource": {
+        "oven": "Oven",
+        "work": "Work"
+      },
+      "used_of_total": "{used} of {total} min",
+      "orders_count": "{count, plural, =0 {No orders.} one {One order.} other {# orders.}}",
+      "sentence_free_oven": "{free} oven minutes left of {total}.",
+      "sentence_free_work": "{free} work minutes left of {total}.",
+      "sentence_closed": "The day is closed to new orders.",
+      "sentence_unpaid_oven": "{unpaid} of the booked minutes are in orders not paid yet.",
+      "sentence_unpaid_work": "{unpaid} of the booked minutes are in orders not paid yet.",
+      "day_not_set": "No capacity is set for this day, so customers cannot order for it. Save minutes below to open it.",
+      "oven_minutes": "Oven minutes per day",
+      "work_minutes": "Work minutes per day",
+      "blackout_toggle": "Closed day (no orders taken)",
+      "blackout_has_orders": "{count, plural, one {There is one order on this day.} other {There are # orders on this day.}} Closing the day does not cancel them.",
+      "source_manual": "Set by hand for this day. The weekly pattern does not change it.",
+      "source_pattern": "Follows the weekly pattern.",
+      "source_none": "Not saved yet.",
+      "save_day": "Save the day",
+      "reset_to_pattern": "Back to the weekly pattern",
+      "saved": "Saved.",
+      "reset_done": "The day follows the weekly pattern again.",
+      "error_below_reserved": "Orders already booked {oven} oven minutes and {work} work minutes on this day. The totals cannot go below that.",
+      "error_invalid_minutes": "Enter whole minutes, from 0 to 1440.",
+      "error_session": "The session has ended. Sign in again.",
+      "error_no_pattern": "There is no weekly pattern for this weekday yet.",
+      "error_generic": "Saving failed. Try again.",
+      "weekly_pattern": "Weekly pattern",
+      "pattern_empty": "No weekly pattern yet. Until one is saved, only days set by hand are open.",
+      "working_day": "Working day",
+      "pattern_explain": "Saving writes these numbers into the coming days. Days you set by hand, and days whose orders already need more, stay as they are.",
+      "save_pattern": "Save the weekly pattern",
+      "pattern_saved": "The weekly pattern was saved. {written, plural, =0 {No day needed a change} one {One day was updated} other {# days were updated}} in the next {days} days.",
+      "pattern_kept_manual": "{count, plural, one {One day set by hand stayed as it was.} other {# days set by hand stayed as they were.}}",
+      "pattern_kept_below": "{count, plural, one {One day was not changed} other {# days were not changed}} because its orders already need more.",
+      "weekday": {
+        "0": "Sunday",
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday"
+      }
+    },
+    "orders": {
+      "title": "Orders",
+      "custom_cakes_link": "Custom cake requests",
+      "filter_label": "Show orders by status",
+      "filter": {
+        "payment_pending": "Waiting for payment",
+        "paid": "Paid",
+        "fulfilled": "Delivered",
+        "expired": "Expired",
+        "cancelled": "Cancelled"
+      },
+      "status": {
+        "payment_pending": "Waiting for payment",
+        "paid": "Paid",
+        "fulfilled": "Delivered",
+        "expired": "Expired, not paid",
+        "cancelled": "Cancelled"
+      },
+      "empty": "No orders here.",
+      "list_limited": "Showing the latest {limit}.",
+      "list_label": "Orders: {status}",
+      "order_label": "Order <ltr>{number}</ltr>",
+      "custom_cake": "Custom cake",
+      "for_day": "For {weekday} {date}",
+      "pickup": "Pickup",
+      "delivery": "Delivery",
+      "delivery_to": "Delivery to {city}",
+      "time_window": "Time: {window}",
+      "items_label": "Items",
+      "item_line": "{quantity} × {name}",
+      "total": "Total",
+      "phone_label": "Phone",
+      "no_phone": "No valid phone number on this order.",
+      "pii_purged": "The customer's details were deleted under the retention policy.",
+      "expires_at": "If not paid, it expires on {date} at {time}.",
+      "expired_at": "Expired on {date} at {time}.",
+      "whatsapp": "WhatsApp message",
+      "whatsapp_label": "WhatsApp message about order {number}",
+      "whatsapp_text": {
+        "payment_pending": "Hello, this is about order {number} for {date}. The amount to pay is {total}. You can pay by Bit or PayBox, with the order number in the note.",
+        "paid": "Hello, the payment for order {number} arrived. Thank you! See you on {date}.",
+        "fulfilled": "Hello, thank you for order {number}. Enjoy!",
+        "expired": "Hello, order {number} for {date} expired because the payment did not arrive in time. If you already paid, reply here and we will sort it out.",
+        "cancelled": "Hello, order {number} for {date} was cancelled. For any question, reply here."
+      },
+      "mark_paid": "Mark as paid",
+      "mark_paid_title": "Before marking it paid",
+      "expected_amount": "Amount that should have arrived",
+      "mark_paid_check": "Check in Bit or PayBox that this amount arrived, with order number <ltr>{number}</ltr> in the note.",
+      "confirm_paid": "Yes, the payment arrived",
+      "back": "Back",
+      "cancel": "Cancel the order",
+      "cancel_title": "Cancel this order?",
+      "cancel_explain": "Its time on {date} goes back to other customers. A cancelled order cannot be restored.",
+      "cancel_paid_note": "This order is paid. The refund is done outside the app.",
+      "confirm_cancel": "Yes, cancel it",
+      "mark_fulfilled": "Delivered or picked up",
+      "done": {
+        "paid": "Order <ltr>{number}</ltr> was marked paid.",
+        "cancelled": "Order <ltr>{number}</ltr> was cancelled.",
+        "fulfilled": "Order <ltr>{number}</ltr> was marked delivered.",
+        "released": "{count, plural, =0 {No order of that day was still waiting for payment.} one {One unpaid order was released.} other {# unpaid orders were released.}}"
+      },
+      "error_transition": "The order is already in the state \"{status}\". The list was refreshed.",
+      "error_confirmation": "The written confirmation has not reached the customer yet, so the order cannot be marked delivered.",
+      "error_session": "The session has ended. Sign in again.",
+      "error_not_found": "The order was not found.",
+      "error_generic": "That did not work. Try again.",
+      "expired_note_title": "An expired order may have been paid late",
+      "expired_note": "An order expires when it is not marked paid in time, and its time goes back to other customers. Before giving that time to someone else, check in Bit or PayBox that no payment arrived with its order number. If one did, contact the customer: the app does not reopen an expired order.",
+      "expired_card_hint": "Its day has not passed yet: check that it was not paid.",
+      "recent_expired": "{count, plural, one {One order} other {# orders}} expired in the last {hours} hours for a day still ahead. Check that none was paid late.",
+      "recent_expired_link": "Show expired orders",
+      "holds_title": "Unpaid holds by day",
+      "holds_intro": "Orders waiting for payment hold oven and work time. At most {cap}% of a day can be held this way.",
+      "holds_day": "{weekday} {date}",
+      "holds_line": "{pct}% of the day is held, {count, plural, =0 {by no order} one {by one order} other {by # orders}}",
+      "holds_high": "High. If you do not recognise these orders, you can release them.",
+      "release_button": "{count, plural, one {Release the unpaid order} other {Release # unpaid orders}}",
+      "release_title": "Release the unpaid orders of {day}?",
+      "release_explain": "Every order of this day that is still waiting for payment is cancelled, and its time goes back to other customers. Paid orders are not touched.",
+      "release_confirm": "Yes, release them",
+      "day_filter": "Only orders for {day}.",
+      "all_days": "Show all days",
+      "holds_show_day": "Orders of this day"
+    },
+    "delivery_zones": {
+      "title": "Delivery zones",
+      "intro": "Each zone has one fee and a list of cities. A customer whose city is in no zone can only pick up.",
+      "empty": "No delivery zones yet. Until you add one, customers can only pick up.",
+      "add_zone": "Add zone",
+      "new_zone_title": "New zone",
+      "new_zone_hint": "Cities are added on the zone card after it is created.",
+      "create_submit": "Create zone",
+      "zone_name": "Zone name",
+      "fee": "Delivery fee in shekels",
+      "fee_label": "Delivery fee for {zone} in shekels",
+      "city_list": "Cities in {zone}",
+      "city_name": "City name",
+      "add_city": "+ City",
+      "add_city_submit": "Add",
+      "remove_city": "Remove {city}",
+      "one_zone_rule": "A city can be in one zone only.",
+      "active_toggle": "Delivery to this zone is on",
+      "inactive_note": "The zone is off: customers from these cities cannot order delivery.",
+      "rename": "Rename",
+      "save_name": "Save name",
+      "delete": "Delete zone",
+      "delete_confirm": "Delete the zone {zone}? Existing orders keep their delivery fee.",
+      "delete_submit": "Delete",
+      "cancel": "Cancel",
+      "saved": "Saved.",
+      "city_added": "{city} added.",
+      "city_removed": "{city} removed.",
+      "activated": "Delivery to this zone is on.",
+      "deactivated": "Delivery to this zone is off.",
+      "error_city_in_other_zone": "{city} is already in the zone {zone}. A city can be in one zone only.",
+      "error_city_taken": "{city} is already in another zone. A city can be in one zone only.",
+      "error_name_taken": "There is already a zone with this name.",
+      "error_fee": "Delivery fee: whole shekels, from 0 to 1000.",
+      "error_name": "Zone name: 1 to 40 characters.",
+      "error_city": "City name: 1 to 60 characters.",
+      "error_invalid": "Some of the details are not valid. Check the name, the fee and the cities.",
+      "error_not_found": "This zone no longer exists. Reload the page.",
+      "error_session": "Your session ended. Please sign in again.",
+      "error_generic": "Saving failed. Please try again."
+    },
+    "delivery_list": {
+      "title": "Delivery list",
+      "open_for_day": "Delivery list for this day",
+      "day_title": "Deliveries for {weekday} {date}",
+      "day_nav": "Change day",
+      "previous_day": "Previous day",
+      "next_day": "Next day",
+      "stop_count": "{count, plural, one {One delivery.} other {# deliveries.}}",
+      "pending_note": "{count, plural, one {One more delivery order for this day is waiting for payment and is not on the list.} other {# more delivery orders for this day are waiting for payment and are not on the list.}}",
+      "print": "Print or save as PDF",
+      "share": "To send it to the courier: save as PDF and send it on WhatsApp, in a chat with disappearing messages. At the end of the day, delete the file and shred any printed page.",
+      "empty": "There are no paid deliveries for this day.",
+      "list_label": "Deliveries",
+      "address": "Address:",
+      "phone": "Phone:",
+      "notes": "Notes:",
+      "no_window": "No time set",
+      "pii_footer": "Customers' personal information. Delete or shred at the end of the delivery day."
+    },
+    "custom_cake": {
+      "whatsapp": {
+        "approved": "Hello, your cake request for {date} is approved. Price: {price} ILS. Order number: {orderNumber}. To pay: {link} Please put the order number in the payment note.",
+        "declined": "Hello, unfortunately we cannot make the cake you asked for on {date}. You can reply to this message to check another day.",
+        "declined_with_reason": "Hello, unfortunately we cannot make the cake you asked for on {date}. {reason} You can reply to this message to check another day."
+      },
+      "queue_title": "Custom cake requests",
+      "empty": "No requests are waiting.",
+      "count": "{count, plural, one {One request waiting} other {# requests waiting}}",
+      "date_label": "For {weekday} {date}",
+      "no_name": "(name deleted)",
+      "whatsapp_ok_yes": "Agreed to a reply on WhatsApp",
+      "whatsapp_ok_no": "Did not tick the WhatsApp box",
+      "inscription": "Text on the cake",
+      "notes": "Notes",
+      "none": "None",
+      "photos": "Inspiration photos",
+      "no_photos": "No photos were attached.",
+      "photo_alt": "Customer inspiration photo {n}",
+      "photo_unavailable": "Photo {n} cannot be shown right now.",
+      "set_price": "Price (ILS)",
+      "set_time_cost": "Time cost",
+      "oven_minutes": "Oven minutes",
+      "work_minutes": "Work minutes",
+      "capacity_idle": "Enter the minutes to see whether the cake fits that day.",
+      "capacity_loading": "Checking the day...",
+      "capacity_error": "Could not check the day. Try again.",
+      "capacity_fits": "Fits. The day has {oven} oven minutes and {work} work minutes left.",
+      "capacity_warning": "Does not fit that day. {oven} oven minutes and {work} work minutes are left. Lower the minutes, add time on the capacity screen, or agree another day with the customer.",
+      "capacity_warning_unpaid": "Room left for unpaid orders: {oven} oven minutes and {work} work minutes.",
+      "capacity_no_day": "That day has no capacity set. Set it on the capacity screen first.",
+      "capacity_blackout": "That day is closed.",
+      "capacity_day_passed": "That day has already passed.",
+      "approve": "Approve and create the order",
+      "decline": "Decline",
+      "decline_reason": "Reason (optional)",
+      "decline_reason_hint": "The customer sees this reason in the WhatsApp message.",
+      "decline_confirm": "Decline the request",
+      "approved_done": "Approved. An order for {total} ILS is waiting for payment.",
+      "order_number": "Order number:",
+      "payment_link_label": "Payment page link:",
+      "send_whatsapp": "Send on WhatsApp",
+      "no_whatsapp": "The phone number is not valid for WhatsApp. Call the customer instead.",
+      "declined_done": "The request was declined.",
+      "error_capacity_changed": "Capacity changed, re-check: the day no longer has room for this cake. Nothing was saved.",
+      "error_not_pending": "This request was already handled. Reload the page.",
+      "error_session": "The session expired. Sign in again.",
+      "error_invalid": "Check the price (above 0) and the minutes (0 to 1440).",
+      "error_generic": "Something went wrong. Try again."
+    },
+    "push": {
+      "title": "Notifications on this device",
+      "extra_note": "Push notifications are an extra. Every new order and custom cake request is also sent to your email, always.",
+      "enable": "Turn on notifications",
+      "disable": "Turn off on this device",
+      "working": "One moment...",
+      "state_on": "On",
+      "state_off": "Off",
+      "status_label": "Status on this device:",
+      "unsupported": "This browser cannot receive notifications. New orders will still reach you by email.",
+      "denied": "Notifications are blocked for this site in the browser. To allow them: open the browser's site settings (the lock icon next to the address), set Notifications to Allow, then press the button again. Until then, new orders reach you by email.",
+      "dismissed": "Notifications were not turned on. You can try again any time.",
+      "failed": "Could not turn on notifications. Try again in a moment. New orders still reach you by email.",
+      "disabled_confirmation": "Notifications are off for this device.",
+      "devices": "{count, plural, =0 {No device receives notifications yet.} one {One device receives notifications.} other {# devices receive notifications.}}",
+      "not_configured": "Notifications are not set up on the server yet. New orders reach you by email.",
+      "unsubscribe_failed": "Could not turn off notifications. Try again in a moment.",
+      "ios_note": "On iPhone and iPad, notifications work from ⁦iOS 16.4⁩, and only in the app added to the home screen: open this page in Safari, tap Share, then Add to Home Screen, and open the site from the new icon. Then turn notifications on there."
+    },
+    "products": {
+      "title": "Products",
+      "add": "New product",
+      "lead": "What customers see in the catalog. A product is shown only when it is published.",
+      "empty": "No products yet. Add the first one.",
+      "list_label": "Products",
+      "edit": "Edit",
+      "edit_named": "Edit {name}",
+      "back": "Back to products",
+      "new_title": "New product",
+      "edit_title": "Edit product",
+      "status_published": "Published",
+      "status_draft": "Not published",
+      "status_available": "Available",
+      "status_paused": "Sold out",
+      "no_photo": "No photo: the catalog shows a placeholder.",
+      "availability_toggle": "Available to order",
+      "availability_named": "{name} available to order",
+      "availability_hint": "Off: the product stays in the catalog, greyed out, marked sold out.",
+      "section_details": "Details",
+      "name": "Product name",
+      "description": "Description",
+      "description_hint": "Optional. Shown under \"Ingredients and details\".",
+      "section_price": "Price and time",
+      "price": "Price",
+      "price_hint": "The price the customer pays, in shekels.",
+      "cost_basis": "Sold as",
+      "cost_basis_per_unit": "A unit (one croissant)",
+      "cost_basis_per_batch": "A batch (a box, a whole cake)",
+      "oven_minutes": "Oven minutes",
+      "work_minutes": "Work minutes",
+      "minutes_hint": "For each item ordered. They come off the day's oven and work time.",
+      "snapshot_note": "A new price or new minutes apply to new orders only. Orders already placed keep the price and the minutes they were placed with.",
+      "section_allergens": "Ingredients and allergens",
+      "ingredients": "Ingredients",
+      "contains": "Contains",
+      "may_contain": "May contain",
+      "may_contain_hint": "Traces from the same kitchen (cross-contact).",
+      "other_allergens": "Other allergens",
+      "other_allergens_hint": "Separate with commas.",
+      "allergen_notes": "Allergen notes",
+      "allergens_confirmed": "I checked the ingredients and allergens and they are correct",
+      "allergens_confirmed_hint": "Required to publish. Any change to the ingredients or allergens needs a new check.",
+      "allergens_reset": "The allergens changed: tick the check again before publishing.",
+      "section_visibility": "Visibility",
+      "published_toggle": "Published in the catalog",
+      "blockers_title": "Before it can be published:",
+      "blocker_allergens_not_confirmed": "Confirm the ingredients and allergens.",
+      "blocker_photo_alt_missing": "Every photo needs a description.",
+      "save": "Save",
+      "create": "Create product",
+      "saving": "Saving...",
+      "saved": "Saved.",
+      "created": "Product created. Now add a photo.",
+      "section_photos": "Photos",
+      "photos_hint": "Up to 6 photos. The first one is shown on the catalog card. Location data (EXIF/GPS) is removed from every photo.",
+      "photo_label": "Photo {n}",
+      "photo_primary": "Main photo",
+      "make_primary": "Make main photo",
+      "alt_text": "Photo description",
+      "alt_text_hint": "What is in the photo, for customers using a screen reader, e.g. \"Chocolate cake sliced on a white plate\". Required to publish.",
+      "alt_missing": "No description yet",
+      "save_alt": "Save description",
+      "delete_photo": "Delete photo",
+      "delete_photo_confirm": "Delete this photo?",
+      "photo_deleted": "Photo deleted.",
+      "photo_limit": "6 photos is the maximum. Delete one to add another.",
+      "upload_title": "Add a photo",
+      "upload_file": "Photo file",
+      "choose_file": "Choose a file",
+      "no_file": "No file chosen",
+      "upload_file_hint": "JPEG, PNG or WebP, up to 10 MB.",
+      "upload_submit": "Upload photo",
+      "uploading": "Uploading...",
+      "processing": "Processing the photo...",
+      "uploaded": "Photo added.",
+      "delete": "Delete product",
+      "delete_confirm": "Delete {name}? It leaves the catalog. Orders already placed keep it.",
+      "delete_submit": "Yes, delete",
+      "cancel": "Cancel",
+      "error_name": "Enter a name, up to 80 characters.",
+      "error_price": "Price: a number from 0 to 10,000, with at most two decimals.",
+      "error_minutes": "Minutes: a whole number from 0 to 1,440.",
+      "error_file": "Choose a JPEG, PNG or WebP photo up to 10 MB.",
+      "error_alt": "Write a short description of the photo (up to 200 characters).",
+      "error_invalid": "One of the values is not valid. Check the fields and try again.",
+      "error_not_found": "This product no longer exists. Refresh the page.",
+      "error_allergens_not_confirmed": "To publish, confirm the ingredients and allergens first.",
+      "error_photo_alt_required": "To publish, every photo needs a description.",
+      "error_photo_rejected": "This file is not a photo we can use. Try another JPEG, PNG or WebP.",
+      "error_upload": "The upload did not finish. Try again.",
+      "error_session": "The session ended. Sign in again.",
+      "error_generic": "Something went wrong. Try again."
+    },
+    "settings": {
+      "nav_label": "Settings sections",
+      "back": "Back to settings",
+      "business": {
+        "title": "Business details",
+        "intro": "These details appear on the site: on the business details page, at the bottom of every page and before payment, as consumer protection law requires. A detail left empty appears on the site as a placeholder in square brackets until it is filled in.",
+        "status_missing": "{count, plural, one {One detail is not filled in yet} other {# details are not filled in yet}}, the site shows a placeholder in its place.",
+        "status_done": "All details are filled in.",
+        "status_vat_unconfirmed": "The osek type has not been confirmed yet.",
+        "field": {
+          "name": "Business name",
+          "ownerName": "Owner's full name",
+          "registrationNumber": "Osek number",
+          "address": "Business address",
+          "phone": "Phone for inquiries",
+          "whatsapp": "WhatsApp number",
+          "email": "Email for inquiries",
+          "vatStatus": "Osek type"
+        },
+        "hint": {
+          "name": "The name customers see at the top and bottom of the site.",
+          "ownerName": "Consumer protection law requires the name of the dealer.",
+          "registrationNumber": "9 digits, like an ID number.",
+          "address": "Whether to publish a home address or a PO box is still open for legal advice.",
+          "phone": "Appears on every page; tapping it calls.",
+          "whatsapp": "The WhatsApp button on every page opens a chat with this number.",
+          "email": "Appears on the business details page and in the privacy notice.",
+          "vatStatus": "Changes the price wording on the site: \"final price\" for an exempt dealer, \"incl. VAT\" for a licensed dealer. Worth checking with the accountant."
+        },
+        "empty_shows": "Empty: the site shows {placeholder}.",
+        "vat": {
+          "exempt": "Osek patur (exempt dealer)",
+          "licensed": "Osek murshe (licensed dealer)"
+        },
+        "vat_unconfirmed": "Not confirmed yet. Until a choice is saved here, the site uses the default: {current}.",
+        "save": "Save details",
+        "saved": "Saved. The site shows the new details.",
+        "nothing_changed": "Nothing changed, nothing to save.",
+        "error_fields": "Some details are not valid. The marked fields say what to fix.",
+        "error_session": "The session has ended. Please sign in again.",
+        "error_generic": "Saving did not work. Please try again.",
+        "error": {
+          "name": "Business name: 2 to 60 characters.",
+          "ownerName": "Owner's name: 2 to 60 characters.",
+          "registrationNumber": "An osek number has 9 digits and a valid check digit, like an ID number.",
+          "address": "Address: 5 to 150 characters.",
+          "phone": "An Israeli phone number, for example 050-123-4567.",
+          "whatsapp": "An Israeli phone number, for example 050-123-4567.",
+          "email": "An email address, for example name@example.com."
+        }
+      },
+      "payment": {
+        "title": "Payment links",
+        "intro": "Customers pay through these links after ordering. Because a change here decides where money goes, saving needs a fresh code from the authenticator app even when already signed in, is recorded, and is emailed to every admin.",
+        "status_missing": "{count, plural, one {One link is not shown to customers} other {# links are not shown to customers}}, a placeholder appears instead of a button.",
+        "status_done": "Both links are shown to customers.",
+        "field": {
+          "bit": "Bit link",
+          "paybox": "PayBox link"
+        },
+        "state": {
+          "unset": "Not set: the order page shows a placeholder instead of a button.",
+          "shown": "Shown to customers on the order page.",
+          "refused": "The saved link does not pass the check, so customers do not see it. Save a correct link."
+        },
+        "last_changed": "Last changed {when}.",
+        "hosts_hint": "Only secure (https) links of Bit (bitpay.co.il) or PayBox (payboxapp.com) are accepted. An empty field removes the link.",
+        "code_label": "Code from the authenticator app",
+        "code_hint": "6 digits. Needed for every change of the payment links, even when already signed in.",
+        "save": "Save links",
+        "saved": "Saved. An email about the change was sent to every admin.",
+        "nothing_changed": "The links did not change, nothing to save.",
+        "error_fields": "A link is not valid. The marked field says what to fix.",
+        "error_code_format": "Type the 6-digit code from the authenticator app.",
+        "error_code": "The code is wrong or has expired. Try again with the next code.",
+        "error_step_up": "The code check has expired. Type a new code and save again.",
+        "error_rate_limited": "Too many attempts. Wait 15 minutes and try again.",
+        "error_session": "The session has ended. Please sign in again.",
+        "error_generic": "Saving did not work. Please try again.",
+        "error_link": {
+          "bit": "A Bit link starts with https://bitpay.co.il or https://www.bitpay.co.il.",
+          "paybox": "A PayBox link starts with https:// and one of payboxapp.com, links.payboxapp.com or payboxapp.page.link."
+        }
+      },
+      "hours": {
+        "title": "Hours and order rules",
+        "status_slots": "{count, plural, one {One time slot} other {# time slots}}, the first at {time}.",
+        "status_no_slots": "No time slots yet, so no order can be placed.",
+        "status_rules_unconfirmed": "Some order rules are still defaults.",
+        "slots_title": "Time slots",
+        "slots_intro": "Customers pick one of these slots for delivery or pickup. The same slots apply to every day.",
+        "earliest": "A day can be ordered only while its first slot ({time}) is at least 24 hours away. That time follows the earliest slot.",
+        "earliest_none": "With no slot, no day can be ordered.",
+        "slots_empty": "No time slots yet. Until one is saved, customers see that the hours are not set and cannot order.",
+        "slot_start": "From",
+        "slot_end": "Until",
+        "remove_slot": "Remove the slot {start} to {end}",
+        "add_slot": "+ Add a slot",
+        "slots_hint": "Times as HH:MM, for example 10:00. Each slot is 30 minutes to 12 hours, and slots do not overlap. A removed slot stays on orders that already chose it.",
+        "save_slots": "Save slots",
+        "slots_saved": "Saved. Checkout shows these slots.",
+        "error_count": "Between 1 and {max} slots.",
+        "error_slot": "A marked slot is not valid: times as HH:MM, 30 minutes to 12 hours long.",
+        "error_overlap": "Two slots overlap. Each moment belongs to one slot at most.",
+        "rules_title": "Order rules",
+        "rules_intro": "Changes apply to orders placed from now on. Existing orders keep their own time.",
+        "rule": {
+          "expiryHoursStandard": "Time to pay for a regular order",
+          "expiryHoursCustomCake": "Time to pay for an approved custom cake",
+          "limitedThresholdPct": "A day shows as \"little left\" below"
+        },
+        "unit": {
+          "expiryHoursStandard": "hours",
+          "expiryHoursCustomCake": "hours",
+          "limitedThresholdPct": "percent"
+        },
+        "rule_hint": {
+          "expiryHoursStandard": "An unpaid order frees its oven and work time after this many hours. Shorter frees a busy day sooner; longer is kinder to a slow payment. {min} to {max}.",
+          "expiryHoursCustomCake": "Counted from the approval, because the customer first sees the price then. {min} to {max}.",
+          "limitedThresholdPct": "On the day strip, when less than this share of the oven or work time is left. {min} to {max}."
+        },
+        "default_note": "Default from the specification, not confirmed yet. Saving confirms it.",
+        "save_rules": "Save rules",
+        "rules_saved": "Saved. New orders follow these rules.",
+        "error_rules": "A marked value is out of range.",
+        "error_range": "A whole number from {min} to {max}.",
+        "error_session": "The session has ended. Please sign in again.",
+        "error_generic": "Saving did not work. Please try again."
+      }
+    }
+  },
+  "custom_cake": {
+    "meta_title": "Custom cake request",
+    "title": "Custom cake",
+    "back": "Back to the catalog",
+    "intro": "Tell us what cake you have in mind. We review every request ourselves, set a price and confirm the day. Nothing is charged and no day is held until we approve.",
+    "form": {
+      "contact_legend": "Your details",
+      "name": "Name",
+      "phone": "Mobile phone",
+      "phone_hint": "We will get back to you on this number with a price and a confirmation.",
+      "email": "Email (optional)",
+      "email_hint": "If you fill it in, we will send the confirmation there too.",
+      "whatsapp_ok": "You may reply to me on WhatsApp",
+      "cake_legend": "The cake",
+      "date": "For which day?",
+      "date_hint": "At least 24 hours ahead. The day is not held yet: we confirm it when we approve the request.",
+      "inscription": "Text on the cake (optional)",
+      "inscription_count": "{used} of {max} characters",
+      "notes": "Anything else we should know (optional)",
+      "photos_legend": "Inspiration photos",
+      "upload_photo": "Inspiration photos (optional)",
+      "photos_hint": "Up to {max} photos, JPG, PNG or WebP, up to {mb}MB each. Only we see them, and they are never published.",
+      "upload_rights": "The photos I upload are mine, or I have the right to share them for this order (required).",
+      "no_hold": "Sending the request costs nothing and holds no day. You pay only after we confirm a price.",
+      "submit": "Send the request",
+      "sending": "Sending...",
+      "errors": {
+        "name": "Please enter a name, up to 60 characters.",
+        "phone": "Please enter an Israeli mobile number starting with 05.",
+        "email": "This email address is not valid.",
+        "desiredDate": "Please choose a day.",
+        "too_soon": "This day is too close. Requests need at least 24 hours.",
+        "inscription": "Up to 120 characters.",
+        "notes": "Up to 500 characters.",
+        "photos": "Up to 3 photos, JPG, PNG or WebP, up to 10MB each.",
+        "uploadRightsConfirmed": "Please confirm the rights to the photos to send the request.",
+        "rate_limited": "Several requests were already sent from this device or number. Please try again in an hour, or contact us on WhatsApp.",
+        "unavailable": "We could not send the request right now. Please try again in a moment, or contact us on WhatsApp."
+      }
+    },
+    "submitted_confirmation": "Request sent",
+    "sent": {
+      "body": "We received your cake request. We will review it, set a price and get back to you by phone or WhatsApp.",
+      "steps_title": "What happens now",
+      "step_review": "We check the request and the day you asked for.",
+      "step_price": "If we can make it, we send you a price and a payment link.",
+      "step_hold": "The day is held only after we approve, and only then do you pay.",
+      "photos_unavailable": "The photos did not upload. You can send them to us on WhatsApp.",
+      "photos_partial": "Some of the photos did not upload. You can send them to us on WhatsApp.",
+      "back": "Back to the catalog"
+    }
+  },
+  "registration": {
+    "title": "Open an account",
+    "optional_note": "An account is optional. You can order without one, as a guest.",
+    "order_as_guest": "Back to the catalog",
+    "benefits": "With an account your details are saved for the next order and you can see your orders.",
+    "name": "Full name",
+    "phone": "Mobile phone",
+    "phone_hint": "For coordinating orders. Example: 050-1234567",
+    "email": "Email",
+    "email_hint": "We send a link to confirm the address.",
+    "password": "Password",
+    "password_hint": "At least 12 characters.",
+    "age_confirm": "I am 18 or older",
+    "consent_later_note": "Whether to receive offers by email is a separate choice, offered after you confirm your email. It is not required.",
+    "submit": "Open an account",
+    "submitting": "Sending",
+    "have_account": "Already have an account?",
+    "sign_in_link": "Sign in",
+    "check_email_title": "Check your email",
+    "check_email_body": "If the address can be used, a confirmation link is on its way to <addr>{email}</addr>. The account opens only after you click it.",
+    "check_email_spam": "Nothing arrived within a few minutes? Check the spam folder.",
+    "errors": {
+      "invalid_input": "Some details are missing or not valid. Check the marked fields.",
+      "weak_password": "The password needs at least 12 characters.",
+      "pwned_password": "This password appeared in a known data breach. Choose a different one.",
+      "rate_limited": "Too many attempts. Try again in 15 minutes.",
+      "unavailable": "Registration is not available right now. Try again in a few minutes.",
+      "forbidden_origin": "The request was refused. Reload the page and try again.",
+      "field_name": "Enter a name.",
+      "field_phone": "Enter an Israeli mobile number, for example 050-1234567.",
+      "field_email": "Enter a valid email address.",
+      "field_password": "At least 12 characters.",
+      "field_ageConfirmed": "An account can be opened from age 18."
+    },
+    "welcome_title": "Your account is open",
+    "welcome_intro": "Your details are saved. One more optional choice:",
+    "marketing_title": "Offers by email",
+    "marketing_optin_label": "I want to receive by email benefits, promotions and a birthday greeting with a benefit from {businessName}. I can unsubscribe at any time.",
+    "marketing_optin_hint": "Not required. Without it you receive only messages about your orders.",
+    "dates_title": "Birthday and anniversary",
+    "purpose_note": "Only for sending you a benefit on these dates. Day and month only, no year. Kept only while you receive offers, and erased if you unsubscribe.",
+    "dates_need_optin": "Available only with offers by email, since that is their only use.",
+    "birthday_optional": "Birthday (optional)",
+    "anniversary_optional": "Wedding anniversary (optional)",
+    "day": "Day",
+    "month": "Month",
+    "no_value": "Not set",
+    "save_preferences": "Save",
+    "skip": "Skip, to my account",
+    "saved": "Saved."
+  },
+  "account": {
+    "title": "My account",
+    "signed_in_as": "Signed in as <addr>{email}</addr>",
+    "details_title": "My details",
+    "details_intro": "This is everything we keep about you.",
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email",
+    "birthday": "Birthday",
+    "anniversary": "Wedding anniversary",
+    "not_set": "Not set",
+    "day_month": "{day} {month}",
+    "marketing": "Offers by email",
+    "marketing_on": "Yes, since {date}",
+    "marketing_off": "No",
+    "age_confirmed": "Age 18 or older, declared on",
+    "privacy_version": "Privacy notice shown at registration",
+    "created": "Account opened on",
+    "edit_title": "Edit details",
+    "email_change_note": "To change the email address, contact us.",
+    "save": "Save details",
+    "saved": "The details were saved.",
+    "preferences_title": "Offers by email",
+    "consent_history_title": "Consent history",
+    "consent_granted": "Joined",
+    "consent_withdrawn": "Unsubscribed",
+    "consent_source": {
+      "registration": "at registration",
+      "profile": "in my account",
+      "unsubscribe_link": "from the link in an email",
+      "admin_on_request": "by request to the business",
+      "account_deletion": "account deleted"
+    },
+    "no_consent_events": "No changes yet.",
+    "orders_title": "My orders",
+    "orders_empty": "No orders placed while signed in yet. Orders placed as a guest are not linked to the account.",
+    "order_number": "Order",
+    "order_date": "Date",
+    "order_status": "Status",
+    "order_total": "Total",
+    "status": {
+      "payment_pending": "Waiting for payment",
+      "paid": "Paid",
+      "fulfilled": "Delivered",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "rights_title": "Copy or deletion of your data",
+    "rights_body": "To receive a copy of your data or to delete the account, contact us by phone or WhatsApp. We answer within 30 days.",
+    "sign_out": "Sign out",
+    "login_title": "Sign in",
+    "login_intro": "Signing in is optional. You can order without it.",
+    "login_email": "Email",
+    "login_password": "Password",
+    "login_submit": "Sign in",
+    "no_account": "No account yet?",
+    "register_link": "Open an account",
+    "notice": {
+      "link_invalid": "The confirmation link is not valid or was already used. If the account is already confirmed, sign in.",
+      "signed_out": "You signed out."
+    },
+    "login_errors": {
+      "invalid": "The email or password is wrong.",
+      "email_not_confirmed": "The email is not confirmed yet. Open the link we sent you.",
+      "rate_limited": "Too many attempts. Try again in 15 minutes.",
+      "unavailable": "Signing in is not available right now. Try again in a few minutes."
+    },
+    "complete_title": "Complete your details",
+    "complete_intro": "The email is confirmed. Your details are needed to finish opening the account.",
+    "complete_phone_taken": "This phone number already belongs to another account. Enter a different number, or contact us.",
+    "complete_submit": "Finish",
+    "errors": {
+      "signed_out": "You are signed out. Sign in again.",
+      "invalid_input": "Some details are not valid.",
+      "phone_taken": "This phone number already belongs to another account.",
+      "dates_need_consent": "Dates are saved only with offers by email.",
+      "not_registered": "The account was not found.",
+      "unavailable": "Saving is not available right now. Try again in a few minutes."
+    },
+    "unsubscribe_title": "Unsubscribe from offers",
+    "unsubscribe_body": "One click and you will stop receiving offers by email. Messages about your orders keep arriving.",
+    "unsubscribe_button": "Unsubscribe me",
+    "unsubscribe_missing": "The link is incomplete. Open it again from the email.",
+    "unsubscribe_done_title": "You are unsubscribed",
+    "unsubscribe_done_body": "No more offers will be sent to you by email. Your birthday and anniversary were erased.",
+    "unsubscribe_invalid_title": "The link is not valid",
+    "unsubscribe_invalid_body": "It may be incomplete. Open it again from the email, or contact us.",
+    "unsubscribe_unavailable_title": "Something went wrong",
+    "unsubscribe_unavailable_body": "The removal was not saved. Try again in a few minutes, or contact us."
+  },
+  "notification": {
+    "common": {
+      "fulfillment": {
+        "delivery": "delivery",
+        "pickup": "pickup"
+      },
+      "footer_admin": "Automatic message from the ordering site. Every new order also arrives as a push notification on devices where you turned it on.",
+      "footer_customer": "A service message about your order from {businessName}. It contains no advertising.",
+      "contact": "Questions? Phone or WhatsApp: {phone}",
+      "name_hidden": "(name hidden: it looked like a link)",
+      "name_missing": "(no name)"
+    },
+    "new_order": {
+      "subject": "New order {orderNumber}",
+      "body": "{customerName} placed order {orderNumber} for {date} ({fulfillment}). Total: {total}.",
+      "cta": "Open the order"
+    },
+    "new_custom_cake": {
+      "subject": "New custom cake request from {customerName}",
+      "body": "{customerName} asked for a custom cake for {date}. The request is waiting for your review.",
+      "cta": "Open the request"
+    },
+    "order_confirmation": {
+      "subject": "Order {orderNumber} received",
+      "body": "Thank you. We received order {orderNumber} for {date}. The order confirmation is attached as a PDF file.",
+      "payment": "The order is confirmed once payment is received. Please put the order number in the payment note."
+    },
+    "custom_cake_approved": {
+      "subject": "Your custom cake is approved: order {orderNumber}",
+      "body": "Your custom cake request for {date} is approved. Price: {price}. Order number: {orderNumber}.",
+      "payment": "To confirm the order, please pay by {deadline}. The payment details will reach you from us; put the order number in the payment note."
+    },
+    "custom_cake_declined": {
+      "subject": "About your custom cake request",
+      "body": "We are sorry, we cannot take your custom cake request for {date}.",
+      "reason": "Reason: {reason}"
+    },
+    "push": {
+      "new_order_title": "New order {orderNumber}",
+      "new_order_body": "Tap to open the order.",
+      "new_custom_cake_title": "New custom cake request",
+      "new_custom_cake_body": "Tap to review the request.",
+      "quota_title": "Emails today: {count} of {cap}",
+      "quota_body": "Above {cap} emails a day, emails stop until tomorrow. Push notifications continue.",
+      "payment_links_title": "Payment links changed",
+      "payment_links_body": "Details in the email and in Settings."
+    },
+    "payment_links_changed": {
+      "subject": "Payment links changed",
+      "body": "The Bit/PayBox links on the site were changed on {time} by the admin user {admin}.",
+      "bit_set": "Bit: customers are now sent to {link}",
+      "bit_removed": "Bit: the link was removed; customers see a placeholder instead of a button.",
+      "paybox_set": "PayBox: customers are now sent to {link}",
+      "paybox_removed": "PayBox: the link was removed; customers see a placeholder instead of a button.",
+      "not_you": "If you did not make this change, sign in to the management area now, put the right links back, and check who has access to the account.",
+      "cta": "Open payment settings"
+    }
+  },
+  "push": {
+    "permission_prompt": "Turn on notifications on this device to hear about new orders right away.",
+    "enabled_confirmation": "Notifications are on for this device."
+  },
+  "checkout": {
+    "title": "When and how",
+    "back_to_catalog": "Back to the catalog",
+    "empty_title": "Your cart is empty",
+    "empty_body": "No products chosen yet.",
+    "delivery_or_pickup": "How you get it",
+    "delivery": "Delivery",
+    "pickup": "Pickup",
+    "select_date": "Date",
+    "legend_full": "Full: no room in the oven",
+    "legend_closed": "Closed: day off",
+    "no_days": "No free days in the next two weeks. You can contact us.",
+    "select_slot_delivery": "Delivery time",
+    "select_slot_pickup": "Pickup time",
+    "slot_label": "between {start} and {end}",
+    "no_slots": "Delivery and pickup hours are not set yet. You can contact us.",
+    "slot_needs_day": "Choose a date first, then a time.",
+    "select_city": "City for delivery",
+    "city_placeholder": "Choose a city",
+    "city_not_listed": "My city is not on the list",
+    "city_not_covered": "There is no delivery to that city, pickup only. We switched to pickup.",
+    "city_hint": "A city not on the list: no delivery there, pickup is possible.",
+    "zone_fee": "Delivery {fee}",
+    "no_zones": "Delivery is not available yet, pickup only.",
+    "details_heading": "Contact details",
+    "guest_fields": {
+      "name": "Full name",
+      "phone": "Mobile phone",
+      "phone_hint": "For example 050-1234567. Only for contact about this order.",
+      "email": "Email (optional)",
+      "email_hint": "To get the order confirmation by email.",
+      "address": "Delivery address",
+      "address_hint": "Street, house number, floor and apartment.",
+      "notes": "Notes (optional)"
+    },
+    "summary_heading": "Summary",
+    "line": "{name}, {quantity} units",
+    "delivery_line": "Delivery to {city}",
+    "pickup_line": "Pickup",
+    "total": "To pay",
+    "summary_note": "The final amount is set when the order is saved and appears on the payment screen.",
+    "submit": "Continue to payment",
+    "submitting": "Saving the order...",
+    "field_errors": {
+      "required": "Required",
+      "phone": "An Israeli mobile number, for example 050-1234567",
+      "email": "The email address is not valid",
+      "day": "Choose a date",
+      "slot": "Choose a time",
+      "city": "Choose a city"
+    },
+    "errors": {
+      "day_full": "The day you chose filled up in the meantime. Choose another day; the order was not saved.",
+      "day_almost_full": "The day you chose is almost full. Choose another day, or contact us.",
+      "order_too_big": "The order is too big for one day. Contact us and we will arrange it.",
+      "too_soon": "The time you chose is too close; orders are at least 24 hours ahead. Choose another day or time.",
+      "slot_unavailable": "The time you chose is no longer available. Choose another time.",
+      "city_not_served": "There is no delivery to this city right now. You can choose pickup.",
+      "product_unavailable": "One of the products is no longer available. Go back to the catalog to update the cart.",
+      "too_many_attempts": "Too many attempts from this connection. Try again in an hour, or contact us.",
+      "too_many_open_orders": "This phone already has orders waiting for payment. Pay for them first, or contact us.",
+      "invalid_input": "Some details are not valid. Check the marked fields.",
+      "forbidden_origin": "We could not save the order. Reload the page and try again.",
+      "server_error": "We could not save the order. Try again in a moment."
+    },
+    "pick_another_day": "Choose another day"
+  },
+  "payment": {
+    "page_title": "Payment",
+    "saved": "The order is saved for {day}",
+    "order_number_heading": "Your order number. Write it in the payment note:",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copy_label": "Copy order number {orderNumber}",
+    "amount": "Amount to transfer",
+    "hold_today": "Your place in the oven is held until {time} today. If the payment does not arrive by then, the place is released to others.",
+    "hold_other_day": "Your place in the oven is held until {time} on {day}. If the payment does not arrive by then, the place is released to others.",
+    "methods_heading": "How to pay",
+    "bit_link": "Pay with Bit",
+    "paybox_link": "Pay with PayBox",
+    "link_placeholder": "[{method} link not set yet]",
+    "instructions": {
+      "step1": "Choose an app and type in the amount, {amount}.",
+      "step2": "In the note field write the order number <b>{orderNumber}</b>.",
+      "step3": "When the payment arrives the order is confirmed by hand, usually within a few hours."
+    },
+    "keep_link": "Keep the link to this page: it is how you get back to your order.",
+    "details_heading": "Order details",
+    "when": "When",
+    "slot": "between {start} and {end}",
+    "how": "How",
+    "delivery_to": "Delivery to {city}",
+    "pickup": "Pickup",
+    "items_heading": "Products",
+    "line": "{name}, {quantity} units",
+    "delivery_fee": "Delivery",
+    "total": "Total",
+    "status": {
+      "paid": "The payment was received. Thank you!",
+      "fulfilled": "The order was fulfilled.",
+      "expired": "The payment time ran out and the place was released. You can order again.",
+      "cancelled": "The order was cancelled."
+    }
+  },
+  "confirmation": {
+    "pdf": {
+      "title": "Order confirmation",
+      "order_number": "Order number: {orderNumber}",
+      "ordered_on": "Order received on {date}",
+      "total_with_label": "Total ({label})",
+      "payment_heading": "Payment",
+      "payment_note": "Write the order number in the payment note: {orderNumber}",
+      "business_link": "All business details: {url}",
+      "footer": "This document was created on {date} and is kept unchanged. It can be downloaded again from the same link for at least 24 months."
+    },
+    "page": {
+      "heading": "Written order confirmation",
+      "download": "Download the order confirmation (PDF)",
+      "kept": "The file does not change, and its link is kept for at least 24 months."
+    },
+    "email": {
+      "link_intro": "The order confirmation is attached. You can download it again from this link for at least 24 months:",
+      "link_cta": "Download the order confirmation"
+    },
+    "admin": {
+      "needed": "This order has no email. Before it can be marked delivered, the customer must receive the written order confirmation on WhatsApp.",
+      "send_whatsapp": "Send the order confirmation on WhatsApp",
+      "send_whatsapp_label": "Send the confirmation of order {number} on WhatsApp",
+      "whatsapp_text": "Hello, here is the written confirmation of order {number} (PDF file): {url}",
+      "then_mark": "Once the message is sent, press \"I sent it\".",
+      "mark_sent": "I sent it",
+      "no_phone": "The order has no valid phone number, so WhatsApp is not possible. Send the confirmation another way, then mark it.",
+      "link_unavailable": "The order confirmation link is not available right now. Try reloading the page.",
+      "error": "Could not record that the confirmation was sent. Try again.",
+      "done": "Recorded that the confirmation of order <ltr>{number}</ltr> was sent. It can now be marked delivered."
+    }
+  },
+  "find_order": {
+    "meta_title": "Find my order",
+    "back": "Back to the shop",
+    "title": "Find my order",
+    "intro": "Type the phone number you gave with the order and the order number. The two together find the order.",
+    "privacy": "The phone and order number you type are used only to find the order, and are kept for 90 days to prevent guessing.",
+    "privacy_link": "Privacy notice",
+    "phone_label": "Mobile phone number",
+    "phone_invalid": "An Israeli mobile number is needed, for example 050-1234567.",
+    "number_label": "Order number",
+    "number_hint": "Shown on the order page and on the order confirmation, for example A2Y7-YCP.",
+    "number_invalid": "The order number does not look right. Check that it is typed as shown.",
+    "submit": "Find the order",
+    "not_found": "We found no order with this phone and order number. Check both and try again, or contact us by phone or WhatsApp.",
+    "too_many": "Too many attempts. Try again in an hour, or contact us by phone or WhatsApp.",
+    "error": "Something went wrong. Try again in a moment.",
+    "result_title": "Order <ltr>{number}</ltr>",
+    "status_label": "Status",
+    "status": {
+      "payment_pending": "Waiting for payment",
+      "paid": "Paid",
+      "fulfilled": "Delivered",
+      "expired": "Expired, not paid",
+      "cancelled": "Cancelled"
+    },
+    "day_label": "For",
+    "how_label": "How",
+    "delivery": "Delivery",
+    "pickup": "Pickup",
+    "address_label": "Address (partial)",
+    "download": "Download the order confirmation (PDF)",
+    "payment_page_hint": "For payment and full details use the order page link you received. If it is lost, contact us."
+  }
+}

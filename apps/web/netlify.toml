@@ -1,0 +1,20 @@
+# Netlify site config (ADR-001). Base directory on Netlify: apps/web.
+# Environment variables are set in the Netlify UI per site (DEV / PROD), never here.
+[build]
+  command = "npm ci && npm run build && npm run build:functions"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Scheduled functions (job-001). Sources: netlify/src/*.ts, bundled by
+# scripts/build-functions.mjs (react-server condition, see that file). The
+# schedule lives in each function's exported config; UTC cron.
+#   expire-orders   */15 * * * *   payment_pending expiry + heartbeat (keep-alive)
+#   retention-daily 40 0 * * *     retention sweep and purges
+#   capacity-rollforward 10 22 * * *  weekly pattern into the next 60 days + heartbeat
+[functions]
+  directory = "netlify/functions"
+
+# Deploy previews and branch deploys run against DEV only (SEC-020).

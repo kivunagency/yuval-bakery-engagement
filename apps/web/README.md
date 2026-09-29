@@ -1,0 +1,154 @@
+# apps/web
+
+Next.js 15 App Router, TypeScript strict. Specs live at the repo root (see ../../CLAUDE.md).
+
+## Run it locally
+
+```bash
+npm ci
+npm run stack:up      # Postgres 17 + Supabase Auth + PostgREST on :54321, writes .env.local
+npm run dev           # http://localhost:3000
+npm run stack:down
+```
+
+Supabase Auth runs with email confirmation ON; its mail goes to a local SMTP
+sink (`.local-stack/mail/*.eml`, read by `qa/helpers/mail.js`) using the
+templates in `supabase/templates/`.
+
+No Docker needed: `scripts/local-stack/` fetches PostgreSQL 17 (npm package
+`@embedded-postgres/linux-x64`), Supabase Auth and PostgREST (GitHub releases)
+and Supabase Storage (built from `supabase/storage` with Node 24 from npm, file
+backend) into a cache outside the repo. The first run builds Storage (about a
+minute); later runs start in seconds. Seed data is `supabase/seed.sql` (synthetic only).
+
+## Checks
+
+| Command | What |
+|---|---|
+| `npm run lint` | ESLint, includes: no Hebrew literals in code, no `dangerouslySetInnerHTML`, no `lib/server` import from `components/` |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Vitest unit tests (`tests/`) |
+| `npm run test:e2e` | Playwright: `qa/regression.spec.js` (needs `stack:up` and `npm run build`), `qa/smoke.spec.js` (needs `SMOKE_BASE_URL`, otherwise DID NOT RUN) |
+| `npm run build:functions` | bundles the Netlify Scheduled Functions (`netlify/src/*.ts` -> `netlify/functions/*.mjs`, job-001) |
+| `bash ../../output/qa/verify-all.sh` | everything, one verdict table |
+
+## Layout
+
+```
+app/                 routes (server components by default); app/api/*/route.ts with Zod contracts
+lib/server/          DB, auth, secrets. Every file starts with import 'server-only'
+  supabase/          createUserClient (acts as the signed-in user), serviceClient, anonClient, callRpc
+  auth/admin.ts      getAdminSession(): verified user + aal2 (TOTP within 12h) + admins membership, or null;
+                     requireAdminPage(): same, redirecting to /admin/login. Call it in EVERY admin page.
+  auth/admin-login.ts  password -> TOTP enrol/verify -> aal2, rate limited in the DB, uniform errors
+  identity/          optional customer accounts (api-010): sign-up, mail confirmation, sign-in,
+                     getCustomerSession(), own profile and marketing consent, one-click unsubscribe
+lib/shared/          no I/O: types (DB enums mirrored and tested), Zod contracts, Asia/Jerusalem time
+messages/            en.json (keys, primary) and he.json (UI text)
+supabase/migrations  the migrations that ship to Supabase (moved from output/db/)
+lib/server/jobs/     scheduled jobs (expiry sweep, daily retention, daily capacity roll-forward), called by netlify/src/*
+netlify/src/         Netlify Scheduled Functions, thin wrappers (built output netlify/functions/ is gitignored)
+qa/                  Playwright regression + smoke
+qa/                  Playwright regression + smoke (regression.<domain>.spec.js per domain)
+app/(admin)/admin/   admin shell (bottom tabs) and its screens; app/(admin-auth)/admin/login/ the login flow
+styles/admin.css     admin-only styles
+```
+
+## Rules that bite in code review
+
+- Writes go through the DB's SECURITY DEFINER functions (`callRpc`), never `.insert()`/`.update()` on a table.
+- Admin actions use `createUserClient()` so the DB sees the admin's own aal2 JWT; never pass an admin id.
+- No second "is there room" check in app code: capacity lives in `fn_reserve_capacity`.
+- Every new route goes into `qa/regression.spec.js` in the same PR, and every behaviour change updates `output/qa/SYSTEM-CONTRACT.md`.
+
+## Public business settings (compliance-002, US-0b)
+
+Yuval edits these `app_settings` keys in `/admin/settings/business` (with `vat_status`,
+through `fn_admin_set_business_details`; `app_settings` has no direct write path). Each is a
+JSON string, or JSON `null` while unknown; the site then shows a visible
+placeholder such as `[שם העסק]`. anon reads them only via `fn_public_site_settings()`.
+
+| Key | Shown where |
+|---|---|
+| `business_name` | footer, `/business`, checkout summary |
+| `business_owner_name` | `/business` |
+| `business_registration_number` | `/business`, checkout summary, order confirmation (status wording from `vat_status`) |
+| `business_address` | `/business` (home vs PO box: open legal question) |
+| `business_phone` | contact block (tap to call), `/business` |
+| `business_whatsapp` | contact block (wa.me) |
+| `business_email` | `/business`, privacy notice |
+
+Reusable pieces for other screens: `components/compliance` (`BusinessDetails`,
+`CancellationExemptionNotice`), `components/contact-block` (`ContactBlock`, pass
+`orderNumber` on order pages), `components/price` (`PriceWithVat`, `VatLabel`),
+`lib/shared/compliance/versions.ts` (`TEXT_VERSIONS`: pass these to the order
+functions), `lib/server/compliance/site-settings.ts` (`getPublicSiteSettings`).
+
+## Notifications (job-002)
+
+Other contexts call one function per event, with the id only, after their
+transaction committed (`after()` from `next/server` is the recommended way):
+
+```ts
+import { OrderCreated, CustomCakeRequested, CustomCakeApproved, CustomCakeDeclined } from '@/lib/server/notification';
+after(() => OrderCreated({ orderId }));
+```
+
+They never throw and never touch the order; every attempt and its outcome is a
+row in `notification_attempts` (recipients as sha256 only). Content comes from
+the DB and `messages/he.json`, never from the caller.
+
+| Env (Netlify, per context; never committed) | Meaning |
+|---|---|
+| `EMAIL_PROVIDER` | `resend`, `capture` (local only, refused in prod) or `none`. Default: `capture` locally, `resend` when a key exists, else `none` |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Resend account and verified sender (Yuval's, not created yet). Without them every email is recorded as `skipped` |
+| `EMAIL_CAPTURE_DIR` | where the capture adapter writes one JSON file per email (`.local-stack/outbox`) |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | web push keys (P-256, base64url) and contact (`mailto:`). Generate once per environment: `npx web-push generate-vapid-keys`. The private key stays server-side |
+| `PUSH_ALLOW_LOCAL_ENDPOINTS` | `1` lets tests use a push endpoint on 127.0.0.1; ignored unless `APP_ENV=local` |
+| `EMAIL_RECIPIENT_ALLOWLIST` | comma-separated addresses; when set, email goes only to them and every other recipient is recorded as `skipped` (`recipient_not_allowlisted`). Without a verified domain Resend delivers only to the account owner, so DEV and PROD set it to that address. Held as sha256 in memory |
+| `CUSTOMER_EMAIL_ENABLED` | `true` / `false`. Off: no email field in checkout or the custom-cake form, an email is not stored, customer mail is `skipped` (`customer_email_disabled`). Unset: on locally, off in dev and prod (`lib/server/features/index.ts`) |
+| `CUSTOMER_ACCOUNTS_ENABLED` | `true` / `false`. Off: `/register`, `/account/*`, `POST /api/customers` answer 404 and the footer has no account link. Unset: on locally, off in dev and prod. Needs a domain first: Supabase's built-in mail reaches only the project team |
+
+Until a domain is verified: `EMAIL_FROM=onboarding@resend.dev`, `EMAIL_RECIPIENT_ALLOWLIST=<the Resend account owner's address>`, both customer flags unset (off). Yuval gets her admin mail only if that address is also her admin login address.
+
+Email spend cap (Rule 30, Resend free tier 100/day), counted in the DB per
+Asia/Jerusalem day, all in `app_settings`: `email_daily_hard_cap` (100, the
+sender refuses above it), `email_daily_alert_at` (80, one push to the admin
+when reached), `email_daily_customer_cap` (60, customer mail stops so admin
+notifications keep room), `email_per_recipient_daily_cap` (3 per customer address).
+The same 80/100 alert must also be set in Resend's own dashboard when Yuval
+creates the account (infra-003).
+## Checkout settings (api-003)
+
+| What | Where | Notes |
+|---|---|---|
+| Delivery/pickup time slots | table `time_slots` (start, end, Asia/Jerusalem) | None ship in the migration (Yuval's hours are open); `seed.sql` has synthetic ones. Edited in `/admin/settings/hours` through `fn_admin_set_time_slots` (no direct writes). The first active start is copied into `app_settings.earliest_slot_time` by a trigger: do not edit that key by hand. |
+| Payment expiry hours, "limited" threshold | `app_settings` `payment_pending_expiry_hours_*`, `day_limited_threshold_pct` | Edited in `/admin/settings/hours` through `fn_admin_set_order_rules`; bounds in `trg_app_settings_guard`. |
+| Bit / PayBox links | `app_settings` `payment_link_bit`, `payment_link_paybox` | JSON null until set; shown only if https on the host allowlist in `lib/shared/payment/links.ts` (UNVERIFIED hosts; `fn_payment_link_valid` repeats it). Read through `fn_payment_link_settings()` (service role). Edited in `/admin/settings/payment` with a fresh TOTP code (SEC-009), audited, emailed to every admin. |
+| Order creation | `POST /api/orders` -> `fn_create_standard_order` (service role only) | The client never sends an amount; the DB prices, reserves and checks the slot lead time. |
+
+## Operations registry (ops-registry-001, Rule 27)
+
+The five business operations of ADR-001 over MCP Streamable HTTP, for an
+agent acting for Yuval: `markOrderPaid`, `approveCustomCakeRequest`,
+`declineCustomCakeRequest`, `generateDeliveryList` (counts per city only),
+`updateDayCapacity`. Code: `lib/server/agent-ops/` (copied from the
+`agent-ops-registry/` template), routes `app/api/ops/mcp` and
+`app/api/admin/ops-registry/tokens`. How agents authenticate and what each
+role may do, with the evidence per gate: `lib/server/agent-ops/SECURITY.md`.
+
+| Env (Netlify, per context; never committed) | Meaning |
+|---|---|
+| `OPS_REGISTRY_ENABLED` | exactly `true` switches the registry on. Anything else, or unset (the default everywhere, production included): both routes answer 404 |
+| `OPS_REGISTRY_TOKEN_SECRET` | 32+ random characters, required when on (503 without it). Rotating it ends every agent token at once. Treat it like the service role key |
+
+Local use: set both in `.env.local`, `npm run build && npm start`, sign in to
+`/admin` (password + TOTP), then from that browser tab:
+
+```js
+await (await fetch('/api/admin/ops-registry/tokens', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"role":"verifier"}' })).json()
+```
+
+and give the agent the MCP URL (`<SITE_URL>/api/ops/mcp`) with the header
+`Authorization: Bearer <token>`. The token lives at most one hour. With
+`APP_ENV=prod` only `verifier` can be minted and no write operation runs.

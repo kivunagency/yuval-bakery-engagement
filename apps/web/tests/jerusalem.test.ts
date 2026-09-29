@@ -1,0 +1,45 @@
+import { describe, expect, it } from 'vitest';
+import { addDays, earliestDeliveryDate, jerusalemDate, jerusalemHhmm, jerusalemInstant, slotMeetsLeadTime } from '@/lib/shared/time/jerusalem';
+import slotCases from '../qa/db/slot-lead-time.cases.json';
+
+describe('Asia/Jerusalem day boundaries', () => {
+  it('23:30 UTC is already the next day in Jerusalem', () => {
+    expect(jerusalemDate(new Date('2026-09-30T23:30:00Z'))).toBe('2026-10-01');
+  });
+  it('handles summer (UTC+3) and winter (UTC+2) offsets', () => {
+    expect(jerusalemInstant('2026-07-01', '12:00').toISOString()).toBe('2026-07-01T09:00:00.000Z');
+    expect(jerusalemInstant('2026-12-01', '12:00').toISOString()).toBe('2026-12-01T10:00:00.000Z');
+  });
+  it('adds calendar days across a month end', () => {
+    expect(addDays('2026-10-31', 1)).toBe('2026-11-01');
+  });
+});
+
+// Same table as qa/db/business-day.test.mjs, which runs it against the DB rule.
+describe('earliest delivery date (24h lead time, Asia/Jerusalem)', () => {
+  const cases: [string, string, string][] = [
+    ['2026-09-25T20:30:00Z', '2026-09-25', '2026-09-26'],
+    ['2026-09-25T21:30:00Z', '2026-09-26', '2026-09-27'],
+    ['2026-09-25T22:30:00Z', '2026-09-26', '2026-09-27'],
+    ['2026-12-01T21:59:00Z', '2026-12-01', '2026-12-02'],
+    ['2026-12-01T22:00:00Z', '2026-12-02', '2026-12-03'],
+    ['2026-10-24T21:30:00Z', '2026-10-25', '2026-10-25'],
+    ['2027-03-25T22:30:00Z', '2027-03-26', '2027-03-27'],
+  ];
+  it.each(cases)('at %s: business date %s, earliest delivery %s', (at, day, earliest) => {
+    expect(jerusalemDate(new Date(at))).toBe(day);
+    expect(earliestDeliveryDate(new Date(at))).toBe(earliest);
+  });
+});
+
+// api-003: slot-level lead time. Same table as qa/db/slot-lead-time.test.mjs,
+// which runs it against fn_slot_meets_lead_time (the rule the DB enforces).
+describe('slot lead time (24 real hours before the slot start, Asia/Jerusalem)', () => {
+  it.each(slotCases.cases as [string, string, string, boolean, string][])('at %s, slot %s %s: %s (%s)', (at, day, start, ok) => {
+    expect(slotMeetsLeadTime(day, start, new Date(at))).toBe(ok);
+  });
+  it('formats a Jerusalem wall-clock time for the hold message', () => {
+    expect(jerusalemHhmm(new Date('2026-09-26T10:40:00Z'))).toBe('13:40');
+    expect(jerusalemHhmm(new Date('2026-12-01T22:05:00Z'))).toBe('00:05');
+  });
+});

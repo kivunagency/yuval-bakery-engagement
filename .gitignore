@@ -31,6 +31,9 @@ env.*-local
 !.env.example
 !.env.local.example
 !env.local.example
+# Managed QA user (Rule 22, qa-005): the filled file is a credential, the example is not
+.qa.env
+!.qa.env.example
 
 # Vercel
 .vercel

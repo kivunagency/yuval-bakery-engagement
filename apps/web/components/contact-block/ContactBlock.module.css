@@ -1,0 +1,14 @@
+.block { display: grid; gap: var(--s3); }
+.heading { font-size: 16px; }
+.order { margin: 0; color: var(--ink-2); font-size: 14px; }
+/* One action per row: a phone number must never wrap inside its button. */
+.actions { display: grid; gap: var(--s2); }
+.action { min-block-size: var(--tap); gap: var(--s2); white-space: nowrap; }
+.placeholder {
+  margin: 0;
+  min-block-size: var(--tap);
+  display: flex; align-items: center;
+  padding-inline: var(--s4);
+  border: 1.5px dashed var(--line-strong); border-radius: var(--r-control);
+  color: var(--ink-2); font-size: 14px;
+}

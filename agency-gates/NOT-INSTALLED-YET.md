@@ -1,5 +1,9 @@
-This folder is not installed. See INSTALL-HERE.md.
+Installed on 2026-09-26 (branch feature/agency-gates), adapted to this layout:
 
-The gates have to live in the CODE repository, which usually does not exist yet at
-bootstrap time. Copy scripts/, qa/ and .github/ across the moment it does, and before
-the first route is written.
+- scripts: `apps/web/scripts/gates/` (plus `selftest.sh` and `check-baselines-reproducible.mjs`)
+- baselines: `apps/web/qa/gates/*.baseline.json`, taken from develop at c9a63ae (ratchet)
+- CI: `.github/workflows/agency-gates.yml`; locally: `bash output/qa/verify-all.sh`
+
+This folder stays as the pristine copy that arrived at bootstrap. The installed copy is the
+one that runs; the differences are marked "YuvalBakery adaptation" or "YuvalBakery fix" in
+each script. Not installed: `check-proof-of-execution.mjs` (Rule 17), see SYSTEM-CONTRACT.md.

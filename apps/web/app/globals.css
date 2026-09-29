@@ -1,0 +1,98 @@
+/* Design tokens: mirror of 06-mockups/design-tokens.md and the :root block of
+   06-mockups/mockup.html. If they disagree, the mockup wins; update both. */
+:root {
+  --bg: #f3f3f0; --surface: #ffffff; --surface-2: #f8f8f6;
+  --ink: #16181d; --ink-2: #555a63; --line: #ddded9; --line-strong: #8a8f98;
+  --accent: #a3123f; --accent-press: #8c0f36; --on-accent: #ffffff; --accent-soft: #f8e4eb; --accent-soft-ink: #8c0f36;
+  --ok: #135e3a; --ok-bg: #e2f2e8; --warn: #7a4700; --warn-bg: #fcefd7; --danger: #a1221b; --danger-bg: #fbe7e5;
+  --day-full-bg: #e6e6e2; --day-full-ink: #4a4e56; --day-closed-bg: #ededea; --hatch: #c9cac4;
+  --focus: #16181d;
+  --shadow-1: 0 1px 2px rgba(22, 24, 29, 0.06), 0 2px 8px rgba(22, 24, 29, 0.05);
+  --shadow-2: 0 8px 28px rgba(22, 24, 29, 0.1);
+  --r-chip: 999px; --r-control: 12px; --r-card: 16px; --r-sheet: 22px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px;
+  --font-ui: "IBM Plex Sans Hebrew", system-ui, sans-serif;
+  --font-display: "Karantina", "IBM Plex Sans Hebrew", sans-serif;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1); --dur-1: 120ms; --dur-2: 220ms;
+  --tap: 44px;
+  color-scheme: light; /* Always light (Ran, 2026-09-29): no dark theme. */
+}
+
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+h1, h2, h3, h4 { margin: 0; font-weight: 600; }
+h1 { font-size: 18px; line-height: 1.3; }
+h2 { font-size: 16px; line-height: 1.4; }
+
+.display { font-family: var(--font-display); font-weight: 700; line-height: 1; }
+.num { font-variant-numeric: tabular-nums; }
+/* Order numbers, phones, codes: isolated LTR inside RTL text (design-tokens.md, RTL section). */
+.ltr { direction: ltr; unicode-bidi: isolate; }
+.visually-hidden {
+  position: absolute; inline-size: 1px; block-size: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Focus ring in ink color, 3px, offset 2px, never blue (design-tokens.md). */
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+/* qa-006: Tab from the year reaches the date field's own calendar button; the field then
+   matches only :focus-within (not :focus or :focus-visible), and Chromium's thin orange ring is under 3:1. */
+input[type="date"]:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.skip-link {
+  position: absolute;
+  inset-inline-start: var(--s4);
+  inset-block-start: -100px;
+  min-block-size: var(--tap);
+  padding: var(--s3) var(--s4);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--r-control);
+  z-index: 100;
+}
+.skip-link:focus { inset-block-start: var(--s4); }
+
+.page {
+  max-inline-size: 720px;
+  margin-inline: auto;
+  padding-inline: var(--s4);
+  padding-block: var(--s6) var(--s10);
+}
+
+a { color: inherit; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-block-size: 52px; min-inline-size: var(--tap);
+  padding-inline: var(--s5);
+  border-radius: var(--r-control);
+  font: inherit; font-weight: 600;
+  text-decoration: none; cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--accent); color: var(--on-accent); border: 0; }
+.btn-primary:hover { background: var(--accent-press); }
+.btn-secondary { background: var(--surface); color: var(--ink); border: 1.5px solid var(--ink); }
+.btn-secondary:hover { background: var(--surface-2); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

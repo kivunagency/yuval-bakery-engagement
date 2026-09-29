@@ -1,0 +1,77 @@
+/* Custom-cake request (client-002). Fields per design-tokens.md "שדות וטפסים":
+   label above (14/600), hint below (14 ink-2), error under the hint (danger),
+   52px fields, 1.5px line-strong border, 16px text. */
+.header { display: grid; gap: var(--s3); margin-block-end: var(--s5); }
+.back {
+  display: inline-flex; align-items: center; min-block-size: var(--tap); min-inline-size: var(--tap);
+  font-size: 15px; font-weight: 600; text-underline-offset: 3px; justify-self: start;
+}
+.intro { margin: 0; color: var(--ink-2); }
+.stack { display: grid; gap: var(--s5); }
+
+.form { display: grid; gap: var(--s5); }
+.group { border: 0; margin: 0; padding: 0; display: grid; gap: var(--s4); min-inline-size: 0; }
+.group legend { padding: 0; margin-block-end: var(--s3); font-size: 17px; font-weight: 600; }
+.field { display: grid; gap: var(--s1); }
+.field label { font-size: 14px; font-weight: 600; line-height: 1.4; }
+.input {
+  inline-size: 100%; min-block-size: 52px;
+  padding: 12px var(--s3);
+  font: inherit; font-size: 16px; color: var(--ink);
+  background: var(--surface);
+  border: 1.5px solid var(--line-strong); border-radius: var(--r-control);
+}
+textarea.input { resize: vertical; line-height: 1.55; }
+.input[dir='ltr'] { text-align: end; }
+.input[aria-invalid='true'], .file[aria-invalid='true'] { border-color: var(--danger); }
+.file {
+  inline-size: 100%; min-block-size: 52px;
+  padding: var(--s2);
+  font: inherit; font-size: 15px; color: var(--ink);
+  background: var(--surface);
+  border: 1.5px dashed var(--line-strong); border-radius: var(--r-control);
+}
+.file::file-selector-button {
+  min-block-size: var(--tap); margin-inline-end: var(--s3); padding-inline: var(--s4);
+  font: inherit; font-weight: 600; color: var(--ink);
+  background: var(--surface-2); border: 1.5px solid var(--ink); border-radius: var(--r-control); cursor: pointer;
+}
+.hint { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.error { margin: 0; font-size: 14px; font-weight: 600; color: var(--danger); }
+.error::before { content: '!'; display: inline-grid; place-items: center; inline-size: 18px; block-size: 18px; margin-inline-end: 6px; border-radius: 50%; background: var(--danger); color: var(--surface); font-size: 12px; }
+.check {
+  display: flex; align-items: flex-start; gap: var(--s2);
+  font-size: 15px; line-height: 1.45; cursor: pointer;
+}
+.check span { padding-block-start: 11px; }
+/* The input itself is the 44x44 target (baseline check); the box is drawn at 24px inside it. */
+.check input {
+  appearance: none; flex: none; margin: 0;
+  inline-size: var(--tap); block-size: var(--tap);
+  display: grid; place-items: center;
+  background: transparent; border: 0; border-radius: var(--r-control); cursor: pointer;
+}
+.check input::before {
+  content: ''; inline-size: 24px; block-size: 24px; border-radius: 6px;
+  border: 1.5px solid var(--line-strong); background: var(--surface) center / 16px no-repeat;
+}
+.check input:checked::before {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3 7-7' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.check input[aria-invalid='true']::before { border-color: var(--danger); border-width: 2px; }
+.noHold { margin: 0; padding: var(--s3) var(--s4); border-radius: var(--r-control); background: var(--accent-soft); color: var(--accent-soft-ink); font-size: 14px; font-weight: 600; }
+.formError { margin: 0; padding: var(--s3) var(--s4); border-radius: var(--r-control); background: var(--danger-bg); color: var(--danger); font-size: 14px; font-weight: 600; }
+.submit { inline-size: 100%; }
+.submit:disabled { opacity: 0.7; cursor: progress; }
+
+.sent { display: grid; gap: var(--s5); }
+.status {
+  display: grid; gap: var(--s2);
+  padding: var(--s5); border-radius: var(--r-card);
+  background: var(--surface); box-shadow: var(--shadow-1);
+}
+.status p { margin: 0; }
+.steps { margin: 0; padding-inline-start: var(--s5); display: grid; gap: var(--s2); }
+.photoNote { margin: 0; padding: var(--s3) var(--s4); border-radius: var(--r-control); background: var(--warn-bg); color: var(--warn); font-weight: 600; font-size: 14px; }
