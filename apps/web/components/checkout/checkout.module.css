@@ -80,6 +80,15 @@
 .sumCard { background: var(--surface); border-radius: var(--r-card); padding: var(--s4); box-shadow: var(--shadow-1); }
 .sumRow { display: flex; justify-content: space-between; gap: var(--s3); font-size: 15px; padding-block: 3px; }
 .sumRow span:first-child { color: var(--ink-2); }
+.sumLine { padding-block: var(--s2); border-block-end: 1px solid var(--line); }
+.sumEdit { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-block-start: var(--s1); }
+.remove {
+  min-block-size: var(--tap); min-inline-size: var(--tap); padding-inline: var(--s2);
+  border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.sumCard h2:focus { outline: none; }
+.sumCard h2:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .sumTotal {
   display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3);
   border-block-start: 1px solid var(--line); margin-block-start: var(--s2); padding-block-start: var(--s3);
@@ -92,6 +101,7 @@
 .biz { font-size: 14px; }
 .submit { inline-size: 100%; }
 .submit:disabled { opacity: 0.7; cursor: progress; }
+.submit[data-blocked] { cursor: not-allowed; }
 
 .empty { display: grid; gap: var(--s3); justify-items: start; padding: var(--s4); }
 .empty p { margin: 0; color: var(--ink-2); }

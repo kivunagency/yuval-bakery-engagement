@@ -28,10 +28,11 @@ INSERT INTO time_slots (id, start_time, end_time) VALUES
   ('dddddddd-0000-0000-0003-000000000004', '16:00', '18:00')
 ON CONFLICT DO NOTHING;
 
--- Weekly pattern: Sunday to Thursday full days, Friday short, Saturday closed
+-- Weekly pattern: Sunday to Thursday full days, Friday short, Saturday closed.
+-- Sized so a mixed demo cart fits the 35% single-order cap (SEC-005): 35% of 900 = 315 minutes.
 INSERT INTO capacity_weekly_pattern (weekday, is_working_day, oven_minutes_total, work_minutes_total) VALUES
-  (0, true, 480, 360), (1, true, 480, 360), (2, true, 480, 360), (3, true, 480, 360),
-  (4, true, 480, 360), (5, true, 240, 180), (6, false, 0, 0)
+  (0, true, 900, 900), (1, true, 900, 900), (2, true, 900, 900), (3, true, 900, 900),
+  (4, true, 900, 900), (5, true, 450, 450), (6, false, 0, 0)
 ON CONFLICT (weekday) DO UPDATE SET is_working_day = EXCLUDED.is_working_day,
   oven_minutes_total = EXCLUDED.oven_minutes_total, work_minutes_total = EXCLUDED.work_minutes_total;
 SELECT fn_materialize_capacity_from_pattern();
