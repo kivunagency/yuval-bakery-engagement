@@ -152,7 +152,8 @@ test.describe('home page', () => {
     const res = await request.get(`http://localhost:${PROD_PORT}/`);
     test.skip(res.status() !== 200, `DID NOT RUN: "/" answered ${res.status()}; it reads the catalog, so it needs the local stack (npm run stack:up)`);
     const html = await res.text();
-    expect(tag(html, /<link[^>]*rel="canonical"[^>]*href="([^"]*)"/g)).toEqual([`${PROD_URL}/`]);
+    // Next.js normalises the root canonical to the bare origin (no trailing slash)
+    expect(tag(html, /<link[^>]*rel="canonical"[^>]*href="([^"]*)"/g)).toEqual([PROD_URL]);
     expect(meta(html, 'property', 'og:title')).toHaveLength(1);
     expect(meta(html, 'name', 'twitter:card')).toEqual(['summary']);
     const blocks = tag(html, /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g);
