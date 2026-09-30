@@ -3,10 +3,11 @@ import { getTranslations } from 'next-intl/server';
 import { BusinessDetails, CancellationExemptionNotice } from '@/components/compliance';
 import { LegalPage, LegalSection } from '@/components/legal-page';
 import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
+import { pageMetadata } from '@/lib/server/seo/page-metadata';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('business.page');
-  return { title: t('title') };
+  return pageMetadata({ path: '/business', title: t('title'), key: 'business' });
 }
 
 // compliance-002: business details under Consumer Protection Law s.14C, linked

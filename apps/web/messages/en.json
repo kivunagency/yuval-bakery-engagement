@@ -1352,5 +1352,17 @@
     "address_label": "Address (partial)",
     "download": "Download the order confirmation (PDF)",
     "payment_page_hint": "For payment and full details use the order page link you received. If it is lost, contact us."
+  },
+  "seo": {
+    "description": {
+      "home": "Order fresh pastries and cakes from the bakery for pickup or delivery. Pick a day and your products, then pay with Bit or PayBox.",
+      "custom_cake": "Request a custom cake: tell us what matters to you, add an inspiration photo and we get back to you.",
+      "find_order": "Find an existing order and get its confirmation.",
+      "business": "Business details and how to contact us: name, address, phone and email.",
+      "privacy": "The privacy notice: what details we collect, why, who receives them and what your rights are.",
+      "terms": "Terms of use for the site and for ordering products.",
+      "returns": "Cancellation and returns policy: what you can do before and after payment, and your rights if a product is defective.",
+      "accessibility": "The accessibility statement: what has been done, known limitations and how to contact us about accessibility."
+    }
   }
 }
