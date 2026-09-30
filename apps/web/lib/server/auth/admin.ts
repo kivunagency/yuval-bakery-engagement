@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createUserClient } from '@/lib/server/supabase/server';
-import { ADMIN_ACTIVITY_COOKIE, SESSION_MAX_AGE_SECONDS, idleVerdict } from '@/lib/server/auth/session-policy';
+import { ADMIN_ACTIVITY_COOKIE, SESSION_MAX_AGE_SECONDS, idleVerdict } from '@/lib/shared/auth/session-policy';
 
 export type AdminSession = { userId: string };
 

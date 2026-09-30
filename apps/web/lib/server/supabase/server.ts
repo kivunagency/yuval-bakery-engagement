@@ -2,7 +2,7 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { serverEnv } from '@/lib/server/env';
-import { hardenCookieOptions } from '@/lib/server/auth/session-policy';
+import { hardenCookieOptions } from '@/lib/shared/auth/session-policy';
 
 // Request-scoped client that acts as the signed-in user (or anon). Use it for
 // admin actions: the DB functions derive the actor from auth.uid() and check

@@ -7,7 +7,7 @@ import {
   idleVerdict,
   isAdminPath,
   needsActivityRefresh,
-} from '@/lib/server/auth/session-policy';
+} from '@/lib/shared/auth/session-policy';
 
 describe('hardenCookieOptions (gate blockers B1, B2, G5)', () => {
   // @supabase/ssr 0.12.7 DEFAULT_COOKIE_OPTIONS plus its 400-day maxAge override.

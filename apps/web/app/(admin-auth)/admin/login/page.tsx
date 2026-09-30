@@ -3,13 +3,12 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { adminLoginStep } from '@/lib/server/auth/admin-login';
 import { LoginForm } from '@/components/admin/LoginForm';
-import { IDLE_REASON } from '@/lib/server/auth/session-policy';
+import { IDLE_REASON } from '@/lib/shared/auth/session-policy';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ reason?: string | string[] }> }) {
-  const { reason } = await searchParams;
-  const step = await adminLoginStep();
+  const [{ reason }, step] = await Promise.all([searchParams, adminLoginStep()]);
   if (step === 'done') redirect('/admin');
   if (step === 'enrol') redirect('/admin/login/enroll');
   if (step === 'totp') redirect('/admin/login/verify');

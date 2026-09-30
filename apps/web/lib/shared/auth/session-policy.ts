@@ -3,6 +3,7 @@
 // no I/O, and deliberately NO `import 'server-only'`, because middleware.ts
 // (which does not run under the react-server condition) must import it. It is
 // only ever imported by server code (middleware, lib/server, route handlers).
+// It lives in lib/shared because it holds no secret and no I/O (house shape gate).
 
 /** Absolute cap for every auth cookie and for an admin session after its TOTP step: 12 hours. */
 export const SESSION_MAX_AGE_SECONDS = 12 * 60 * 60;

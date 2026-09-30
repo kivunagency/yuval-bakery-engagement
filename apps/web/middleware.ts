@@ -9,7 +9,7 @@ import {
   needsActivityRefresh,
   isAdminPath,
   type CookieOptions,
-} from '@/lib/server/auth/session-policy';
+} from '@/lib/shared/auth/session-policy';
 
 // 1. Content-Security-Policy with a per-request nonce (SEC-019): no
 //    'unsafe-inline' and no 'unsafe-eval' for scripts in production.
