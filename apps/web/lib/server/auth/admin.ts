@@ -1,12 +1,14 @@
 import 'server-only';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createUserClient } from '@/lib/server/supabase/server';
+import { ADMIN_ACTIVITY_COOKIE, SESSION_MAX_AGE_SECONDS, idleVerdict } from '@/lib/server/auth/session-policy';
 
 export type AdminSession = { userId: string };
 
 /** SEC-013: an admin session ends 12 hours after its TOTP step, whatever the refreshes. */
-export const ADMIN_SESSION_MAX_AGE_SECONDS = 12 * 60 * 60;
+export const ADMIN_SESSION_MAX_AGE_SECONDS = SESSION_MAX_AGE_SECONDS;
 
 type AmrEntry = { method?: string; timestamp?: number };
 
@@ -26,9 +28,16 @@ export function totpVerifiedAt(accessToken: string): number | null {
 // Resolves the signed-in admin for an admin page or route, or null.
 // Requires: a verified user (getUser hits Auth, never trusts the cookie alone),
 // a session at aal2 (TOTP verified) no older than 12 hours since the TOTP
-// step, and membership in `admins` (checked by the DB's is_admin_aal2(), never
-// by user_metadata, SEC-002). The actor id is never taken from the client.
+// step, not idle for more than 30 minutes (SEC-013), and membership in
+// `admins` (checked by the DB's is_admin_aal2(), never by user_metadata, SEC-002). The actor id is never taken from the client.
 export async function getAdminSession(): Promise<AdminSession | null> {
+  // SEC-013 idle window. middleware.ts signs an idle admin out and refreshes
+  // the activity cookie; this is the second line, so a path the middleware
+  // matcher ever misses still refuses a session idle for more than 30 minutes.
+  // It reads the REQUEST cookie (the value before middleware's refresh).
+  const activity = (await cookies()).get(ADMIN_ACTIVITY_COOKIE)?.value;
+  if (idleVerdict(activity, Date.now() / 1000) === 'idle') return null;
+
   const supabase = await createUserClient();
   const { data: userData, error } = await supabase.auth.getUser();
   if (error || !userData.user) return null;
