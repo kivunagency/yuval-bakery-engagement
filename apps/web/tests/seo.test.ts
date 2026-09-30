@@ -94,7 +94,7 @@ describe('JsonLd component', () => {
     const { JsonLd } = await import('@/components/seo/JsonLd');
     const html = renderToStaticMarkup(await JsonLd({ data: bakeryJsonLd(site, ORIGIN)! }));
     expect(html).toMatch(/^<script type="application\/ld\+json" nonce="abc123">/);
-    const body = /<script[^>]*>([\s\S]*)<\/script>/.exec(html)![1]!;
+    const body = /<script[^>]*>([\s\S]*)<\/script>/i.exec(html)![1]!;
     expect(JSON.parse(body)['@type']).toBe('Bakery');
     vi.doUnmock('next/headers');
   });
