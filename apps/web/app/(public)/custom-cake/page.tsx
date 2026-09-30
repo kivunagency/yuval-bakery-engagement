@@ -7,12 +7,13 @@ import styles from '@/components/custom-cake/custom-cake.module.css';
 import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
 import { readFeatures } from '@/lib/server/features';
 import { earliestDeliveryDate } from '@/lib/shared/time/jerusalem';
+import { pageMetadata } from '@/lib/server/seo/page-metadata';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('custom_cake');
-  return { title: t('meta_title') };
+  return pageMetadata({ path: '/custom-cake', title: t('meta_title'), key: 'custom_cake' });
 }
 
 // Custom-cake request (client-002, PRD US-2), linked from the catalog's
