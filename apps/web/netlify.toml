@@ -4,6 +4,13 @@
   command = "npm ci && npm run build && npm run build:functions"
   publish = ".next"
 
+# The Next.js runtime, declared here and not only in the UI: a site created
+# through the Netlify API gets no framework detection, so without this line it
+# publishes .next as static files and every route is Netlify's own 404 (seen on
+# the PROD site's first deploy, 2026-09-30; the same lesson as DEV).
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
 [build.environment]
   NODE_VERSION = "22"
   NEXT_TELEMETRY_DISABLED = "1"
