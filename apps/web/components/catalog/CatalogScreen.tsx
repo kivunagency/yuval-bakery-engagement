@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { CatalogResponse, CatalogProduct } from '@/lib/shared/contracts/catalog';
 import type { CapacityResponse } from '@/lib/shared/contracts/capacity';
-import { addToCart, cartCount, moveCartToDay } from '@/lib/shared/cart';
+import { addToCart, cartCount, decrementLine, incrementLine, moveCartToDay } from '@/lib/shared/cart';
 import { useCart } from '@/components/cart/cart-store';
 import { DayStrip } from '@/components/day-state/DayStrip';
 import { isSelectableDay } from '@/components/day-state/DayState';
@@ -68,6 +68,18 @@ export function CatalogScreen({ businessName, catalog, availability, initialDay 
     setAnnouncement(t('added', { name: p.name }));
   }
 
+  // Plus and minus on a line already in the cart (its day is already set).
+  function increase(p: CatalogProduct) {
+    updateCart((c) => incrementLine(c, p.id));
+    setAnnouncement(t('added', { name: p.name }));
+  }
+
+  function decrease(p: CatalogProduct) {
+    const removes = qty(p.id) <= 1;
+    updateCart((c) => decrementLine(c, p.id));
+    setAnnouncement(removes ? t('quantity.removed', { name: p.name }) : t('quantity.lowered', { name: p.name }));
+  }
+
   const count = cartCount(cart);
   const qty = (id: string) => cart.lines.find((l) => l.productId === id)?.quantity ?? 0;
   const products = catalog.products;
@@ -120,7 +132,7 @@ export function CatalogScreen({ businessName, catalog, availability, initialDay 
           {products.length === 0 ? <p className={styles.empty}>{t('empty')}</p> : null}
           <div className={styles.cat}>
             {products.slice(0, customAt).map((p, i) => (
-              <ProductCard key={p.id} product={p} wide={i === 0} blocked={blockedReason(p)} inCart={qty(p.id)} onAdd={add} />
+              <ProductCard key={p.id} product={p} wide={i === 0} blocked={blockedReason(p)} inCart={qty(p.id)} onAdd={add} onIncrease={increase} onDecrease={decrease} />
             ))}
             <div className={styles.custom}>
               <h3>{t('custom_cake.title')}</h3>
@@ -128,7 +140,7 @@ export function CatalogScreen({ businessName, catalog, availability, initialDay 
               <Link href="/custom-cake" prefetch={false}>{t('custom_cake.cta')}</Link>
             </div>
             {products.slice(customAt).map((p) => (
-              <ProductCard key={p.id} product={p} wide={false} blocked={blockedReason(p)} inCart={qty(p.id)} onAdd={add} />
+              <ProductCard key={p.id} product={p} wide={false} blocked={blockedReason(p)} inCart={qty(p.id)} onAdd={add} onIncrease={increase} onDecrease={decrease} />
             ))}
           </div>
           <p className={styles.kitchenNotice}>{t('kitchen_notice')}</p>

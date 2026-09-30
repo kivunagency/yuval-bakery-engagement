@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -9,17 +9,20 @@ import type { PublicSiteSettings } from '@/lib/shared/contracts/site-settings';
 import { capacityResponse } from '@/lib/shared/contracts/capacity';
 import {
   checkoutErrorBody,
+  checkoutFitResponse,
   createOrderRequest,
   createOrderResponse,
   type CheckoutError,
+  type CheckoutFitState,
   type PublicZone,
   type TimeSlot,
 } from '@/lib/shared/contracts/checkout';
-import { EMPTY_CART, moveCartToDay } from '@/lib/shared/cart';
+import { decrementLine, EMPTY_CART, incrementLine, moveCartToDay, removeFromCart } from '@/lib/shared/cart';
 import { quoteCart } from '@/lib/shared/checkout/quote';
 import { slotMeetsLeadTime } from '@/lib/shared/time/jerusalem';
 import { isolate } from '@/lib/shared/text/bidi';
 import { useCart } from '@/components/cart/cart-store';
+import { QuantityStepper } from '@/components/cart/QuantityStepper';
 import { DayStrip } from '@/components/day-state/DayStrip';
 import { isSelectableDay } from '@/components/day-state/DayState';
 import { BusinessDetails, CancellationExemptionNotice, NotesFieldHint, PrivacyNoticeAtCollection } from '@/components/compliance';
@@ -34,6 +37,11 @@ import styles from '@/components/checkout/checkout.module.css';
 // priced and reserved by fn_create_standard_order behind POST /api/orders.
 // A refusal is shown as it is and never retried silently; when the day is
 // gone the customer is sent back to the day picker with fresh day states.
+// Early warning: once a day is chosen, and whenever the cart changes, the page
+// asks POST /api/checkout/fit whether the cart passes the single-order cap on
+// that day (the DB answers, fn_checkout_single_order_fit). "too big" shows the
+// warning and disables continue; any other answer, or no answer, leaves the
+// decision to fn_create_standard_order when the order is placed.
 
 type Props = {
   products: { id: string; name: string; price: number; isAvailable: boolean }[];
@@ -79,6 +87,7 @@ function CheckoutHeader() {
 
 export function CheckoutForm({ products, days: initialDays, range, zones, slots, settings, now, collectEmail }: Props) {
   const t = useTranslations('checkout');
+  const tq = useTranslations('catalog.quantity');
   const router = useRouter();
   const [cart, updateCart] = useCart();
   const hydrated = useHydrated();
@@ -95,6 +104,8 @@ export function CheckoutForm({ products, days: initialDays, range, zones, slots,
   const [pickAnotherDay, setPickAnotherDay] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const dayRef = useRef<HTMLElement>(null);
+  const summaryRef = useRef<HTMLHeadingElement>(null);
+  const [fit, setFit] = useState<{ key: string; state: CheckoutFitState | 'unknown' } | null>(null);
 
   const selectableDays = useMemo(() => new Set(days.filter((d) => isSelectableDay(d.state)).map((d) => d.day)), [days]);
   const day = dayChoice === null ? (cart.day && selectableDays.has(cart.day) ? cart.day : null) : dayChoice || null;
@@ -107,6 +118,41 @@ export function CheckoutForm({ products, days: initialDays, range, zones, slots,
   const zone = fulfillment === 'delivery' ? (cityOptions.find((o) => o.city === city)?.zone ?? null) : null;
   const quote = quoteCart(cart.lines, productMap, zone?.fee ?? 0);
   const nowDate = useMemo(() => new Date(now), [now]);
+
+  // The request body doubles as the key: an answer counts only for the exact
+  // day and lines it was asked about.
+  const fitKey =
+    day && quote.lines.length > 0 ? JSON.stringify({ day, items: quote.lines.map((l) => ({ productId: l.productId, quantity: l.quantity })) }) : null;
+  useEffect(() => {
+    if (!hydrated || !fitKey) return;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      let state: CheckoutFitState | 'unknown' = 'unknown';
+      try {
+        const res = await fetch('/api/checkout/fit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: fitKey,
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        const parsed = checkoutFitResponse.safeParse(await res.json());
+        if (parsed.success) state = parsed.data.fit;
+      } catch (e) {
+        if (controller.signal.aborted) return;
+        // No early answer (network, 503): recorded as unknown, no warning shown.
+        // The DB still refuses a too-big order when it is placed.
+        console.warn('checkout fit check did not run', e instanceof Error ? e.name : 'unknown');
+        state = 'unknown';
+      }
+      setFit({ key: fitKey, state });
+    }, 250);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [hydrated, fitKey]);
+  const tooBig = fit !== null && fit.key === fitKey && fit.state === 'too_big';
 
   if (hydrated && cart.lines.length === 0) {
     return (
@@ -156,9 +202,15 @@ export function CheckoutForm({ products, days: initialDays, range, zones, slots,
     }
   }
 
+  function editCart(next: Parameters<typeof updateCart>[0], lineGoes: boolean) {
+    updateCart(next);
+    // The focused control leaves with its line: keep focus in the summary.
+    if (lineGoes) requestAnimationFrame(() => summaryRef.current?.focus());
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || tooBig) return;
     setServerError(null);
     const body = {
       items: quote.lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
@@ -269,6 +321,11 @@ export function CheckoutForm({ products, days: initialDays, range, zones, slots,
           </div>
           {!anyDay ? <p className={styles.hint}>{t('no_days')}</p> : null}
           {errorText('day')}
+          {tooBig ? (
+            <p className={styles.alert} role="alert" data-testid="too-big-warning">
+              {t('too_big_warning')}
+            </p>
+          ) : null}
         </section>
 
         <section aria-labelledby="slot-label" className={styles.section}>
@@ -400,15 +457,55 @@ export function CheckoutForm({ products, days: initialDays, range, zones, slots,
         </section>
 
         <section className={styles.sumCard} aria-labelledby="summary-label" data-testid="summary">
-          <h2 id="summary-label" className={styles.sectionH}>
+          <h2 id="summary-label" className={styles.sectionH} ref={summaryRef} tabIndex={-1}>
             {t('summary_heading')}
           </h2>
           {quote.lines.map((l) => (
-            <div className={styles.sumRow} key={l.productId}>
-              <span>{t('line', { name: isolate(l.name), quantity: l.quantity })}</span>
-              <span className="num">{formatIls(l.lineTotal)}</span>
+            <div className={styles.sumLine} key={l.productId} data-testid="summary-line" data-product-id={l.productId}>
+              <div className={styles.sumRow}>
+                <span>{t('line', { name: isolate(l.name), quantity: l.quantity })}</span>
+                <span className="num">{formatIls(l.lineTotal)}</span>
+              </div>
+              <div className={styles.sumEdit}>
+                <QuantityStepper
+                  name={l.name}
+                  quantity={l.quantity}
+                  onIncrease={() => editCart((c) => incrementLine(c, l.productId), false)}
+                  onDecrease={() => editCart((c) => decrementLine(c, l.productId), l.quantity <= 1)}
+                />
+                <button
+                  type="button"
+                  className={styles.remove}
+                  aria-label={tq('remove', { name: l.name })}
+                  onClick={() => editCart((c) => removeFromCart(c, l.productId), true)}
+                  data-testid="summary-remove"
+                >
+                  {t('remove_line')}
+                </button>
+              </div>
             </div>
           ))}
+          {quote.missing.map((id) => {
+            const name = products.find((p) => p.id === id)?.name;
+            return name ? (
+              <div className={styles.sumLine} key={id} data-testid="summary-line-unavailable" data-product-id={id}>
+                <div className={styles.sumRow}>
+                  <span>{t('line_unavailable', { name: isolate(name) })}</span>
+                </div>
+                <div className={styles.sumEdit}>
+                  <button
+                    type="button"
+                    className={styles.remove}
+                    aria-label={tq('remove', { name })}
+                    onClick={() => editCart((c) => removeFromCart(c, id), true)}
+                    data-testid="summary-remove"
+                  >
+                    {t('remove_line')}
+                  </button>
+                </div>
+              </div>
+            ) : null;
+          })}
           <div className={styles.sumRow}>
             <span>{fulfillment === 'pickup' ? t('pickup_line') : zone ? t('delivery_line', { city: isolate(city) }) : t('delivery')}</span>
             <span className="num" data-testid="summary-fee">{formatIls(quote.deliveryFee)}</span>
@@ -445,7 +542,19 @@ export function CheckoutForm({ products, days: initialDays, range, zones, slots,
           </div>
         ) : null}
 
-        <button type="submit" className={`btn btn-primary ${styles.submit}`} disabled={submitting} data-testid="checkout-submit">
+        {tooBig ? (
+          <p id="submit-blocked" className={styles.notice} data-testid="too-big-submit">
+            {t('too_big_warning')}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          className={`btn btn-primary ${styles.submit}`}
+          disabled={submitting || tooBig}
+          aria-describedby={tooBig ? 'submit-blocked' : undefined}
+          data-blocked={tooBig ? 'too_big' : undefined}
+          data-testid="checkout-submit"
+        >
           {submitting ? t('submitting') : t('submit')}
         </button>
       </form>

@@ -440,7 +440,8 @@ test.describe('client-001: catalog screen', () => {
         await page.locator(`[data-day="${day}"]`).click();
         await expect(page.getByTestId('need-day')).toHaveCount(0);
         await add.click();
-        await add.click();
+        // once in the cart, the add button becomes minus / quantity / plus
+        await page.locator(`[data-product-id="${p.id}"]`).getByTestId('quantity-increase').click();
         await expect(page.getByTestId('cart-button')).toHaveAttribute('aria-label', 'סל, 2 פריטים');
         await expect(page.locator('main [role="status"]')).toHaveText(`${p.name} נוסף לסל`);
         const stored = await page.evaluate(() => JSON.parse(sessionStorage.getItem('yb.cart.v1') ?? 'null'));
@@ -448,6 +449,82 @@ test.describe('client-001: catalog screen', () => {
       });
     } finally {
       await withDb((db) => deleteProducts(db, [p.id]));
+    }
+  });
+
+  test('card: after add, minus / quantity / plus; minus lowers, minus at 1 removes (focus back on add), plus stops at 20', async ({ page }) => {
+    const p = await withDb((db) => insertProduct(db, { oven: 1, work: 1 }));
+    try {
+      await withDays([12], [{ oven: 300, work: 300 }], async ([day]) => {
+        await page.goto(`/?day=${day}`);
+        const card = page.locator(`[data-product-id="${p.id}"]`);
+        await card.getByRole('button', { name: /הוספה/ }).click();
+        const stepper = card.getByRole('group', { name: `${p.name} בסל` });
+        await expect(stepper).toBeVisible();
+        await expect(card.getByRole('button', { name: /הוספה/ })).toHaveCount(0);
+        const plus = card.getByRole('button', { name: `עוד יחידה, ${p.name}` });
+        await expect(plus).toBeFocused(); // keyboard focus moved from add to plus
+        const minus = card.getByTestId('quantity-decrease');
+        await expect(minus).toHaveAccessibleName(`הסרה מהסל, ${p.name}`); // at 1 the minus removes
+        for (const b of [plus, minus]) {
+          const box = await b.boundingBox();
+          expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
+        }
+
+        await plus.click();
+        await plus.click();
+        await expect(card.getByTestId('quantity-value')).toContainText('3');
+        await expect(minus).toHaveAccessibleName(`יחידה אחת פחות, ${p.name}`);
+        await minus.click();
+        await expect(card.getByTestId('quantity-value')).toContainText('2');
+        await expect(page.getByTestId('cart-button')).toHaveAttribute('aria-label', 'סל, 2 פריטים');
+        await page.evaluate(() => document.fonts.ready);
+        await card.scrollIntoViewIfNeeded();
+        await page.screenshot({ path: join(SCREENS, 'catalog-card-stepper.png') });
+
+        // RTL: the first control in the DOM (minus) sits at the right-hand end
+        const [minusX, plusX] = await Promise.all([minus, plus].map((b) => b.evaluate((el) => el.getBoundingClientRect().x)));
+        expect(minusX).toBeGreaterThan(plusX);
+
+        for (let i = 0; i < 25; i += 1) if (await plus.isEnabled()) await plus.click();
+        await expect(card.getByTestId('quantity-value')).toContainText('20');
+        await expect(plus).toBeDisabled();
+        let stored = await page.evaluate(() => JSON.parse(sessionStorage.getItem('yb.cart.v1') ?? 'null'));
+        expect(stored).toEqual({ day, lines: [{ productId: p.id, quantity: 20 }] });
+
+        await page.evaluate((id) => {
+          sessionStorage.setItem('yb.cart.v1', JSON.stringify({ day: new URL(location.href).searchParams.get('day'), lines: [{ productId: id, quantity: 1 }] }));
+        }, p.id);
+        await page.reload();
+        await card.getByTestId('quantity-decrease').click();
+        await expect(card.getByTestId('quantity-stepper')).toHaveCount(0);
+        await expect(card.getByRole('button', { name: /הוספה/ })).toBeFocused();
+        stored = await page.evaluate(() => JSON.parse(sessionStorage.getItem('yb.cart.v1') ?? 'null'));
+        expect(stored).toEqual({ day, lines: [] });
+        await expect(page.locator('main [role="status"]')).toHaveText(`${p.name} הוסר מהסל`);
+      });
+    } finally {
+      await withDb((db) => deleteProducts(db, [p.id]));
+    }
+  });
+
+  test('a product already in the cart that no longer fits the chosen day keeps its minus and loses its plus', async ({ page }) => {
+    const big = await withDb((db) => insertProduct(db, { oven: 50, work: 50 }));
+    try {
+      await withDays([11, 12], [{ oven: 60, work: 60 }, { oven: 300, work: 300 }], async ([small, roomy]) => {
+        await page.goto(`/?day=${roomy}`);
+        const card = page.locator(`[data-product-id="${big.id}"]`);
+        await card.getByRole('button', { name: /הוספה/ }).click();
+        await page.locator(`[data-day="${small}"]`).click();
+        await expect(card).toHaveAttribute('data-blocked', 'does_not_fit');
+        await expect(card.getByTestId('quantity-increase')).toBeDisabled();
+        await card.getByTestId('quantity-decrease').click();
+        await expect(card.getByRole('button', { name: 'לא זמין' })).toBeDisabled();
+        const stored = await page.evaluate(() => JSON.parse(sessionStorage.getItem('yb.cart.v1') ?? 'null'));
+        expect(stored.lines).toEqual([]);
+      });
+    } finally {
+      await withDb((db) => deleteProducts(db, [big.id]));
     }
   });
 

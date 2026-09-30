@@ -90,6 +90,11 @@ test.describe('site footer + contact block (US-0b, s.14C)', () => {
       await expect(footer.getByTestId('contact-call')).toContainText('050-000-0000');
       await expect(footer.getByTestId('contact-whatsapp')).toHaveAttribute('href', 'https://wa.me/972500000000');
       await expect(footer).not.toContainText('000000018');
+      // the catalog header, the tab title and the admin login header use the same name, not the placeholder
+      await expect(page.getByTestId('business-name')).toHaveText('מאפיית בדיקה');
+      await expect(page).toHaveTitle(/מאפיית בדיקה/);
+      await page.goto('/admin/login');
+      await expect(page.locator('.admin-brand small')).toHaveText('מאפיית בדיקה');
 
       await checkPublicBaseline(page, '/business', 'business-values');
       await expect(page.getByTestId('business-registration')).toContainText('עוסק פטור מס׳');

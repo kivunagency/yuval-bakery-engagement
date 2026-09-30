@@ -261,6 +261,119 @@ test.describe('api-003 read paths', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Early warning: POST /api/checkout/fit (fn_checkout_single_order_fit)
+// ---------------------------------------------------------------------------
+function fit(request, data, { origin = 'http://localhost:3100' } = {}) {
+  const headers = { 'content-type': 'application/json' };
+  if (origin) headers.origin = origin;
+  return request.post('/api/checkout/fit', { data, headers });
+}
+
+test.describe('checkout early warning: POST /api/checkout/fit', () => {
+  test('the DB answers with a state word only (fits, too_big, day_unavailable, product_unavailable) and reserves nothing', async ({ request }) => {
+    const { p, w, day, blackout } = await withDb(async (c) => ({
+      p: await product(c, { oven: 10, work: 10 }),
+      w: await product(c, { oven: 1, work: 20 }),
+      day: await db.freshDay(c, { oven: 100, work: 100 }),
+      blackout: await db.freshDay(c, { oven: 100, work: 100, blackout: true }),
+    }));
+    const before = await withDb((c) => db.ledger(c, day));
+    const ok = await fit(request, { day, items: [{ productId: p.id, quantity: 3 }] }); // 30 of 100: under the 35% cap
+    expect(ok.status()).toBe(200);
+    expect(await ok.json()).toEqual({ fit: 'fits' }); // no minutes, no totals
+    expect(ok.headers()['cache-control']).toContain('no-store');
+    expect(await (await fit(request, { day, items: [{ productId: p.id, quantity: 4 }] })).json()).toEqual({ fit: 'too_big' }); // 40 > 35
+    expect(await (await fit(request, { day, items: [{ productId: w.id, quantity: 2 }] })).json()).toEqual({ fit: 'too_big' }); // work 40 > 35 on its own
+    expect(await (await fit(request, { day, items: [{ productId: p.id, quantity: 1 }, { productId: w.id, quantity: 1 }] })).json()).toEqual({ fit: 'fits' }); // lines add up: oven 11, work 30
+    expect(await (await fit(request, { day, items: [{ productId: p.id, quantity: 2 }, { productId: w.id, quantity: 1 }] })).json()).toEqual({ fit: 'too_big' }); // work 20 + 20 = 40
+    expect(await (await fit(request, { day: blackout, items: [{ productId: p.id, quantity: 1 }] })).json()).toEqual({ fit: 'day_unavailable' });
+    expect(await (await fit(request, { day: '2099-01-02', items: [{ productId: p.id, quantity: 1 }] })).json()).toEqual({ fit: 'day_unavailable' });
+    await withDb((c) => c.query('UPDATE products SET is_available = false WHERE id = $1', [w.id]));
+    expect(await (await fit(request, { day, items: [{ productId: p.id, quantity: 1 }, { productId: w.id, quantity: 1 }] })).json()).toEqual({ fit: 'product_unavailable' });
+    expect(await withDb((c) => db.ledger(c, day))).toEqual(before);
+  });
+
+  test('same-origin only; an amount, a bad id, quantity over 20 or a duplicate line is 400', async ({ request }) => {
+    const { p, day } = await withDb(async (c) => ({ p: await product(c), day: await db.freshDay(c, { oven: 100, work: 100 }) }));
+    const good = { day, items: [{ productId: p.id, quantity: 1 }] };
+    expect((await fit(request, good, { origin: 'https://evil.example' })).status()).toBe(403);
+    expect((await fit(request, good, { origin: '' })).status()).toBe(403);
+    for (const bad of [
+      { ...good, total: 1 },
+      { day, items: [{ productId: 'x', quantity: 1 }] },
+      { day, items: [{ productId: p.id, quantity: 21 }] },
+      { day, items: [{ productId: p.id, quantity: 1 }, { productId: p.id.toUpperCase(), quantity: 1 }] },
+      { day: 'tomorrow', items: good.items },
+      { day, items: [] },
+    ]) {
+      const r = await fit(request, bad);
+      expect(r.status(), JSON.stringify(bad)).toBe(400);
+      expect(await r.json()).toEqual({ error: 'invalid_input' });
+    }
+  });
+
+  test('agrees with fn_create_standard_order: too_big exactly when the real checkout refuses with the single-order cap', async () => {
+    // One transaction, rolled back. For every (day totals, cart) the early
+    // answer must match what the order function does with the same cart.
+    const disagreements = await withDb(async (c) => {
+      await c.query('BEGIN');
+      try {
+        const a = await product(c, { oven: 10, work: 10 });
+        const b = await product(c, { oven: 35, work: 0 });
+        const d = await product(c, { oven: 0, work: 12 });
+        const out = [];
+        let n = 0;
+        for (const [oven, work, blackout] of [[100, 100, false], [60, 60, false], [100, 20, false], [20, 100, false], [300, 300, false], [100, 100, true]]) {
+          const day = await db.freshDay(c, { oven, work, blackout });
+          for (const qa of [0, 1, 2, 3, 4, 10])
+            for (const qb of [0, 1, 2])
+              for (const qd of [0, 1, 3]) {
+                const items = [[a, qa], [b, qb], [d, qd]].filter(([, q]) => q > 0).map(([x, q]) => ({ product_id: x.id, quantity: q }));
+                if (items.length === 0) continue;
+                const early = (await c.query('SELECT fn_checkout_single_order_fit($1, $2::jsonb) AS f', [day, JSON.stringify(items)])).rows[0].f;
+                await c.query('SAVEPOINT try_order');
+                let reason = 'ordered';
+                try {
+                  n += 1;
+                  await c.query(
+                    `SELECT fn_create_standard_order($1, NULL, 'QA', $2, NULL, 'pickup', $3,
+                       (SELECT id FROM time_slots WHERE is_active ORDER BY start_time DESC LIMIT 1), NULL, NULL, NULL,
+                       $4::jsonb, $5, 'p', 't', 'c')`,
+                    [`10.8.${Math.floor(n / 250)}.${n % 250}`, `+97252${String(1000000 + n).slice(-7)}`, day, JSON.stringify(items), crypto.randomUUID()],
+                  );
+                } catch (e) {
+                  reason = String(e.message);
+                }
+                await c.query('ROLLBACK TO SAVEPOINT try_order');
+                const expected = /single_order_capacity_cap_exceeded/.test(reason) ? 'too_big' : /day_unavailable/.test(reason) ? 'day_unavailable' : reason === 'ordered' ? 'fits' : `unexpected: ${reason}`;
+                if (early !== expected) out.push({ oven, work, blackout, items: [qa, qb, qd], early, reason });
+              }
+        }
+        expect(n).toBeGreaterThan(250);
+        return out;
+      } finally {
+        await c.query('ROLLBACK');
+      }
+    });
+    expect(disagreements).toEqual([]);
+  });
+
+  test('fn_checkout_single_order_fit is service_role only; the cap helpers are callable by nobody', async () => {
+    const env = localEnv();
+    const anon = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+    const denied = await anon.rpc('fn_checkout_single_order_fit', { p_day: '2099-01-02', p_items: [] });
+    expect(denied.error?.message).toContain('permission denied');
+    const privileges = await withDb(async (c) => (await c.query(`
+      SELECT has_function_privilege('anon', 'fn_checkout_single_order_fit(date,jsonb)', 'execute') AS a,
+             has_function_privilege('authenticated', 'fn_checkout_single_order_fit(date,jsonb)', 'execute') AS u,
+             has_function_privilege('service_role', 'fn_checkout_single_order_fit(date,jsonb)', 'execute') AS s,
+             has_function_privilege('service_role', 'fn_single_order_cap_exceeded(int,int,int,int,numeric)', 'execute') AS cap,
+             has_function_privilege('service_role', 'fn_order_items_invalid(jsonb)', 'execute') AS shape`)).rows[0]);
+    expect(privileges).toEqual({ a: false, u: false, s: true, cap: false, shape: false });
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Screens. Days 4..7 of the strip are reshaped and restored.
 // ---------------------------------------------------------------------------
 async function withStripDays(fn) {
@@ -423,6 +536,119 @@ test.describe('client-003: checkout screen', () => {
       expect(page.url()).toContain('/checkout');
       expect(await withDb((c) => db.ledger(c, days[2]))).toEqual(before);
       await page.screenshot({ path: join(SCREENS, 'checkout-day-gone.png'), fullPage: true });
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// client-003: editing the cart in the summary, and the early too-big warning
+// ---------------------------------------------------------------------------
+const storedCart = (page) => page.evaluate((k) => JSON.parse(window.sessionStorage.getItem(k) ?? 'null'), CART_KEY);
+
+test.describe('client-003: cart editing and the early too-big warning', () => {
+  test('summary: minus lowers, minus at 1 removes, plus stops at 20, remove takes the line; an empty cart shows the empty state', async ({ page }) => {
+    await withStripDays(async ({ days, p }) => {
+      const q = await withDb((c) => product(c, { price: 10, oven: 1, work: 1 }));
+      try {
+        await withCart(page, { day: days[0], lines: [{ productId: p.id, quantity: 2 }, { productId: q.id, quantity: 1 }] });
+        await page.goto('/checkout');
+        const lineP = page.locator(`[data-testid="summary-line"][data-product-id="${p.id}"]`);
+        const lineQ = page.locator(`[data-testid="summary-line"][data-product-id="${q.id}"]`);
+        await expect(page.getByTestId('summary-total')).toContainText('38'); // 2 x 14 + 10
+
+        // accessible names come from he.json, and every control is a 44px target
+        await expect(lineP.getByRole('button', { name: `יחידה אחת פחות, ${p.name}` })).toBeVisible();
+        await expect(lineP.getByRole('button', { name: `עוד יחידה, ${p.name}` })).toBeVisible();
+        await expect(lineP.getByRole('button', { name: `הסרה מהסל, ${p.name}` })).toHaveText('הסרה');
+        for (const b of await lineP.getByRole('button').all()) {
+          const box = await b.boundingBox();
+          expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
+        }
+
+        await lineP.getByTestId('quantity-decrease').click();
+        await expect(lineP.getByTestId('quantity-value')).toContainText('1');
+        await expect(page.getByTestId('summary-total')).toContainText('24');
+        expect((await storedCart(page)).lines).toEqual([{ productId: p.id, quantity: 1 }, { productId: q.id, quantity: 1 }]);
+
+        // at 1 the minus is "remove" and takes the line
+        await expect(lineP.getByTestId('quantity-decrease')).toHaveAccessibleName(`הסרה מהסל, ${p.name}`);
+        await lineP.getByTestId('quantity-decrease').click();
+        await expect(lineP).toHaveCount(0);
+        expect(await storedCart(page)).toEqual({ day: days[0], lines: [{ productId: q.id, quantity: 1 }] });
+        await expect(page.locator('#summary-label')).toBeFocused(); // focus stays in the summary
+
+        const plus = lineQ.getByTestId('quantity-increase');
+        for (let i = 0; i < 19; i += 1) await plus.click();
+        await expect(lineQ.getByTestId('quantity-value')).toContainText('20');
+        await expect(plus).toBeDisabled();
+        expect((await storedCart(page)).lines).toEqual([{ productId: q.id, quantity: 20 }]);
+
+        await lineQ.getByTestId('summary-remove').click();
+        await expect(page.getByTestId('checkout-empty')).toBeVisible();
+        await expect(page.getByTestId('checkout-form')).toHaveCount(0);
+        expect(await storedCart(page)).toEqual({ day: days[0], lines: [] });
+      } finally {
+        await withDb((c) => c.query('UPDATE products SET is_published = false WHERE id = $1', [q.id]));
+      }
+    });
+  });
+
+  test('too big for the chosen day: the warning shows before any field is filled and continue is disabled; removing a line, lowering it or a roomier day clears it', async ({ page }) => {
+    await withStripDays(async ({ days }) => {
+      // Strip days are 300/300, so the single-order cap is 105 minutes a resource.
+      const { a, b } = await withDb(async (c) => {
+        await c.query('UPDATE capacity_day_ledger SET oven_minutes_total = 1000, work_minutes_total = 1000 WHERE day = $1', [days[1]]);
+        return { a: await product(c, { price: 20, oven: 60, work: 5 }), b: await product(c, { price: 20, oven: 60, work: 5 }) };
+      });
+      try {
+        const answers = [];
+        page.on('response', async (r) => {
+          if (r.url().endsWith('/api/checkout/fit')) answers.push(await r.json().catch(() => 'not json'));
+        });
+        const before = await withDb((c) => db.ledger(c, days[0]));
+        await withCart(page, { day: days[0], lines: [{ productId: a.id, quantity: 1 }, { productId: b.id, quantity: 1 }] });
+        await page.goto('/checkout');
+        const warning = page.getByTestId('too-big-warning');
+        await expect(warning).toBeVisible(); // 120 > 105, and nothing has been typed
+        await expect(warning).toHaveText('ההזמנה גדולה מדי ליום אחד. הורידו כמה פריטים או בחרו יום אחר, או צרו קשר ונתאם.');
+        await expect(warning).toHaveAttribute('role', 'alert');
+        await expect(page.locator('#name')).toHaveValue('');
+        const submit = page.getByTestId('checkout-submit');
+        await expect(submit).toBeDisabled();
+        await expect(submit).toHaveAttribute('aria-describedby', 'submit-blocked');
+        await expect(page.getByTestId('too-big-submit')).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+        await page.screenshot({ path: join(SCREENS, 'checkout-too-big.png'), fullPage: false });
+        await page.getByTestId('summary').scrollIntoViewIfNeeded();
+        await page.screenshot({ path: join(SCREENS, 'checkout-too-big-summary.png'), fullPage: true });
+
+        // removing a line clears it
+        await page.locator(`[data-testid="summary-line"][data-product-id="${b.id}"]`).getByTestId('summary-remove').click();
+        await expect(warning).toHaveCount(0);
+        await expect(submit).toBeEnabled();
+
+        // plus brings it back, minus clears it again
+        const lineA = page.locator(`[data-testid="summary-line"][data-product-id="${a.id}"]`);
+        await lineA.getByTestId('quantity-increase').click();
+        await expect(warning).toBeVisible();
+        await expect(submit).toBeDisabled();
+        await lineA.getByTestId('quantity-decrease').click();
+        await expect(warning).toHaveCount(0);
+
+        // a roomier day clears it too (the answer follows the chosen day)
+        await lineA.getByTestId('quantity-increase').click();
+        await expect(warning).toBeVisible();
+        await page.locator(`[data-day="${days[1]}"]`).click();
+        await expect(warning).toHaveCount(0);
+        await expect(submit).toBeEnabled();
+
+        // the page only ever received state words, and nothing was reserved
+        expect(answers.length).toBeGreaterThan(0);
+        for (const x of answers) expect(Object.keys(x)).toEqual(['fit']);
+        expect(await withDb((c) => db.ledger(c, days[0]))).toEqual(before);
+      } finally {
+        await withDb((c) => c.query('UPDATE products SET is_published = false WHERE id = ANY($1::uuid[])', [[a.id, b.id]]));
+      }
     });
   });
 });

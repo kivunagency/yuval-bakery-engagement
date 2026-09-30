@@ -25,6 +25,36 @@ export function addToCart(cart: Cart, productId: string, day: string): Cart {
   return { day, lines };
 }
 
+/**
+ * Set one line's quantity. Above MAX_LINE_QUANTITY it stays at the cap; 0 or
+ * less removes the line. A product not in the cart is left alone (only
+ * addToCart creates a line, because only it knows the day).
+ */
+export function setLineQuantity(cart: Cart, productId: string, quantity: number): Cart {
+  if (!cart.lines.some((l) => l.productId === productId)) return cart;
+  if (!Number.isFinite(quantity) || quantity < 1) return removeFromCart(cart, productId);
+  const q = Math.min(MAX_LINE_QUANTITY, Math.floor(quantity));
+  return { ...cart, lines: cart.lines.map((l) => (l.productId === productId ? { ...l, quantity: q } : l)) };
+}
+
+/** One more of a line already in the cart, capped at MAX_LINE_QUANTITY. */
+export function incrementLine(cart: Cart, productId: string): Cart {
+  const line = cart.lines.find((l) => l.productId === productId);
+  return line ? setLineQuantity(cart, productId, line.quantity + 1) : cart;
+}
+
+/** One less of a line; at quantity 1 the line is removed. */
+export function decrementLine(cart: Cart, productId: string): Cart {
+  const line = cart.lines.find((l) => l.productId === productId);
+  return line ? setLineQuantity(cart, productId, line.quantity - 1) : cart;
+}
+
+/** Remove a line. The day stays with the cart (the customer picked it). */
+export function removeFromCart(cart: Cart, productId: string): Cart {
+  if (!cart.lines.some((l) => l.productId === productId)) return cart;
+  return { ...cart, lines: cart.lines.filter((l) => l.productId !== productId) };
+}
+
 /** The cart follows the selected day (one order, one day). */
 export function moveCartToDay(cart: Cart, day: string): Cart {
   return cart.day === day ? cart : { ...cart, day };

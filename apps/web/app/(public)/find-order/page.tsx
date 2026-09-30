@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { FindOrderForm } from '@/components/find-order/FindOrderForm';
 import styles from '@/components/find-order/find-order.module.css';
+import { pageMetadata } from '@/lib/server/seo/page-metadata';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('find_order');
-  return { title: t('meta_title'), robots: { index: false, follow: false }, referrer: 'no-referrer' };
+  return pageMetadata({ path: '/find-order', title: t('meta_title'), key: 'find_order', robots: { index: false, follow: false }, referrer: 'no-referrer' });
 }
 
 // Find my order (US-0d, PRD). The form is the whole first frame (nothing to

@@ -1,14 +1,19 @@
+import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import type { CatalogProduct } from '@/lib/shared/contracts/catalog';
 import { AllergenChips } from '@/components/catalog/AllergenChips';
 import { ProductPhoto } from '@/components/catalog/ProductPhoto';
 import { PriceAmount } from '@/components/price';
+import { QuantityStepper } from '@/components/cart/QuantityStepper';
 import styles from '@/components/catalog/catalog.module.css';
 
 // One product (design-tokens.md, "כרטיס מוצר"). Three states: orderable,
 // sold out (Yuval paused it) and "does not fit on the selected day" (the DB
 // said one unit does not fit). The last two look the same: the product stays
 // in the catalog, greyed, with a note under the photo and a disabled button.
+// Once the product is in the cart the add button becomes minus / quantity /
+// plus; a blocked product already in the cart keeps its minus (it can be
+// lowered or removed) and loses its plus.
 
 export type BlockedReason = { kind: 'out_of_stock' } | { kind: 'does_not_fit'; day: string; next: string | null };
 
@@ -18,10 +23,22 @@ type Props = {
   blocked: BlockedReason | null;
   inCart: number;
   onAdd: (product: CatalogProduct) => void;
+  onIncrease: (product: CatalogProduct) => void;
+  onDecrease: (product: CatalogProduct) => void;
 };
 
-export function ProductCard({ product, wide, blocked, inCart, onAdd }: Props) {
+export function ProductCard({ product, wide, blocked, inCart, onAdd, onIncrease, onDecrease }: Props) {
   const t = useTranslations('catalog');
+  // Keep keyboard focus when the add button and the stepper replace each other.
+  const addRef = useRef<HTMLButtonElement>(null);
+  const plusRef = useRef<HTMLButtonElement>(null);
+  const focusNext = useRef<'add' | 'plus' | null>(null);
+  const hasLine = inCart > 0;
+  useEffect(() => {
+    if (focusNext.current === 'plus' && hasLine) plusRef.current?.focus();
+    if (focusNext.current === 'add' && !hasLine) addRef.current?.focus();
+    focusNext.current = null;
+  }, [hasLine]);
   const headingId = `p-${product.id}`;
   const note =
     blocked?.kind === 'out_of_stock'
@@ -59,16 +76,35 @@ export function ProductCard({ product, wide, blocked, inCart, onAdd }: Props) {
           ) : null}
         </details>
       ) : null}
-      <button
-        type="button"
-        className={styles.add}
-        disabled={blocked !== null}
-        aria-describedby={headingId}
-        onClick={() => onAdd(product)}
-      >
-        {blocked ? t('unavailable') : t('add')}
-        {!blocked && inCart > 0 ? <span className={`${styles.inCart} num`}>{inCart}</span> : null}
-      </button>
+      {hasLine ? (
+        <div className={styles.stepperRow}>
+          <QuantityStepper
+            ref={plusRef}
+            name={product.name}
+            quantity={inCart}
+            increaseDisabled={blocked !== null}
+            onIncrease={() => onIncrease(product)}
+            onDecrease={() => {
+              if (inCart <= 1) focusNext.current = 'add';
+              onDecrease(product);
+            }}
+          />
+        </div>
+      ) : (
+        <button
+          ref={addRef}
+          type="button"
+          className={styles.add}
+          disabled={blocked !== null}
+          aria-describedby={headingId}
+          onClick={() => {
+            focusNext.current = 'plus';
+            onAdd(product);
+          }}
+        >
+          {blocked ? t('unavailable') : t('add')}
+        </button>
+      )}
     </article>
   );
 }

@@ -1,0 +1,21 @@
+/* The quantity stepper (catalog card and checkout summary). 44px targets,
+   logical properties only (RTL), focus ring from globals.css :focus-visible. */
+.stepper {
+  display: inline-flex; align-items: center; gap: var(--s1);
+  border: 1.5px solid var(--ink); border-radius: var(--r-control);
+  background: var(--surface);
+}
+.step {
+  inline-size: var(--tap); block-size: var(--tap);
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: calc(var(--r-control) - 2px); background: transparent; color: var(--ink);
+  cursor: pointer; transition: background-color var(--dur-1) var(--ease);
+}
+.step svg { inline-size: 18px; block-size: 18px; }
+.step:hover:not(:disabled) { background: var(--surface-2); }
+.step:disabled { color: var(--line-strong); cursor: not-allowed; }
+.qty { min-inline-size: 2ch; text-align: center; font-weight: 600; font-size: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .step { transition: none; }
+}

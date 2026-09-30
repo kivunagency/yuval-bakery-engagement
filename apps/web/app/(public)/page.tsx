@@ -5,6 +5,11 @@ import { defaultDayWindow, getDayAvailability } from '@/lib/server/capacity/day-
 import { isoDate } from '@/lib/shared/contracts/primitives';
 import { CatalogScreen } from '@/components/catalog/CatalogScreen';
 import { isSelectableDay } from '@/components/day-state/DayState';
+import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { siteOrigin } from '@/lib/server/seo/site';
+import { bakeryJsonLd } from '@/lib/shared/seo/json-ld';
+import { pageMetadata } from '@/lib/server/seo/page-metadata';
 
 // Catalog at `/` (client-001): the Instagram bio link lands here. Server
 // component: the catalog and the day strip are fetched here, in parallel, and
@@ -12,14 +17,14 @@ import { isSelectableDay } from '@/components/day-state/DayState';
 // customer picks and to the cart.
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations();
-  return { title: `${t('catalog.title')} | ${t('business.details.name')}` };
+  const [t, site] = await Promise.all([getTranslations(), getPublicSiteSettings()]);
+  return pageMetadata({ path: '/', title: `${t('catalog.title')} | ${site.business_name ?? t('business.details.name')}`, key: 'home' });
 }
 
 export default async function CatalogPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [t, params] = await Promise.all([getTranslations('business.details'), searchParams]);
   const range = defaultDayWindow();
-  const [catalog, availability] = await Promise.all([getCatalog(), getDayAvailability(range.from, range.to)]);
+  const [catalog, availability, site] = await Promise.all([getCatalog(), getDayAvailability(range.from, range.to), getPublicSiteSettings()]);
 
   // ?day= keeps a shared or reloaded link on the same day, only if that day
   // is still selectable (the DB's state, not ours).
@@ -29,5 +34,12 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
       ? requested.data
       : null;
 
-  return <CatalogScreen businessName={t('name')} catalog={catalog} availability={availability} initialDay={initialDay} />;
+  const jsonLd = bakeryJsonLd(site, siteOrigin());
+
+  return (
+    <>
+      {jsonLd ? <JsonLd data={jsonLd} /> : null}
+      <CatalogScreen businessName={site.business_name ?? t('name')} catalog={catalog} availability={availability} initialDay={initialDay} />
+    </>
+  );
 }

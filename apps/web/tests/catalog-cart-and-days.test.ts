@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { addToCart, cartCount, EMPTY_CART, MAX_LINE_QUANTITY, moveCartToDay, parseCart } from '@/lib/shared/cart';
+import {
+  addToCart,
+  cartCount,
+  decrementLine,
+  EMPTY_CART,
+  incrementLine,
+  MAX_LINE_QUANTITY,
+  moveCartToDay,
+  parseCart,
+  removeFromCart,
+  setLineQuantity,
+} from '@/lib/shared/cart';
 import { isolatedDate, shortDate, weekdayKey } from '@/components/day-state/format';
 import { formatIls } from '@/lib/shared/price/vat';
 
@@ -26,6 +37,55 @@ describe('cart (client-side, one day per order)', () => {
       day: '2026-10-01',
       lines: [{ productId: 'a', quantity: 2 }],
     });
+  });
+});
+
+describe('cart editing (minus, plus, remove)', () => {
+  const day = '2026-10-01';
+  const two = addToCart(addToCart(addToCart(EMPTY_CART, 'a', day), 'a', day), 'b', day);
+
+  it('minus lowers a line by one; at 1 it removes the line; the day stays', () => {
+    const c = decrementLine(two, 'a');
+    expect(c.lines).toEqual([{ productId: 'a', quantity: 1 }, { productId: 'b', quantity: 1 }]);
+    const d = decrementLine(c, 'a');
+    expect(d).toEqual({ day, lines: [{ productId: 'b', quantity: 1 }] });
+    expect(decrementLine(d, 'b')).toEqual({ day, lines: [] });
+  });
+
+  it('plus adds one and stops at MAX_LINE_QUANTITY', () => {
+    let c = incrementLine(two, 'b');
+    expect(c.lines[1]).toEqual({ productId: 'b', quantity: 2 });
+    for (let i = 0; i < 40; i++) c = incrementLine(c, 'b');
+    expect(c.lines[1]!.quantity).toBe(MAX_LINE_QUANTITY);
+    expect(incrementLine(c, 'b')).toEqual(c);
+  });
+
+  it('plus and minus leave a product that is not in the cart alone (only add creates a line)', () => {
+    expect(incrementLine(two, 'zz')).toBe(two);
+    expect(decrementLine(two, 'zz')).toBe(two);
+    expect(removeFromCart(two, 'zz')).toBe(two);
+    expect(setLineQuantity(two, 'zz', 3)).toBe(two);
+  });
+
+  it('setLineQuantity caps, floors, and removes at 0 or below or on a non-number', () => {
+    expect(setLineQuantity(two, 'a', 99).lines[0]).toEqual({ productId: 'a', quantity: MAX_LINE_QUANTITY });
+    expect(setLineQuantity(two, 'a', 3.7).lines[0]).toEqual({ productId: 'a', quantity: 3 });
+    expect(setLineQuantity(two, 'a', 0).lines).toEqual([{ productId: 'b', quantity: 1 }]);
+    expect(setLineQuantity(two, 'a', -2).lines).toEqual([{ productId: 'b', quantity: 1 }]);
+    expect(setLineQuantity(two, 'a', Number.NaN).lines).toEqual([{ productId: 'b', quantity: 1 }]);
+  });
+
+  it('remove drops the whole line whatever its quantity, and never mutates the input', () => {
+    const before = JSON.stringify(two);
+    expect(removeFromCart(two, 'a')).toEqual({ day, lines: [{ productId: 'b', quantity: 1 }] });
+    expect(cartCount(removeFromCart(removeFromCart(two, 'a'), 'b'))).toBe(0);
+    expect(JSON.stringify(two)).toBe(before);
+  });
+
+  it('an edited cart round-trips through parseCart (what sessionStorage holds)', () => {
+    const c = incrementLine(decrementLine(two, 'a'), 'b');
+    expect(parseCart(JSON.stringify(c))).toEqual(c);
+    expect(parseCart(JSON.stringify(removeFromCart(removeFromCart(two, 'a'), 'b')))).toEqual({ day, lines: [] });
   });
 });
 
