@@ -94,7 +94,9 @@ describe('JsonLd component', () => {
     const { JsonLd } = await import('@/components/seo/JsonLd');
     const html = renderToStaticMarkup(await JsonLd({ data: bakeryJsonLd(site, ORIGIN)! }));
     expect(html).toMatch(/^<script type="application\/ld\+json" nonce="abc123">/);
-    const body = /<script[^>]*>([\s\S]*)<\/script>/i.exec(html)![1]!;
+    // No tag-matching regex: the markup is exactly one element, so its body sits
+    // between the first '>' and the last '<'.
+    const body = html.slice(html.indexOf('>') + 1, html.lastIndexOf('<'));
     expect(JSON.parse(body)['@type']).toBe('Bakery');
     vi.doUnmock('next/headers');
   });
