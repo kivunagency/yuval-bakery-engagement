@@ -4,10 +4,11 @@ import { getTranslations } from 'next-intl/server';
 import { LegalPage, LegalSection } from '@/components/legal-page';
 import { TEXT_VERSIONS } from '@/lib/shared/compliance/versions';
 import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
+import { pageMetadata } from '@/lib/server/seo/page-metadata';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('terms');
-  return { title: t('title') };
+  return pageMetadata({ path: '/terms', title: t('title'), key: 'terms' });
 }
 
 // compliance-004: terms of use (Rule 33 item 2). Built from PRD-01 and

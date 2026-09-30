@@ -4,10 +4,11 @@ import { BusinessDetails, PrivacyNoticeAtCollection } from '@/components/complia
 import { LegalPage, LegalSection } from '@/components/legal-page';
 import { TEXT_VERSIONS } from '@/lib/shared/compliance/versions';
 import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
+import { pageMetadata } from '@/lib/server/seo/page-metadata';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('privacy.page');
-  return { title: t('title') };
+  return pageMetadata({ path: '/privacy', title: t('title'), key: 'privacy' });
 }
 
 // compliance-001: the full privacy notice (Privacy Protection Law s.11,

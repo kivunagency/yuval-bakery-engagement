@@ -15,8 +15,8 @@ FROM (VALUES
   ('business_phone', '050-0000000'),
   ('business_whatsapp', '050-0000000'),
   ('business_email', 'demo@example.test'),
-  ('payment_link_bit', 'https://example.test/demo-bit'),
-  ('payment_link_paybox', 'https://example.test/demo-paybox')
+  ('payment_link_bit', 'https://www.bitpay.co.il/app/me/demo-yuval-bakery'),
+  ('payment_link_paybox', 'https://payboxapp.page.link/demo-yuval-bakery')
 ) AS v(key, val)
 WHERE app_settings.key = v.key;
 

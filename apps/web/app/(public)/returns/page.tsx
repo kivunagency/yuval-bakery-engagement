@@ -3,10 +3,11 @@ import { getTranslations } from 'next-intl/server';
 import { CancellationExemptionNotice } from '@/components/compliance';
 import { LegalPage, LegalSection } from '@/components/legal-page';
 import { TEXT_VERSIONS } from '@/lib/shared/compliance/versions';
+import { pageMetadata } from '@/lib/server/seo/page-metadata';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('returns_policy');
-  return { title: t('title') };
+  return pageMetadata({ path: '/returns', title: t('title'), key: 'returns' });
 }
 
 // compliance-004: cancellation and returns policy (Rule 33 item 5,

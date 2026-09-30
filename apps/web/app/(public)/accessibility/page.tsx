@@ -4,10 +4,11 @@ import { ContactBlock } from '@/components/contact-block';
 import { LegalPage, LegalSection } from '@/components/legal-page';
 import { ACCESSIBILITY_STATEMENT_UPDATED } from '@/lib/shared/compliance/versions';
 import { getPublicSiteSettings } from '@/lib/server/compliance/site-settings';
+import { pageMetadata } from '@/lib/server/seo/page-metadata';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('accessibility.statement');
-  return { title: t('title') };
+  return pageMetadata({ path: '/accessibility', title: t('title'), key: 'accessibility' });
 }
 
 // compliance-003: accessibility statement (Rule 33 items 9-10, IS 5568).
