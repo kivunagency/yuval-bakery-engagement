@@ -13,6 +13,7 @@ const { test, expect } = require('@playwright/test');
 const { spawn } = require('node:child_process');
 const { join } = require('node:path');
 const { localEnv } = require('./helpers/env');
+const db = require('./helpers/db');
 
 const PROD_PORT = Number(process.env.SEO_PROD_PORT || 3103);
 const DEV_PORT = Number(process.env.SEO_DEV_PORT || 3104);
@@ -149,9 +150,22 @@ test.describe('per-route metadata', () => {
 
 test.describe('home page', () => {
   test('canonical, social cards and a valid JSON-LD Bakery built from the business settings', async ({ request }) => {
-    const res = await request.get(`http://localhost:${PROD_PORT}/`);
-    test.skip(res.status() !== 200, `DID NOT RUN: "/" answered ${res.status()}; it reads the catalog, so it needs the local stack (npm run stack:up)`);
-    const html = await res.text();
+    // JSON-LD is built only from a SET business name (never a placeholder), and
+    // the stack's seed leaves it null: set one for this test and restore it.
+    const prior = await db.withClient(async (c) => {
+      const { rows } = await c.query("SELECT value FROM app_settings WHERE key = 'business_name'");
+      await c.query("UPDATE app_settings SET value = $1::jsonb WHERE key = 'business_name'", [JSON.stringify('QA Bakery')]);
+      return rows[0]?.value ?? null;
+    }).catch(() => undefined);
+    let res;
+    let html;
+    try {
+      res = await request.get(`http://localhost:${PROD_PORT}/`);
+      html = await res.text();
+    } finally {
+      if (prior !== undefined) await db.withClient((c) => c.query("UPDATE app_settings SET value = $1::jsonb WHERE key = 'business_name'", [JSON.stringify(prior)]));
+    }
+    test.skip(prior === undefined || res.status() !== 200, `DID NOT RUN: "/" answered ${res.status()} or the DB was unreachable; it reads the catalog, so it needs the local stack (npm run stack:up)`);
     // Next.js normalises the root canonical to the bare origin (no trailing slash)
     expect(tag(html, /<link[^>]*rel="canonical"[^>]*href="([^"]*)"/g)).toEqual([PROD_URL]);
     expect(meta(html, 'property', 'og:title')).toHaveLength(1);
@@ -161,7 +175,7 @@ test.describe('home page', () => {
     const ld = JSON.parse(blocks[0]);
     expect(ld['@context']).toBe('https://schema.org');
     expect(ld['@type']).toBe('Bakery');
-    expect(ld.name).toBeTruthy();
+    expect(ld.name).toBe('QA Bakery');
     expect(ld.name).not.toMatch(/^\[/); // never the unset placeholder
     expect(ld.url).toBe(`${PROD_URL}/`);
     // the script carries the CSP nonce of this very response
