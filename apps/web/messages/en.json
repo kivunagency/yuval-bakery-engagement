@@ -404,6 +404,7 @@
     "login": {
       "title": "Sign in to management",
       "intro": "For the business owner only.",
+      "idle_notice": "You were signed out after 30 minutes without activity. Sign in again.",
       "email": "Email",
       "password": "Password",
       "submit": "Sign in",
