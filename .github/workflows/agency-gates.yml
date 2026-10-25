@@ -19,7 +19,8 @@ name: agency-gates
 on:
   pull_request:
     # `edited`: the claims job reads the PR body, so fixing the body re-runs it
-    types: [opened, synchronize, reopened, edited]
+    # rule-35: ready_for_review runs the gates when a draft is promoted; drafts skip every job below.
+    types: [opened, synchronize, reopened, edited, ready_for_review]
   push:
     branches: [main, develop]
 
@@ -33,7 +34,9 @@ concurrency:
 jobs:
   selftest:
     name: gates refuse a planted violation (selftest)
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults: { run: { working-directory: apps/web } }
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +46,9 @@ jobs:
 
   boundaries:
     name: Rule 2, a route does not query the database
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults: { run: { working-directory: apps/web } }
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +61,9 @@ jobs:
 
   shape:
     name: House shape, lib/server is server-only and named
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults: { run: { working-directory: apps/web } }
     steps:
       - uses: actions/checkout@v4
@@ -66,7 +73,9 @@ jobs:
 
   hebrew:
     name: Rule 1, no Hebrew literal in code
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults: { run: { working-directory: apps/web } }
     steps:
       - uses: actions/checkout@v4
@@ -76,7 +85,9 @@ jobs:
 
   swallowed:
     name: Rule 20, a catch block does not swallow
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults: { run: { working-directory: apps/web } }
     steps:
       - uses: actions/checkout@v4
@@ -86,7 +97,9 @@ jobs:
 
   waterfall:
     name: Rule 31, the server does not wait on itself
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     defaults: { run: { working-directory: apps/web } }
     steps:
       - uses: actions/checkout@v4
@@ -96,7 +109,9 @@ jobs:
 
   contract:
     name: Rule 18, the system contract exists and moves with behaviour
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -116,8 +131,9 @@ jobs:
     # Reports, does not block (whether the callers were CHECKED is judgment). The count is
     # in the job log for the reviewer; a function computing money or capacity needs every
     # caller listed in the PR body (CLAUDE.md).
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -131,8 +147,9 @@ jobs:
 
   claims:
     name: Rule 26, Hebrew is verified rendered
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }

@@ -2,9 +2,31 @@ name: ci
 
 on:
   pull_request:
+    # rule-35: ready_for_review runs the jobs when a draft is promoted; drafts skip them (see `if:` below).
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: [develop, main]
+    # rule-35: documentation cannot change what this builds or tests. Not CLAUDE.md or anything under
+    # apps/ or output/: check-dashes reads those. ci is not a required check here, so paths-ignore is safe.
+    paths-ignore:
+      - 'docs/**'
+      - 'decisions/**'
+      - '04-architecture/**'
+      - '05-prds/**'
+      - '06-mockups/**'
+      - 'BRIEF.md'
+      - 'HISTORY.md'
+      - 'README.md'
   push:
     branches: [develop, main]
+    paths-ignore:
+      - 'docs/**'
+      - 'decisions/**'
+      - '04-architecture/**'
+      - '05-prds/**'
+      - '06-mockups/**'
+      - 'BRIEF.md'
+      - 'HISTORY.md'
+      - 'README.md'
 
 permissions:
   contents: read
@@ -16,14 +38,18 @@ concurrency:
 jobs:
   db:
     name: db (migrations + privilege test, postgres 17)
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - run: bash output/db/tests/run.sh
 
   web:
     name: web (lint, types, unit, build, regression)
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: apps/web
@@ -41,6 +67,11 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run build:functions
+      - name: Cache the Playwright browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json') }}
       - run: npx playwright install --with-deps chromium
       # US-0c: regression.confirmation renders the PDF to PNG and reads its fonts and text.
       - run: sudo apt-get install -y --no-install-recommends poppler-utils
